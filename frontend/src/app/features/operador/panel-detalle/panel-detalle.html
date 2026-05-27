@@ -1,0 +1,188 @@
+<div class="panel-wrapper">
+  <!-- Panel Header -->
+  <div class="panel-header">
+    <div class="header-title">
+      <h2>Incidente</h2>
+    </div>
+    <button class="btn-close" (click)="onCerrar()" title="Cerrar panel">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  @if (cargando()) {
+    <div class="panel-state-container">
+      <div class="spinner"></div>
+      <p>Cargando detalles del incidente...</p>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error(); as err) {
+    <div class="panel-state-container error-state">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="alert-icon">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+      <p>{{ err }}</p>
+      <button class="btn-primary btn-sm" (click)="cargarDetalle(accidenteId())">Reintentar</button>
+    </div>
+  }
+
+  <!-- Detail Content (Rendered only when loaded) -->
+  @if (!cargando() && detalle(); as det) {
+    <div class="panel-content">
+      <!-- Section 1: Overview & Location -->
+      <div class="content-section">
+        <div class="section-title">
+          <h3>Ubicación y Severidad</h3>
+        </div>
+        <div class="overview-grid">
+          @if (det.calle_nombre && det.calle_nombre !== 'Ubicación Registrada') {
+            <div class="overview-item full-width">
+              <span class="label">Calle:</span>
+              <strong class="value">{{ det.calle_nombre }}</strong>
+            </div>
+          }
+          @if (det.ciudad_nombre && det.ciudad_nombre !== 'Ubicación Registrada') {
+            <div class="overview-item">
+              <span class="label">Ciudad:</span>
+              <strong class="value">{{ det.ciudad_nombre }}</strong>
+            </div>
+          }
+          <div class="overview-item">
+            <span class="label">Severidad:</span>
+            <app-badge-severidad [severidad]="det.severidad_nivel"></app-badge-severidad>
+          </div>
+          <div class="overview-item">
+            <span class="label">Estado Actual:</span>
+            <span class="status-badge" [class]="det.estado_actual.toLowerCase().replace(' ', '-')">{{ det.estado_actual }}</span>
+          </div>
+          <div class="overview-item">
+            <span class="label">Hora Inicial:</span>
+            <strong class="value">{{ det.horainicio }}</strong>
+          </div>
+        </div>
+
+        <div class="description-box">
+          <span class="label">Descripción Operativa:</span>
+          <p class="value">{{ det.descripcion }}</p>
+        </div>
+      </div>
+
+      <!-- Section 2: Victims and Vehicles Involved -->
+      <div class="content-section">
+        <div class="section-title">
+          <h3>Estadísticas del Suceso</h3>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card vehicles">
+            <span class="stat-num">{{ det.numvehiculos }}</span>
+            <span class="stat-label">Vehículos</span>
+          </div>
+          <div class="stat-card victims">
+            <span class="stat-num">{{ det.numvictimas }}</span>
+            <span class="stat-label">Víctimas</span>
+          </div>
+          <div class="stat-card injured warning">
+            <span class="stat-num">{{ det.numheridos }}</span>
+            <span class="stat-label">Heridos</span>
+          </div>
+          <div class="stat-card deceased danger">
+            <span class="stat-num">{{ det.numfallecidos }}</span>
+            <span class="stat-label">Fallecidos</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Chronological Dispatches -->
+      <div class="content-section">
+        <div class="section-title">
+          <h3>Unidades Despachadas</h3>
+        </div>
+        @if (det.despachos.length === 0) {
+          <div class="timeline-empty">
+            <p>No se han despachado unidades aún.</p>
+          </div>
+        } @else {
+          <div class="dispatch-timeline">
+            @for (des of det.despachos; track des.iddespacho) {
+              <div class="dispatch-item">
+                <div class="dispatch-marker" [class]="des.tipo_unidad.toLowerCase()"></div>
+                <div class="dispatch-body">
+                  <div class="dispatch-header">
+                    <strong>{{ des.unidad_nombre }}</strong>
+                    <span class="dispatch-type">{{ des.tipo_unidad }}</span>
+                  </div>
+                  <div class="dispatch-dates">
+                    <div class="date-row">
+                      <span>Despachado:</span>
+                      <span>{{ formatFecha(des.fechahoradespacho) }}</span>
+                    </div>
+                    @if (des.fechahoraconfirmacion) {
+                      <div class="date-row">
+                        <span>Confirmado:</span>
+                        <span>{{ formatFecha(des.fechahoraconfirmacion) }}</span>
+                      </div>
+                    }
+                    @if (des.fechahorallegada) {
+                      <div class="date-row arrived">
+                        <span>Llegado a escena:</span>
+                        <span>{{ formatFecha(des.fechahorallegada) }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Section 4: Log Notes -->
+      <div class="content-section">
+        <div class="section-title">
+          <h3>Historial de Bitácora</h3>
+        </div>
+        @if (det.notas.length === 0) {
+          <div class="timeline-empty">
+            <p>Sin anotaciones en la bitácora.</p>
+          </div>
+        } @else {
+          <div class="notes-timeline">
+            @for (nota of det.notas; track nota.idnotaaccidentes) {
+              <div class="note-item">
+                <div class="note-meta">
+                  <span class="note-time">{{ formatFecha(nota.fecha_actualizacion) }}</span>
+                  <span class="note-badge" [class]="nota.tipo ? 'system' : 'operator'">
+                    {{ nota.tipo ? 'Sistema' : 'Operador' }}
+                  </span>
+                </div>
+                <p class="note-text">{{ nota.nota }}</p>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Action Footer Operations -->
+    @if (authService.isLoggedIn()) {
+      <div class="panel-footer">
+        <button class="btn-primary" (click)="onDespachar()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="btn-icon">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Despachar Unidades
+        </button>
+        <button class="btn-secondary" (click)="onActualizarEstado()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="btn-icon">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          </svg>
+          Actualizar Estado
+        </button>
+      </div>
+    }
+  }
+</div>

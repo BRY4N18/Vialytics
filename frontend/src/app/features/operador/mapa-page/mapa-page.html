@@ -1,0 +1,48 @@
+<div class="mapa-page-viewport">
+  <div class="mapa-main-area">
+    <app-mapa
+      [refrescarTrigger]="mapaService.refrescarTrigger()"
+      [filtros]="mapaService.filtros()"
+      [modoRegistro]="false"
+      [selectedAccidenteId]="selectedAccidenteId()"
+      (accidenteSeleccionado)="onAccidenteSeleccionado($event)"
+      (ubicacionSeleccionada)="onUbicacionSeleccionada($event)">
+    </app-mapa>
+  </div>
+
+  @if (selectedAccidenteId()) {
+    <div class="mapa-side-panel shadow-2xl animate-slide-in">
+      <app-panel-detalle
+        [accidenteId]="selectedAccidenteId()!"
+        (cerrar)="onCerrarDetalle()"
+        (abrirDespacho)="onAbrirDespacho()"
+        (abrirActualizarEstado)="onAbrirActualizarEstado()">
+      </app-panel-detalle>
+    </div>
+  }
+
+  <!-- Modal Despacho -->
+  @if (mostrarDespacho() && selectedAccidenteId()) {
+    <div class="sga-modal-backdrop" (click)="onCerrarDespacho()">
+      <div class="sga-modal-content glass-card animate-zoom-in" (click)="$event.stopPropagation()">
+        <app-despacho
+          [accidenteId]="selectedAccidenteId()!"
+          (cerrar)="onCerrarDespacho()">
+        </app-despacho>
+      </div>
+    </div>
+  }
+
+  <!-- Modal Actualizar Estado -->
+  @if (mostrarActualizarEstado() && selectedAccidenteId()) {
+    <div class="sga-modal-backdrop" (click)="onCerrarActualizarEstado()">
+      <div class="sga-modal-content glass-card animate-zoom-in" (click)="$event.stopPropagation()">
+        <app-actualizar-estado
+          [accidenteId]="selectedAccidenteId()!"
+          [estadoActual]="selectedAccidenteEstado() || 'ACTIVO'"
+          (cerrar)="onCerrarActualizarEstado()">
+        </app-actualizar-estado>
+      </div>
+    </div>
+  }
+</div>

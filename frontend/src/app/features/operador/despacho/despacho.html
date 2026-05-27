@@ -1,0 +1,125 @@
+<div class="modal-card">
+  <!-- Modal Header -->
+  <div class="modal-header">
+    <div class="header-title">
+      <h3>Despachar Unidades de Emergencia</h3>
+      <p class="subtitle">Seleccione las unidades que responderán al incidente</p>
+    </div>
+  </div>
+
+  <!-- Department Filter Tabs -->
+  <div class="filter-tabs">
+    <button [class.active]="filtroTipo() === 'TODAS'" (click)="setFiltroTipo('TODAS')">Todas</button>
+    <button [class.active]="filtroTipo() === 'AMBULANCIA'" (click)="setFiltroTipo('AMBULANCIA')">Ambulancias</button>
+    <button [class.active]="filtroTipo() === 'POLICIA'" (click)="setFiltroTipo('POLICIA')">Policía</button>
+    <button [class.active]="filtroTipo() === 'BOMBEROS'" (click)="setFiltroTipo('BOMBEROS')">Bomberos</button>
+    <button [class.active]="filtroTipo() === 'GRUA'" (click)="setFiltroTipo('GRUA')">Grúas</button>
+  </div>
+
+  <!-- Loading State -->
+  @if (cargando()) {
+    <div class="modal-loading">
+      <div class="spinner"></div>
+      <p>Cargando unidades de emergencia...</p>
+    </div>
+  } @else {
+    <!-- Form Content -->
+    <div class="modal-body">
+      
+      <!-- Error Message -->
+      @if (error(); as err) {
+        <div class="form-error">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="error-icon">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span>{{ err }}</span>
+        </div>
+      }
+
+      <!-- Grid of Responding Units -->
+      <div class="units-grid">
+        @for (uni of unidadesFiltradas(); track uni.idunidademergencia) {
+          @let disp = isDisponible(uni);
+          <div 
+            class="unit-card" 
+            [class.selected]="selectedUnidadesIds().has(uni.idunidademergencia)"
+            [class.unavailable]="!disp"
+            (click)="disp && toggleSeleccion(uni.idunidademergencia)">
+            
+            <div class="card-checkbox-wrapper">
+              <input 
+                type="checkbox" 
+                [checked]="selectedUnidadesIds().has(uni.idunidademergencia)" 
+                [disabled]="!disp"
+                class="card-checkbox"
+                (click)="$event.stopPropagation(); toggleSeleccion(uni.idunidademergencia)">
+            </div>
+
+            <div class="unit-icon-wrapper" [class]="uni.tipounidademergencia.toLowerCase()">
+              @switch (uni.tipounidademergencia) {
+                @case ('AMBULANCIA') {
+                  <!-- Ambulance Icon -->
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="unit-svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                }
+                @case ('POLICIA') {
+                  <!-- Shield/Police Icon -->
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="unit-svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                  </svg>
+                }
+                @case ('BOMBEROS') {
+                  <!-- Flame/Fire Icon -->
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="unit-svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
+                  </svg>
+                }
+                @case ('GRUA') {
+                  <!-- Truck/Wrecker Icon -->
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="unit-svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177V3.75A1.5 1.5 0 0012.75 2.25h-1.5a1.5 1.5 0 00-1.5 1.5v4.877m4.5-1.877H9m0 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3 0h3.75m9.75 0h-9.75" />
+                  </svg>
+                }
+              }
+            </div>
+
+            <div class="unit-details">
+              <strong class="unit-name">{{ uni.unidademergencia }}</strong>
+              <div class="unit-badges">
+                <span class="badge-type">{{ uni.tipounidademergencia }}</span>
+                <span class="badge-status" [class]="uni.estadounidad.toLowerCase().replace('_', '-')">
+                  {{ uni.estadounidad }}
+                </span>
+              </div>
+            </div>
+
+          </div>
+        } @empty {
+          <div class="no-units">
+            <p>No se encontraron unidades de esta categoría.</p>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Action Footer -->
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary" (click)="onCancelar()" [disabled]="guardando()">
+        Cancelar
+      </button>
+      <button 
+        type="button" 
+        class="btn-primary" 
+        [disabled]="selectedUnidadesIds().size === 0 || guardando()"
+        (click)="submit()">
+        @if (guardando()) {
+          <div class="spinner-sm"></div>
+          Despachando...
+        } @else {
+          Despachar ({{ selectedUnidadesIds().size }})
+        }
+      </button>
+    </div>
+  }
+</div>

@@ -1,0 +1,83 @@
+<div class="modal-card">
+  <!-- Modal Header -->
+  <div class="modal-header">
+    <h3>Actualizar Estado del Incidente</h3>
+    <span class="incident-badge">Actual: {{ estadoActual() }}</span>
+  </div>
+
+  <!-- Loading State -->
+  @if (cargando()) {
+    <div class="modal-loading">
+      <div class="spinner"></div>
+      <p>Cargando estados disponibles...</p>
+    </div>
+  } @else {
+    <!-- Form Content -->
+    <form [formGroup]="form" (ngSubmit)="submit()" class="modal-form">
+      
+      <!-- Error Message -->
+      @if (error(); as err) {
+        <div class="form-error">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="error-icon">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span>{{ err }}</span>
+        </div>
+      }
+
+      <div class="form-body">
+        <!-- New State Select -->
+        <div class="form-group">
+          <label for="idtipoestadoincidente_id">Nuevo Estado del Incidente</label>
+          <select 
+            id="idtipoestadoincidente_id"
+            formControlName="idtipoestadoincidente_id"
+            class="form-control"
+            [class.invalid]="isInvalid('idtipoestadoincidente_id')">
+            <option value="" disabled selected>Seleccione un nuevo estado...</option>
+            @for (est of estados(); track est.idtipoestadoincidente) {
+              <option [value]="est.idtipoestadoincidente">{{ est.tipoestadoincidente }}</option>
+            }
+          </select>
+          @if (isInvalid('idtipoestadoincidente_id')) {
+            <span class="error-text">{{ getError('idtipoestadoincidente_id') }}</span>
+          }
+        </div>
+
+        <!-- Descriptive Note -->
+        <div class="form-group">
+          <label for="nota">Anotación de Bitácora (Motivo / Detalle)</label>
+          <textarea
+            id="nota"
+            formControlName="nota"
+            rows="4"
+            placeholder="Describa el motivo del cambio de estado o el reporte actual de la situación en escena..."
+            class="form-control textarea"
+            [class.invalid]="isInvalid('nota')"></textarea>
+          <div class="textarea-footer">
+            <span class="hint">Mínimo 5 y máximo 300 caracteres.</span>
+            @if (isInvalid('nota')) {
+              <span class="error-text">{{ getError('nota') }}</span>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="onCancelar()" [disabled]="guardando()">
+          Cancelar
+        </button>
+        <button type="submit" class="btn-primary" [disabled]="form.invalid || guardando()">
+          @if (guardando()) {
+            <div class="spinner-sm"></div>
+            Guardando...
+          } @else {
+            Confirmar Cambio
+          }
+        </button>
+      </div>
+
+    </form>
+  }
+</div>

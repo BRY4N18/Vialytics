@@ -1,0 +1,151 @@
+/* 
+  SGA Global Premium Design System
+  Theme: Elegante / Ultra Dark / Moderno (Glassmorphism & Vibrant Accents)
+*/
+
+:root {
+  --bg-darkest: #0B0F19;
+  --bg-dark: #121A2E;
+  --bg-card: #1E293B;
+  
+  --accent-blue: #3B82F6;
+  --accent-emerald: #10B981;
+  --accent-amber: #F59E0B;
+  --accent-red: #EF4444;
+  --accent-purple: #7C3AED;
+  
+  --text-primary: #F9FAFB;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
+  
+  --border: #374151;
+  --border-light: #4B5563;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-darkest);
+  color: var(--text-primary);
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar for all components */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-darkest);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Leaflet Custom Popup Styling for Dark Theme */
+.leaflet-popup-content-wrapper {
+  background: rgba(18, 26, 46, 0.9) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: var(--radius) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: inherit !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(18, 26, 46, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  color: var(--text-muted) !important;
+  padding: 10px 10px 0 0 !important;
+  font-size: 16px !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button:hover {
+  color: var(--accent-red) !important;
+}
+
+/* Inside Popup Layout */
+.sga-popup {
+  font-family: 'Inter', sans-serif;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+.sga-popup-header {
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sga-popup-header strong {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #F9FAFB;
+}
+
+.sga-popup-ciudad {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.sga-popup-body {
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sga-popup-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.sga-popup-row strong {
+  color: var(--text-primary);
+}
+
+.sga-popup-footer {
+  padding: 8px 14px 12px 14px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

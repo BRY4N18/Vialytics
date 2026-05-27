@@ -1,0 +1,121 @@
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: var(--bg-darkest, #0B0F19);
+  color: var(--text-primary, #F9FAFB);
+  font-family: 'Inter', sans-serif;
+}
+
+.app-viewport {
+  flex: 1;
+  height: calc(100vh - 64px);
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Toast Notifications Container */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 10000; /* Layered above login modal and overlays */
+  pointer-events: none;
+}
+
+.sga-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  min-width: 320px;
+  max-width: 420px;
+  background: rgba(17, 24, 43, 0.95);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: toastSlideIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.sga-toast:hover {
+  transform: translateY(-2px);
+}
+
+.toast-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.toast-message {
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  color: #F9FAFB;
+  flex: 1;
+}
+
+.toast-btn-close {
+  background: transparent;
+  border: none;
+  color: #4B5563;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 50%;
+  transition: all 0.2s;
+  margin-left: 6px;
+}
+
+.sga-toast:hover .toast-btn-close {
+  color: #9CA3AF;
+}
+
+.toast-btn-close:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Success Toast Theme: High Tech Neon Blue */
+.sga-toast.success {
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(59, 130, 246, 0.15);
+}
+
+.sga-toast.success .toast-icon {
+  color: #3B82F6;
+  filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.5));
+}
+
+/* Error Toast Theme: High Tech Neon Red */
+.sga-toast.error {
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(239, 68, 68, 0.15);
+}
+
+.sga-toast.error .toast-icon {
+  color: #EF4444;
+  filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.5));
+}
+
+/* Animations */
+@keyframes toastSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

@@ -1,12 +1,45 @@
-# Ignorar TODOS los archivos en la raíz del proyecto
-/*
+# Ignorar base de datos
+database/
 
-# Excepto las carpetas principales que queremos conservar
-!*/
+# Compiled output (Angular)
+dist/
+tmp/
+out-tsc/
+bazel-out/
 
-# Excepto archivos esenciales de documentación o configuración
-!.gitignore
-!README.md
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
 
-#database
-/database
+# IDEs and editors
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/mcp.json
+.history/*
+
+# Miscellaneous
+.angular/
+.sass-cache/
+connect.lock
+coverage/
+libpeerconnection.log
+testem.log
+typings/
+__screenshots__/
+
+# System files
+.DS_Store
+Thumbs.db

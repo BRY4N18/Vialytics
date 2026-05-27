@@ -1,0 +1,35 @@
+# Django & Python Best Practices
+
+## Estándares de Código
+
+- Escribe código Python limpio, modular y fuertemente tipado (usa Type Hints).
+- Utiliza Django REST Framework (DRF) para todas las interfaces de API.
+- Sigue los principios SOLID. Mantén los controladores/vistas delgados y delega la lógica de negocio a la capa de servicios.
+
+## Reglas Estrictas de Base de Datos
+
+- **Dependencia Física:** Al generar los esquemas en `models.py`, es absolutamente obligatorio implementar un diseño donde todas las tablas dimensionales dependan físicamente de la tabla de hechos principal utilizando Claves Foráneas (`models.ForeignKey`) explícitas. No se permiten relaciones lógicas sueltas.
+- **Robustez Académica:** Los modelos principales deben contemplar la estructura completa y soportar un mínimo de 12 columnas para cumplir con los estándares de calidad y escalabilidad del proyecto.
+
+## Rendimiento
+
+- Optimiza las consultas usando `select_related` y `prefetch_related` para evitar el problema N+1.
+- Asegúrate de que las vistas asíncronas se manejen correctamente si se integran colas de mensajería o herramientas de ingesta de datos.
+
+## Patrones Asíncronos (Async Python & Kafka)
+
+- **I/O No Bloqueante:** Utiliza vistas asíncronas (`async def`) en Django para endpoints que interactúen con servicios externos, I/O pesado o colas de mensajería.
+- **Integración con Kafka:** Al diseñar los flujos de extracción, transformación y carga (ETL), implementa productores y consumidores de Apache Kafka utilizando `asyncio`. El sistema no debe bloquearse al procesar actualizaciones de estado de accidentes, previniendo errores de timeout (ej. `KafkaTimeoutError`).
+- **Concurrencia:** Usa `asyncio.gather()` para ejecutar tareas independientes en paralelo cuando el operador solicite despachos simultáneos a múltiples unidades de emergencia.
+
+## Optimización de Rendimiento (Python Performance)
+
+- **Gestión de Datos Masivos:** El código debe estar diseñado para consultar, filtrar y procesar conjuntos de datos a gran escala (un mínimo garantizado de 1.6 millones de registros). Utiliza generadores en lugar de listas para la iteración de datos y `bulk_create` / `bulk_update` en Django ORM para operaciones masivas.
+- **Optimización de ORM:** Está estrictamente prohibido el problema de consultas N+1. Utiliza siempre `select_related` para relaciones de clave foránea (Foreign Keys) de uno-a-uno o muchos-a-uno, y `prefetch_related` para relaciones de muchos-a-muchos o uno-a-muchos.
+- **Eficiencia de Memoria:** Al consultar datos de las tablas dimensionales conectadas a la tabla de hechos, trae únicamente las columnas necesarias usando `.values()` o `.only()`. Recuerda que las entidades principales deben soportar al menos 12 columnas.
+
+## Estilo, Calidad y Arquitectura ("Taste" & ISO 25010)
+
+- **Separación de Responsabilidades:** Mantén una arquitectura limpia y estrictamente desacoplada. El backend de Django debe operar exclusivamente como una API RESTful o proveedor de WebSockets, sin acoplarse con la lógica de renderizado del frontend en Angular.
+- **Estándar ISO 25010:** El código generado debe priorizar la mantenibilidad, modularidad y escalabilidad. Utiliza nombres de variables y funciones descriptivos en español (o inglés técnico) que reflejen directamente el dominio del problema (ej. `gestionar_retiro_vehicular` o `AccidenteService`).
+- **Manejo Elegante de Errores:** No devuelvas stack traces crudos al cliente. Envuelve las operaciones propensas a fallos en bloques `try/except` y devuelve respuestas JSON estructuradas con códigos de estado HTTP semánticos (ej. 400 para validaciones fallidas, 404 para expedientes no encontrados).

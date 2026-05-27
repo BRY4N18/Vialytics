@@ -1,0 +1,40 @@
+<div class="app-layout">
+  <app-header></app-header>
+  <div class="app-viewport">
+    <router-outlet></router-outlet>
+  </div>
+</div>
+
+@if (authService.showLoginModal()) {
+  <app-login-modal></app-login-modal>
+}
+
+<!-- Premium Toast Notifications overlay -->
+<div class="toast-container">
+  @for (toast of toastService.toasts(); track toast.id) {
+    <div class="sga-toast" [class]="toast.type" (click)="toastService.remove(toast.id)" role="alert">
+      @if (toast.type === 'success') {
+        <!-- Blue Info/Success icon -->
+        <svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+      } @else {
+        <!-- Red Error/Alert icon -->
+        <svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      }
+      <span class="toast-message">{{ toast.message }}</span>
+      <button class="toast-btn-close" (click)="$event.stopPropagation(); toastService.remove(toast.id)" title="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+  }
+</div>

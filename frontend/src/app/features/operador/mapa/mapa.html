@@ -1,0 +1,55 @@
+<div class="mapa-wrapper">
+  <div id="mapa-principal"></div>
+
+  <!-- Overlay de carga -->
+  @if (cargando()) {
+    <div class="mapa-loading">
+      <div class="spinner"></div>
+      <span>Actualizando mapa...</span>
+    </div>
+  }
+
+  <!-- Error banner -->
+  @if (error()) {
+    <div class="mapa-error-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      {{ error() }}
+      <button (click)="cargarAccidentes()">Reintentar</button>
+    </div>
+  }
+
+  <!-- Stats overlay -->
+  <div class="mapa-stats">
+    <div class="stat-chip">
+      <span class="stat-dot" style="background:#EF4444"></span>
+      Activos: {{ totalAccidentes() }}
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="mapa-leyenda">
+    <div class="leyenda-title">Severidad</div>
+    <div class="leyenda-item"><span class="leyenda-dot" style="background:#10B981"></span>Leve</div>
+    <div class="leyenda-item"><span class="leyenda-dot" style="background:#F59E0B"></span>Moderado</div>
+    <div class="leyenda-item"><span class="leyenda-dot" style="background:#EF4444"></span>Grave</div>
+    <div class="leyenda-item"><span class="leyenda-dot" style="background:#7C3AED"></span>Fatal</div>
+  </div>
+
+  <!-- Botón modo ubicación (solo en modo registro) -->
+  @if (modoRegistro()) {
+    <button
+      class="btn-modo-ubicacion"
+      [class.active]="modoUbicacion()"
+      (click)="toggleModoUbicacion()"
+      title="Seleccionar ubicación del accidente"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+        <circle cx="12" cy="10" r="3"/>
+      </svg>
+      {{ modoUbicacion() ? 'Clic en el mapa para ubicar' : 'Seleccionar ubicación' }}
+    </button>
+  }
+</div>

@@ -1,0 +1,163 @@
+<div class="login-modal-backdrop" (click)="onClose()">
+  <div class="login-card-container" (click)="$event.stopPropagation()">
+    
+    <!-- Decorative Grid Background & Glowing Orbs -->
+    <div class="login-card-glow-blue"></div>
+    <div class="login-card-glow-purple"></div>
+    
+    <div class="login-card">
+      <!-- Close button -->
+      <button class="btn-close" (click)="onClose()" title="Cerrar ventana">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      <!-- Brand Header -->
+      <div class="login-header">
+        <div class="brand-glow-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="login-title-group">
+          <h1>ACCESO SEGURO</h1>
+          <p>Consola de Gestión de Accidentes (SGA)</p>
+        </div>
+      </div>
+
+      <!-- Quick Access Simulator (Wow factor) -->
+      <div class="quick-access-section">
+        <span class="section-label">Simulador de Accesos (Roles de Base de Datos)</span>
+        <div class="demo-users-grid">
+          @for (user of demoUsers; track user.user) {
+            <button 
+              type="button"
+              class="btn-demo-user"
+              [class]="user.color"
+              [class.active]="selectedDemo() === user"
+              (click)="selectDemo(user)">
+              <div class="demo-avatar-mini">{{ user.name.substring(0,2) }}</div>
+              <div class="demo-info">
+                <span class="demo-role">{{ user.role }}</span>
+                <span class="demo-name">{{ user.name }}</span>
+              </div>
+              <span class="status-dot"></span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div class="login-divider">
+        <span>O INGRESE MANUALMENTE</span>
+      </div>
+
+      <!-- Main Login Form -->
+      <form class="login-form" (submit)="$event.preventDefault(); onLogin()">
+        
+        <!-- Input Username -->
+        <div class="form-field">
+          <label class="field-label" for="username">Código de Operador</label>
+          <div class="input-wrapper" [class.field-filled]="username()">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            <input 
+              id="username"
+              type="text" 
+              name="username"
+              placeholder="Ej: operador_sga" 
+              [value]="username()"
+              (input)="username.set($any($event.target).value)"
+              [disabled]="loading()"
+              autocomplete="off" />
+          </div>
+        </div>
+
+        <!-- Input Password -->
+        <div class="form-field">
+          <label class="field-label" for="password">Contraseña Cifrada</label>
+          <div class="input-wrapper" [class.field-filled]="password()">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <input 
+              id="password"
+              [type]="showPassword() ? 'text' : 'password'" 
+              name="password"
+              placeholder="••••••••••••" 
+              [value]="password()"
+              (input)="password.set($any($event.target).value)"
+              [disabled]="loading()"
+              autocomplete="current-password" />
+            
+            <button 
+              type="button" 
+              class="btn-toggle-pwd" 
+              (click)="toggleShowPassword()" 
+              tabindex="-1"
+              title="Mostrar/ocultar contraseña">
+              @if (showPassword()) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              }
+            </button>
+          </div>
+        </div>
+
+        <!-- Error Notification -->
+        @if (errorMsg(); as err) {
+          <div class="login-error-banner animate-slide-up">
+            <svg class="error-banner-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <p>{{ err }}</p>
+          </div>
+        }
+
+        <!-- Actions -->
+        <div class="login-actions">
+          <button 
+            type="button" 
+            class="btn-cancel" 
+            (click)="onClose()" 
+            [disabled]="loading()">
+            Cancelar
+          </button>
+          
+          <button 
+            type="submit" 
+            class="btn-submit-login" 
+            [disabled]="loading()">
+            @if (loading()) {
+              <div class="spinner-mini"></div>
+              <span>Verificando Credenciales...</span>
+            } @else {
+              <svg class="submit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                <polyline points="10 17 15 12 10 7"/>
+                <line x1="15" y1="12" x2="3" y2="12"/>
+              </svg>
+              <span>Iniciar Conexión Segura</span>
+            }
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
