@@ -1,3 +1,8 @@
+.cursorrules
+docker-compose.yml
+*.png
+SGA(SISTEMA DE GESTION DE ACCIDENTES).md
+
 # Ignorar base de datos
 database/
 
