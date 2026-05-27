@@ -1,0 +1,12 @@
+# Ignorar TODOS los archivos en la raíz del proyecto
+/*
+
+# Excepto las carpetas principales que queremos conservar
+!*/
+
+# Excepto archivos esenciales de documentación o configuración
+!.gitignore
+!README.md
+
+#database
+/database
