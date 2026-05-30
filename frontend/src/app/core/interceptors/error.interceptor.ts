@@ -4,16 +4,16 @@ import { throwError, catchError } from 'rxjs';
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
+      if (error.status === 401) {
+        return throwError(() => error);
+      }
       let errorMessage = 'Error desconocido';
       if (error.error instanceof ErrorEvent) {
         errorMessage = `Error de red: ${error.error.message}`;
       } else {
         switch (error.status) {
           case 400:
-            errorMessage = 'Solicitud inválida';
-            break;
-          case 401:
-            errorMessage = 'No autorizado';
+            errorMessage = 'Solicitud invÃ¡lida';
             break;
           case 403:
             errorMessage = 'Acceso denegado';

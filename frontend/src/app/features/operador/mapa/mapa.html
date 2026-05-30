@@ -1,4 +1,4 @@
-<div class="mapa-wrapper">
+<div class="mapa-wrapper" [class.modo-seleccion]="modoUbicacion()">
   <div id="mapa-principal"></div>
 
   <!-- Overlay de carga -->
@@ -36,6 +36,14 @@
     <div class="leyenda-item"><span class="leyenda-dot" style="background:#EF4444"></span>Grave</div>
     <div class="leyenda-item"><span class="leyenda-dot" style="background:#7C3AED"></span>Fatal</div>
   </div>
+
+  <!-- Crosshair overlay for location mode -->
+  @if (modoUbicacion()) {
+    <div class="crosshair-overlay">
+      <div class="crosshair-h"></div>
+      <div class="crosshair-v"></div>
+    </div>
+  }
 
   <!-- Botón modo ubicación (solo en modo registro) -->
   @if (modoRegistro()) {

@@ -1,59 +1,64 @@
-# Frontend
+# SGA — Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.12.
+Angular 21 standalone SPA para el Sistema de Gestión de Accidentes.
 
-## Development server
+---
 
-To start a local development server, run:
+## Stack
 
-```bash
-ng serve
+- Angular 21 (standalone, signals, effects)
+- CSS plano (sin Tailwind ni librerías UI externas)
+- Leaflet 1.9.4 vía CDN para mapas
+- JWT auth via `djangorestframework-simplejwt`
+
+---
+
+## Estructura
+
+```
+src/app/
+├── core/
+│   ├── services/          # AuthService, AccidenteService, ToastService
+│   ├── models/            # Interfaces TS (AccidenteDetalle, etc.)
+│   ├── interceptors/      # auth.interceptor, error.interceptor
+│   └── guards/            # auth.guard
+├── features/
+│   └── operador/          # dashboard, lista-accidentes, registro-accidente,
+│                          # mapa-page, panel-detalle, actualizar-estado,
+│                          # despacho-modal
+├── shared/
+│   └── components/        # login-modal, badge-severidad
+└── types/                 # leaflet.d.ts
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+---
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Comandos
 
 ```bash
-ng generate component component-name
+ng serve          # Dev en http://localhost:4200
+ng build          # Producción en dist/
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+---
 
-```bash
-ng generate --help
-```
+## Convenciones Frontend
 
-## Building
+- **Signals** para estado reactivo local (no RxJS BehaviorSubject).
+- **CSS plano con variables** (paleta en `styles.css`). No Tailwind.
+- **Double-Bezel**: cards con `border-radius: 10px`, transiciones `cubic-bezier(0.16, 1, 0.3, 1)` 200ms.
+- **Interceptor JWT**: adjunta `Bearer <token>` a cada request.
+- **Leaflet CDN**: tipos en `types/leaflet.d.ts`, mapa cargado globalmente vía `<script>` en `index.html`.
 
-To build the project run:
+---
 
-```bash
-ng build
-```
+## Errores Frecuentes
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+### Estados (ACTIVO, EN_ATENCION, etc.)
+Los valores del backend para `estado_actual` son `ACTIVO`, `EN_ATENCION`, `CONTROLADO`, `ARCHIVADO`. El array `estados[]` en `lista-accidentes.ts` debe usar esos values. Ver README raíz.
 
-## Running unit tests
+### Leaflet sin tipos
+Instalado global vía CDN. No importar desde npm. El archivo `types/leaflet.d.ts` declara `declare var L: any`.
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+### JWT expirado
+Sin refresh token. Si da 401, redirigir a login. Sesión persiste en `localStorage` (claves `sga_token` y `sga_username`).

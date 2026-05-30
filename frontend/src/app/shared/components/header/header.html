@@ -63,69 +63,6 @@
     }
   </nav>
 
-  <!-- Filters (only visible on the Map route) -->
-  @if (isMapaRoute()) {
-    <div class="header-filters">
-      <div class="filter-group">
-        <label class="filter-label">Severidad</label>
-        <select
-          class="filter-select"
-          [value]="selectedSeveridad() || ''"
-          (change)="onSeveridadChange($any($event.target).value)"
-        >
-          <option value="">Todas</option>
-          @for (sev of severidades; track sev.value) {
-            <option [value]="sev.value">{{ sev.label }}</option>
-          }
-        </select>
-      </div>
-
-      <div class="filter-group">
-        <label class="filter-label">Estado</label>
-        <select
-          class="filter-select"
-          [value]="selectedEstado() || ''"
-          (change)="onEstadoChange($any($event.target).value)"
-        >
-          <option value="">Todos</option>
-          @for (estado of estados; track estado) {
-            <option [value]="estado">{{ estado }}</option>
-          }
-        </select>
-      </div>
-
-      <div class="filter-group">
-        <label class="filter-label">Desde</label>
-        <input
-          type="date"
-          class="filter-date"
-          [value]="selectedFechaInicio() || ''"
-          [min]="minDate()"
-          [max]="maxDate()"
-          (change)="onFechaInicioChange($any($event.target).value)"
-        />
-      </div>
-
-      <div class="filter-group">
-        <label class="filter-label">Hasta</label>
-        <input
-          type="date"
-          class="filter-date"
-          [value]="selectedFechaFin() || ''"
-          [min]="minDate()"
-          [max]="maxDate()"
-          (change)="onFechaFinChange($any($event.target).value)"
-        />
-      </div>
-
-      <button class="btn-clear-filters" (click)="clearFiltros()" title="Limpiar filtros">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-          <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
-        </svg>
-      </button>
-    </div>
-  }
-
   <!-- Actions -->
   <div class="header-actions">
     <!-- Clock -->

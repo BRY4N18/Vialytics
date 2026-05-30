@@ -46,6 +46,7 @@ export interface AccidenteDetalle extends AccidenteMapa {
   severidad_descripcion: string;
   despachos: Despacho[];
   notas: NotaAccidente[];
+  vehiculos_detalles?: VehiculoDetalle[];
 
   // IDs de ubicación (para pre-llenar el formulario de edición)
   idpais_id?: number | null;
@@ -56,6 +57,8 @@ export interface AccidenteDetalle extends AccidenteMapa {
   idtiporeportado_id?: number | null;
   idseveridad_id?: number | null;
   idperiododia_id?: number | null;
+  idestadoclima_id?: number | null;
+  idelementofisico_id?: number | null;
   idreferenciaestacion_id?: number | null;
 
   // Clima
@@ -158,6 +161,31 @@ export interface PeriodoDia {
   crepusculoastronomico: string;
 }
 
+export interface VehiculoDetalle {
+  // Vehiculo
+  tipovehiculo?: string;
+  modelovehiculo?: string;
+  categoriausovehiculo?: string;
+  mercanciapeligrosa?: boolean;
+  ejes?: number;
+
+  // Conductor
+  nombres?: string;
+  apellidos?: string;
+  identificacion?: string;
+  genero?: string;
+  tipolicencia?: string;
+  estadolicencia?: string;
+  ciudadresidencia?: string;
+  aniosexperiencia?: number;
+
+  // Estado del Conductor
+  estadosobriedad?: boolean;
+  nivelatencion?: boolean;
+  condicionfisica?: boolean;
+  usoseguridad?: boolean;
+}
+
 export interface RegistroAccidentePayload {
   latitudinicio: number;
   longitudinicio: number;
@@ -209,6 +237,8 @@ export interface RegistroAccidentePayload {
 
   codigoaeropuerto?: string;
   zonahoraria?: string;
+
+  vehiculos_detalles?: VehiculoDetalle[];
 }
 
 export interface ActualizarEstadoPayload {
@@ -218,4 +248,26 @@ export interface ActualizarEstadoPayload {
 
 export interface DespachoPayload {
   unidades_ids: number[];
+}
+
+export interface ExpedienteAccidente {
+  accidente: AccidenteDetalle;
+  evidencias: {
+    fotos: { url: string; fecha: string }[];
+  };
+  clima: {
+    condicion: string;
+    temperatura_f?: number;
+    humedad?: number;
+    visibilidad_millas?: number;
+    velocidad_viento_mph?: number;
+    precipitacion_pulgadas?: number;
+    presion_pulgadas?: number;
+  };
+  vehiculos: {
+    tipo: string;
+    modelo: string;
+    categoria_uso: string;
+    ejes: number;
+  }[];
 }

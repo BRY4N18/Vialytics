@@ -26,6 +26,18 @@ export class ActualizarEstadoComponent implements OnInit {
   readonly guardando = signal(false);
   readonly error = signal<string | null>(null);
 
+  readonly estadoLabels: Record<string, string> = {
+    ACTIVO: 'Reportado',
+    EN_ATENCION: 'En Atención',
+    EN_TRASLADO: 'En Traslado',
+    CONTROLADO: 'Despejado',
+    ARCHIVADO: 'Archivado'
+  };
+
+  getEstadoLabel(estado: string): string {
+    return this.estadoLabels[estado] || estado;
+  }
+
   ngOnInit(): void {
     this.buildForm();
     this.cargarEstados();
@@ -33,8 +45,7 @@ export class ActualizarEstadoComponent implements OnInit {
 
   private buildForm(): void {
     this.form = this.fb.group({
-      idtipoestadoincidente_id: ['', Validators.required],
-      nota: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(300)]]
+      idtipoestadoincidente_id: ['', Validators.required]
     });
   }
 
@@ -63,8 +74,7 @@ export class ActualizarEstadoComponent implements OnInit {
     this.error.set(null);
 
     const payload: ActualizarEstadoPayload = {
-      idtipoestadoincidente_id: Number(this.form.value.idtipoestadoincidente_id),
-      nota: this.form.value.nota
+      idtipoestadoincidente_id: Number(this.form.value.idtipoestadoincidente_id)
     };
 
     this.accidenteService.actualizarEstado(this.accidenteId(), payload).subscribe({

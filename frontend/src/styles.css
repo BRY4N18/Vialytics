@@ -1,37 +1,57 @@
-/* 
-  SGA Global Premium Design System
-  Theme: Elegante / Ultra Dark / Moderno (Glassmorphism & Vibrant Accents)
+/*
+  SGA Global Design System
+  Theme: Dark Tactical / Premium Utilitarian Minimalism
+  Design tokens, grain texture, reduced-motion gate, focus-visible
 */
 
 :root {
-  --bg-darkest: #0B0F19;
-  --bg-dark: #121A2E;
-  --bg-card: #1E293B;
-  
-  --accent-blue: #3B82F6;
-  --accent-emerald: #10B981;
-  --accent-amber: #F59E0B;
-  --accent-red: #EF4444;
-  --accent-purple: #7C3AED;
-  
-  --text-primary: #F9FAFB;
-  --text-secondary: #9CA3AF;
-  --text-muted: #6B7280;
-  
+  /* Typography */
+  --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Geist Mono', 'Fira Code', 'Cascadia Code',
+    Consolas, monospace;
+
+  /* Color palette — no pure black/white, desaturated accents */
+  --bg-darkest: #0a0a0a;
+  --bg-dark: #121a2e;
+  --bg-card: #1e293b;
+
+  --accent-blue: #5288e0;
+  --accent-emerald: #22a076;
+  --accent-amber: #d99726;
+  --accent-red: #db5757;
+  --accent-purple: #844eda;
+
+  --text-primary: #fafafa;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+
   --border: #374151;
-  --border-light: #4B5563;
+  --border-light: #4b5563;
   --radius: 12px;
   --radius-sm: 8px;
+
+  /* Z-index scale */
+  --z-nav: 100;
+  --z-modal: 200;
+  --z-overlay: 300;
+  --z-grain: 400;
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-sans);
   background-color: var(--bg-darkest);
   color: var(--text-primary);
   height: 100vh;
@@ -39,9 +59,51 @@ body {
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  position: relative;
 }
 
-/* Custom Scrollbar for all components */
+/* Grain / Noise Texture Overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-grain);
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px;
+}
+
+/* Focus-visible outline */
+:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+
+/* Text-wrap balance on headings */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-wrap: balance;
+}
+
+/* Reduced-motion gate — animations disabled when user prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -52,23 +114,25 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(250, 250, 250, 0.08);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(250, 250, 250, 0.2);
 }
 
-/* Leaflet Custom Popup Styling for Dark Theme */
+/* ================================
+   Leaflet Overrides — Dark Theme
+   ================================ */
 .leaflet-popup-content-wrapper {
   background: rgba(18, 26, 46, 0.9) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(250, 250, 250, 0.1) !important;
   border-radius: var(--radius) !important;
   color: var(--text-primary) !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+  box-shadow: 0 10px 30px rgba(10, 10, 10, 0.6) !important;
   padding: 0 !important;
   overflow: hidden;
 }
@@ -81,7 +145,7 @@ body {
 
 .leaflet-popup-tip {
   background: rgba(18, 26, 46, 0.9) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(250, 250, 250, 0.1) !important;
 }
 
 .leaflet-container a.leaflet-popup-close-button {
@@ -96,7 +160,7 @@ body {
 
 /* Inside Popup Layout */
 .sga-popup {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans);
   color: var(--text-primary);
   display: flex;
   flex-direction: column;
@@ -104,8 +168,8 @@ body {
 
 .sga-popup-header {
   padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.02);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(250, 250, 250, 0.02);
+  border-bottom: 1px solid rgba(250, 250, 250, 0.05);
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -114,7 +178,7 @@ body {
 .sga-popup-header strong {
   font-size: 0.85rem;
   font-weight: 700;
-  color: #F9FAFB;
+  color: var(--text-primary);
 }
 
 .sga-popup-ciudad {

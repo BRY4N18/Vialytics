@@ -1,9 +1,15 @@
 .modal-card {
   display: flex;
   flex-direction: column;
-  color: var(--text-primary, #F9FAFB);
-  font-family: 'Inter', sans-serif;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
   background-color: var(--bg-dark, #1E293B);
+  animation: modalEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modalEnter {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 /* Header */
@@ -12,7 +18,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(250, 250, 250, 0.08);
 }
 
 .modal-header h3 {
@@ -21,15 +27,34 @@
   margin: 0;
 }
 
-.incident-badge {
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  color: #60A5FA;
-  font-size: 0.72rem;
+.current-state-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  background: rgba(15, 23, 42, 0.3);
+  border-bottom: 1px solid rgba(250, 250, 250, 0.06);
+}
+
+.state-label {
+  font-size: 0.65rem;
   font-weight: 700;
-  padding: 4px 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.state-value {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--accent-blue);
+  background: rgba(82, 136, 224, 0.1);
+  border: 1px solid rgba(82, 136, 224, 0.25);
+  padding: 4px 14px;
   border-radius: 9999px;
   text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 0 0 12px rgba(82, 136, 224, 0.1);
 }
 
 /* Form Layout */
@@ -55,29 +80,38 @@
 .form-group label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--text-secondary, #9CA3AF);
+  color: var(--text-secondary);
 }
 
 .form-control {
   background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: #F9FAFB;
-  padding: 10px 14px;
+  border: 1px solid rgba(250, 250, 250, 0.08);
+  border-radius: 10px;
+  color: var(--text-primary);
+  padding: 12px 16px;
   font-size: 0.875rem;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   outline: none;
   font-family: inherit;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 16px 12px;
+  padding-right: 40px;
 }
 
 .form-control:focus {
-  border-color: var(--accent-blue, #3B82F6);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 2px rgba(82, 136, 224, 0.2), 0 0 12px rgba(82, 136, 224, 0.1);
   background: rgba(15, 23, 42, 0.8);
 }
 
 .form-control.invalid {
-  border-color: var(--accent-red, #EF4444);
+  border-color: var(--accent-red);
 }
 
 .form-control.textarea {
@@ -93,20 +127,20 @@
 
 .hint {
   font-size: 0.72rem;
-  color: var(--text-muted, #6B7280);
+  color: var(--text-muted);
 }
 
 /* Validation errors */
 .error-text {
   font-size: 0.72rem;
-  color: var(--accent-red, #EF4444);
+  color: var(--accent-red);
   font-weight: 500;
 }
 
 .form-error {
   margin: 16px 24px 0 24px;
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: rgba(219, 87, 87, 0.08);
+  border: 1px solid rgba(219, 87, 87, 0.2);
   border-radius: 8px;
   padding: 12px 16px;
   display: flex;
@@ -128,7 +162,7 @@
   justify-content: flex-end;
   gap: 12px;
   padding: 18px 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(250, 250, 250, 0.08);
   background: rgba(15, 23, 42, 0.2);
 }
 
@@ -138,7 +172,7 @@
   font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -146,32 +180,41 @@
 }
 
 .btn-primary {
-  background: var(--accent-blue, #3B82F6);
+  background: var(--accent-blue);
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
   background: #2563EB;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(82, 136, 224, 0.3), 0 0 0 1px rgba(82, 136, 224, 0.1);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .btn-primary:disabled {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  color: var(--text-muted, #6B7280);
+  background: rgba(250, 250, 250, 0.04);
+  border: 1px solid rgba(250, 250, 250, 0.05);
+  color: var(--text-muted);
   cursor: not-allowed;
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  color: var(--text-secondary, #9CA3AF);
+  background: transparent;
+  border: 1px solid rgba(250, 250, 250, 0.08) !important;
+  color: var(--text-secondary);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-primary, #F9FAFB);
+  background: rgba(250, 250, 250, 0.06);
+  color: var(--text-primary);
+  transform: translateY(-2px);
+}
+
+.btn-secondary:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .btn-secondary:disabled {
@@ -190,7 +233,7 @@
 }
 
 .modal-loading p {
-  color: var(--text-secondary, #9CA3AF);
+  color: var(--text-secondary);
   font-size: 0.9rem;
   margin: 0;
 }
@@ -198,16 +241,16 @@
 .spinner {
   width: 28px;
   height: 28px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
+  border: 3px solid rgba(250, 250, 250, 0.1);
   border-radius: 50%;
-  border-top-color: var(--accent-blue, #3B82F6);
+  border-top-color: var(--accent-blue);
   animation: spin 0.8s linear infinite;
 }
 
 .spinner-sm {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(250, 250, 250, 0.2);
   border-radius: 50%;
   border-top-color: white;
   animation: spin 0.8s linear infinite;

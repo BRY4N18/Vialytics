@@ -1,21 +1,29 @@
-import { Component, OnInit, inject, signal, computed, effect } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, effect, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { AccidenteService } from '../../../core/services/accidente.service';
-import { AccidenteMapa } from '../../../core/models/accidente.model';
+import { AccidenteMapa, Ciudad } from '../../../core/models/accidente.model';
+import { ActualizarEstadoComponent } from '../actualizar-estado/actualizar-estado';
 
 @Component({
   selector: 'app-lista-accidentes',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, ActualizarEstadoComponent],
   templateUrl: './lista-accidentes.html',
   styleUrl: './lista-accidentes.css'
 })
 export class ListaAccidentesComponent implements OnInit {
   private readonly accidenteService = inject(AccidenteService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly Math = Math;
+
+  // Actualizar Estado signals
+  readonly selectedAccidenteId = signal<string | null>(null);
+  readonly selectedAccidenteEstado = signal<string | null>(null);
+  readonly mostrarActualizarEstado = signal(false);
 
   // States
   readonly listadoOriginal = signal<AccidenteMapa[]>([]);
@@ -28,6 +36,16 @@ export class ListaAccidentesComponent implements OnInit {
   readonly filterSeveridad = signal<number | null>(null);
   readonly filterEstado = signal<string>('');
   readonly filterSoloActivos = signal(false);
+  readonly filterCiudadId = signal<number | null>(null);
+  readonly filterFechaDesde = signal<string>('');
+  readonly filterFechaHasta = signal<string>('');
+  readonly filterMinHeridos = signal<number | null>(null);
+  readonly filterMaxHeridos = signal<number | null>(null);
+  readonly filterMinFallecidos = signal<number | null>(null);
+  readonly filterMaxFallecidos = signal<number | null>(null);
+
+  // Catalog data for filters
+  readonly ciudades = signal<Ciudad[]>([]);
 
   // Pagination
   readonly currentPage = signal(1);
@@ -35,37 +53,56 @@ export class ListaAccidentesComponent implements OnInit {
 
   // Severidades catalog
   readonly severidades = [
-    { value: 1, label: 'Leve', color: '#10B981', bg: 'rgba(16, 185, 129, 0.1)' },
-    { value: 2, label: 'Moderado', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.1)' },
-    { value: 3, label: 'Grave', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.1)' },
-    { value: 4, label: 'Fatal', color: '#7C3AED', bg: 'rgba(124, 58, 237, 0.1)' }
+    { value: 1, label: 'Leve', color: '#22A076', bg: 'rgba(34, 160, 118, 0.1)' },
+    { value: 2, label: 'Moderado', color: '#D99726', bg: 'rgba(217, 151, 38, 0.1)' },
+    { value: 3, label: 'Grave', color: '#DB5757', bg: 'rgba(219, 87, 87, 0.1)' },
+    { value: 4, label: 'Fatal', color: '#844EDA', bg: 'rgba(132, 78, 218, 0.1)' }
   ];
 
-  // Estados catalog
+  // Estados catalog — values must match backend seed data
   readonly estados = [
-    { value: 'ACTIVO', label: 'Activo', bg: 'rgba(59, 130, 246, 0.15)', color: '#3B82F6' },
-    { value: 'EN_ATENCION', label: 'En Atención', bg: 'rgba(124, 58, 237, 0.15)', color: '#8B5CF6' },
-    { value: 'CONTROLADO', label: 'Controlado', bg: 'rgba(16, 185, 129, 0.15)', color: '#10B981' },
-    { value: 'CERRADO', label: 'Cerrado', bg: 'rgba(107, 114, 128, 0.15)', color: '#9CA3AF' },
-    { value: 'ARCHIVADO', label: 'Archivado', bg: 'rgba(156, 163, 175, 0.08)', color: '#6B7280' }
+    { value: 'ACTIVO', label: 'Reportado', bg: 'rgba(82, 136, 224, 0.15)', color: '#5288E0' },
+    { value: 'EN_ATENCION', label: 'En Atención', bg: 'rgba(217, 151, 38, 0.15)', color: '#D99726' },
+    { value: 'CONTROLADO', label: 'Despejado', bg: 'rgba(34, 160, 118, 0.15)', color: '#22A076' },
+    { value: 'ARCHIVADO', label: 'Archivado', bg: 'rgba(160, 160, 160, 0.15)', color: '#A0A0A0' }
   ];
 
   constructor() {
-    // Reactive effect: reload data automatically when page, search or filters change
     effect(() => {
       const page = this.currentPage();
       const search = this.searchTerm();
       const sev = this.filterSeveridad();
       const est = this.filterEstado();
       const soloActivos = this.filterSoloActivos();
+      const ciudadId = this.filterCiudadId();
+      const fechaDesde = this.filterFechaDesde();
+      const fechaHasta = this.filterFechaHasta();
+      const minHeridos = this.filterMinHeridos();
+      const maxHeridos = this.filterMaxHeridos();
+      const minFallecidos = this.filterMinFallecidos();
+      const maxFallecidos = this.filterMaxFallecidos();
 
-      this.cargarAccidentesReactivo(page, search, sev, est, soloActivos);
+      this.cargarAccidentesReactivo(
+        page, search, sev, est, soloActivos,
+        ciudadId, fechaDesde, fechaHasta,
+        minHeridos, maxHeridos, minFallecidos, maxFallecidos
+      );
     });
   }
 
-  ngOnInit(): void {}
+  async ngOnInit(): Promise<void> {
+    try {
+      const c = await firstValueFrom(this.accidenteService.getCiudades());
+      this.ciudades.set(c);
+    } catch {}
+  }
 
-  cargarAccidentesReactivo(page: number, search: string, severidad: number | null, estado: string, soloActivos: boolean): void {
+  cargarAccidentesReactivo(
+    page: number, search: string, severidad: number | null, estado: string, soloActivos: boolean,
+    ciudadId: number | null, fechaDesde: string, fechaHasta: string,
+    minHeridos: number | null, maxHeridos: number | null,
+    minFallecidos: number | null, maxFallecidos: number | null
+  ): void {
     this.isLoading.set(true);
     this.errorMessage.set(null);
 
@@ -75,7 +112,14 @@ export class ListaAccidentesComponent implements OnInit {
       search: search || undefined,
       severidad: severidad !== null ? severidad : undefined,
       estado: estado || undefined,
-      solo_activos: soloActivos || undefined
+      solo_activos: soloActivos || undefined,
+      ciudad_id: ciudadId ?? undefined,
+      fecha_desde: fechaDesde || undefined,
+      fecha_hasta: fechaHasta || undefined,
+      min_heridos: minHeridos ?? undefined,
+      max_heridos: maxHeridos ?? undefined,
+      min_fallecidos: minFallecidos ?? undefined,
+      max_fallecidos: maxFallecidos ?? undefined,
     }).subscribe({
       next: (data) => {
         this.listadoOriginal.set(data.results);
@@ -90,37 +134,44 @@ export class ListaAccidentesComponent implements OnInit {
   }
 
   cargarAccidentes(): void {
-    // Manually trigger reload by modifying current page (which kicks off the effect)
-    const page = this.currentPage();
     this.cargarAccidentesReactivo(
-      page, 
-      this.searchTerm(), 
-      this.filterSeveridad(), 
-      this.filterEstado(), 
-      this.filterSoloActivos()
+      this.currentPage(), this.searchTerm(), this.filterSeveridad(), this.filterEstado(),
+      this.filterSoloActivos(), this.filterCiudadId(), this.filterFechaDesde(),
+      this.filterFechaHasta(), this.filterMinHeridos(), this.filterMaxHeridos(),
+      this.filterMinFallecidos(), this.filterMaxFallecidos()
     );
   }
 
-  // Computed values based on loaded list items
-  readonly paginatedAccidentes = computed(() => {
-    return this.listadoOriginal();
-  });
+  onAbrirActualizarEstado(acc: AccidenteMapa): void {
+    this.selectedAccidenteId.set(acc.idaccidente);
+    this.selectedAccidenteEstado.set(acc.estado_actual);
+    this.mostrarActualizarEstado.set(true);
+  }
 
-  readonly totalVictimas = computed(() => {
-    return this.listadoOriginal().reduce((sum, acc) => sum + (acc.numheridos || 0) + (acc.numfallecidos || 0), 0);
-  });
+  onCerrarActualizarEstado(): void {
+    this.mostrarActualizarEstado.set(false);
+    this.selectedAccidenteId.set(null);
+    this.selectedAccidenteEstado.set(null);
+    this.cargarAccidentes();
+  }
 
-  readonly totalFallecidos = computed(() => {
-    return this.listadoOriginal().reduce((sum, acc) => sum + (acc.numfallecidos || 0), 0);
-  });
+  readonly paginatedAccidentes = computed(() => this.listadoOriginal());
 
-  readonly totalHeridos = computed(() => {
-    return this.listadoOriginal().reduce((sum, acc) => sum + (acc.numheridos || 0), 0);
-  });
+  readonly totalVictimas = computed(() =>
+    this.listadoOriginal().reduce((sum, acc) => sum + (acc.numheridos || 0) + (acc.numfallecidos || 0), 0)
+  );
 
-  readonly totalPages = computed(() => {
-    return Math.ceil(this.totalRecords() / this.itemsPerPage) || 1;
-  });
+  readonly totalFallecidos = computed(() =>
+    this.listadoOriginal().reduce((sum, acc) => sum + (acc.numfallecidos || 0), 0)
+  );
+
+  readonly totalHeridos = computed(() =>
+    this.listadoOriginal().reduce((sum, acc) => sum + (acc.numheridos || 0), 0)
+  );
+
+  readonly totalPages = computed(() =>
+    Math.ceil(this.totalRecords() / this.itemsPerPage) || 1
+  );
 
   // Smart Pagination Visible Pages logic: displays 1 ... (curr-2) (curr-1) (curr) (curr+1) (curr+2) ... last
   readonly visiblePages = computed(() => {
@@ -194,11 +245,31 @@ export class ListaAccidentesComponent implements OnInit {
     this.currentPage.set(1);
   }
 
+  onCiudadSelect(value: any): void {
+    const val = value === 'null' || value === '' || value === null ? null : Number(value);
+    this.filterCiudadId.set(val);
+    this.currentPage.set(1);
+  }
+
   limpiarFiltros(): void {
     this.searchTerm.set('');
     this.filterSeveridad.set(null);
     this.filterEstado.set('');
     this.filterSoloActivos.set(false);
+    this.filterCiudadId.set(null);
+    this.filterFechaDesde.set('');
+    this.filterFechaHasta.set('');
+    this.filterMinHeridos.set(null);
+    this.filterMaxHeridos.set(null);
+    this.filterMinFallecidos.set(null);
+    this.filterMaxFallecidos.set(null);
     this.currentPage.set(1);
+  }
+
+  onFilterKeydown(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    if (target) {
+      target.value = target.value.replace(/[^0-9]/g, '');
+    }
   }
 }

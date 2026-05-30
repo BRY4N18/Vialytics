@@ -64,6 +64,29 @@ export class PanelDetalleComponent {
     this.abrirActualizarEstado.emit();
   }
 
+  readonly estadoLabels: Record<string, string> = {
+    ACTIVO: 'Reportado',
+    EN_ATENCION: 'En Atención',
+    EN_TRASLADO: 'En Traslado',
+    CONTROLADO: 'Despejado',
+    ARCHIVADO: 'Archivado'
+  };
+
+  getEstadoLabel(estado: string): string {
+    return this.estadoLabels[estado] || estado;
+  }
+
+  getEstadoClass(estado: string): string {
+    const map: Record<string, string> = {
+      ACTIVO: 'activo',
+      EN_ATENCION: 'en-atencion',
+      EN_TRASLADO: 'en-atencion',
+      CONTROLADO: 'controlado',
+      ARCHIVADO: 'archivado'
+    };
+    return map[estado] || '';
+  }
+
   formatFecha(isoString?: string): string {
     if (!isoString) return '';
     try {

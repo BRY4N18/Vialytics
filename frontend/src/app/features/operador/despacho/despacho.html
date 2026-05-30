@@ -2,7 +2,7 @@
   <!-- Modal Header -->
   <div class="modal-header">
     <div class="header-title">
-      <h3>Despachar Unidades de Emergencia</h3>
+      <h3>Despachar Unidades #{{ accidenteId() }}</h3>
       <p class="subtitle">Seleccione las unidades que responderán al incidente</p>
     </div>
   </div>
@@ -15,6 +15,17 @@
     <button [class.active]="filtroTipo() === 'BOMBEROS'" (click)="setFiltroTipo('BOMBEROS')">Bomberos</button>
     <button [class.active]="filtroTipo() === 'GRUA'" (click)="setFiltroTipo('GRUA')">Grúas</button>
   </div>
+
+  <!-- Selected counter badge -->
+  @if (!cargando()) {
+    <div class="selected-counter">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <span class="counter-value">{{ selectedUnidadesIds().size }}</span>
+      <span class="counter-label">seleccionadas</span>
+    </div>
+  }
 
   <!-- Loading State -->
   @if (cargando()) {

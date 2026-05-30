@@ -2,7 +2,11 @@
   <!-- Modal Header -->
   <div class="modal-header">
     <h3>Actualizar Estado del Incidente</h3>
-    <span class="incident-badge">Actual: {{ estadoActual() }}</span>
+  </div>
+
+  <div class="current-state-banner">
+    <span class="state-label">Estado Actual</span>
+    <span class="state-value">{{ getEstadoLabel(estadoActual()) }}</span>
   </div>
 
   <!-- Loading State -->
@@ -28,7 +32,7 @@
       <div class="form-body">
         <!-- New State Select -->
         <div class="form-group">
-          <label for="idtipoestadoincidente_id">Nuevo Estado del Incidente</label>
+          <label for="idtipoestadoincidente_id">Nuevo estado:</label>
           <select 
             id="idtipoestadoincidente_id"
             formControlName="idtipoestadoincidente_id"
@@ -36,7 +40,7 @@
             [class.invalid]="isInvalid('idtipoestadoincidente_id')">
             <option value="" disabled selected>Seleccione un nuevo estado...</option>
             @for (est of estados(); track est.idtipoestadoincidente) {
-              <option [value]="est.idtipoestadoincidente">{{ est.tipoestadoincidente }}</option>
+              <option [value]="est.idtipoestadoincidente">{{ getEstadoLabel(est.tipoestadoincidente) }}</option>
             }
           </select>
           @if (isInvalid('idtipoestadoincidente_id')) {
@@ -44,24 +48,8 @@
           }
         </div>
 
-        <!-- Descriptive Note -->
-        <div class="form-group">
-          <label for="nota">Anotación de Bitácora (Motivo / Detalle)</label>
-          <textarea
-            id="nota"
-            formControlName="nota"
-            rows="4"
-            placeholder="Describa el motivo del cambio de estado o el reporte actual de la situación en escena..."
-            class="form-control textarea"
-            [class.invalid]="isInvalid('nota')"></textarea>
-          <div class="textarea-footer">
-            <span class="hint">Mínimo 5 y máximo 300 caracteres.</span>
-            @if (isInvalid('nota')) {
-              <span class="error-text">{{ getError('nota') }}</span>
-            }
-          </div>
-        </div>
       </div>
+
 
       <!-- Action Footer -->
       <div class="modal-footer">

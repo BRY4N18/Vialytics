@@ -14,14 +14,20 @@
   @for (toast of toastService.toasts(); track toast.id) {
     <div class="sga-toast" [class]="toast.type" (click)="toastService.remove(toast.id)" role="alert">
       @if (toast.type === 'success') {
-        <!-- Blue Info/Success icon -->
+        <!-- Success check icon -->
+        <svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+      } @else if (toast.type === 'info') {
+        <!-- Info icon -->
         <svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/>
           <line x1="12" y1="16" x2="12" y2="12"/>
           <line x1="12" y1="8" x2="12.01" y2="8"/>
         </svg>
       } @else {
-        <!-- Red Error/Alert icon -->
+        <!-- Error icon -->
         <svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
           <line x1="12" y1="8" x2="12" y2="12"/>

@@ -1,0 +1,65 @@
+<div class="analitico-shell">
+  <aside class="analitico-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5"/>
+          <path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-title">Portal Analítico</span>
+        <span class="brand-subtitle">SGA</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="nav-link" routerLink="/analitico/accidentes" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-icon">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <span>Buscar Accidentes</span>
+      </a>
+      <a class="nav-link" routerLink="/mapa" routerLinkActive="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-icon">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        <span>Mapa Público</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-badge">
+        <div class="user-avatar">{{ authService.userInitials() }}</div>
+        <div class="user-meta">
+          <span class="user-name">{{ authService.userFullName() }}</span>
+          <span class="user-role">{{ authService.userRole() }}</span>
+        </div>
+      </div>
+      <button class="btn-logout" (click)="authService.logout()" title="Cerrar sesión">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="logout-icon">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+      </button>
+    </div>
+  </aside>
+
+  <main class="analitico-main">
+    <div class="main-header">
+      <div class="header-breadcrumb">
+        <span class="breadcrumb-item">Portal Analítico</span>
+      </div>
+      <div class="header-actions">
+        <span class="header-user">{{ authService.userFullName() }}</span>
+        <span class="header-role-badge">{{ authService.userRole() }}</span>
+      </div>
+    </div>
+    <div class="main-content">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>

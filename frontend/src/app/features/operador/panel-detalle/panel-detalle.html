@@ -53,11 +53,13 @@
           }
           <div class="overview-item">
             <span class="label">Severidad:</span>
-            <app-badge-severidad [severidad]="det.severidad_nivel"></app-badge-severidad>
+            <div class="severity-badge-wrapper">
+              <app-badge-severidad [severidad]="det.severidad_nivel"></app-badge-severidad>
+            </div>
           </div>
           <div class="overview-item">
             <span class="label">Estado Actual:</span>
-            <span class="status-badge" [class]="det.estado_actual.toLowerCase().replace(' ', '-')">{{ det.estado_actual }}</span>
+            <span class="status-badge" [class]="getEstadoClass(det.estado_actual)">{{ getEstadoLabel(det.estado_actual) }}</span>
           </div>
           <div class="overview-item">
             <span class="label">Hora Inicial:</span>
@@ -108,7 +110,7 @@
         } @else {
           <div class="dispatch-timeline">
             @for (des of det.despachos; track des.iddespacho) {
-              <div class="dispatch-item">
+              <div class="dispatch-item" [class]="'dispatch-' + des.tipo_unidad.toLowerCase()">
                 <div class="dispatch-marker" [class]="des.tipo_unidad.toLowerCase()"></div>
                 <div class="dispatch-body">
                   <div class="dispatch-header">
@@ -152,7 +154,7 @@
         } @else {
           <div class="notes-timeline">
             @for (nota of det.notas; track nota.idnotaaccidentes) {
-              <div class="note-item">
+              <div class="note-item" [class.note-system]="nota.tipo" [class.note-operator]="!nota.tipo">
                 <div class="note-meta">
                   <span class="note-time">{{ formatFecha(nota.fecha_actualizacion) }}</span>
                   <span class="note-badge" [class]="nota.tipo ? 'system' : 'operator'">

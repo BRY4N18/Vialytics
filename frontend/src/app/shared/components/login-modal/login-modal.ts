@@ -20,11 +20,10 @@ export class LoginModalComponent {
   readonly loading = signal<boolean>(false);
   readonly errorMsg = signal<string | null>(null);
 
-  // High-fidelity pre-populated demo accounts matching the database records
   readonly demoUsers = [
     { label: 'Operador', name: 'Laura Mendoza', user: 'operador_sga', role: 'Operador', color: 'emerald' },
     { label: 'Administrador', name: 'Carlos Gomez', user: 'admin_sga', role: 'Administrador', color: 'blue' },
-    { label: 'Supervisor', name: 'Patricia Vega', user: 'supervisor_sga', role: 'Supervisor', color: 'amber' },
+    { label: 'Consumidor Analítico', name: 'Patricia Vega', user: 'analista_sga', role: 'Consumidor Analítico', color: 'teal' },
     { label: 'Despachador', name: 'David Torres', user: 'despachador_sga', role: 'Despachador', color: 'violet' }
   ];
 
@@ -45,7 +44,7 @@ export class LoginModalComponent {
     this.authService.showLoginModal.set(false);
   }
 
-  onLogin(): void {
+  async onLogin(): Promise<void> {
     const userVal = this.username().trim();
     const pwdVal = this.password().trim();
 
@@ -57,24 +56,12 @@ export class LoginModalComponent {
     this.loading.set(true);
     this.errorMsg.set(null);
 
-    // Simulate standard connection latency for a premium operational feel
-    setTimeout(() => {
-      // Find matches in the simulated accounts
-      const matchedUser = this.demoUsers.find(
-        u => u.user.toLowerCase() === userVal.toLowerCase()
-      );
-
-      if (matchedUser) {
-        // Authenticate with roles!
-        this.authService.login(matchedUser.role, matchedUser.name);
-        this.loading.set(false);
-      } else {
-        // Accept other inputs but warn them or simulate failure
-        this.errorMsg.set(
-          'Acceso denegado. Código de operador no registrado en el sistema local. Use Acceso Rápido.'
-        );
-        this.loading.set(false);
-      }
-    }, 1200);
+    try {
+      await this.authService.login(userVal, pwdVal);
+      this.loading.set(false);
+    } catch {
+      this.errorMsg.set('Acceso denegado. Credenciales inválidas.');
+      this.loading.set(false);
+    }
   }
 }

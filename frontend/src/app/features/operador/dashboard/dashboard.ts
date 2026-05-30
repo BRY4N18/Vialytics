@@ -15,14 +15,12 @@ Chart.register(...registerables);
 export class DashboardComponent implements OnInit {
   private readonly accidenteService = inject(AccidenteService);
 
-  // Canvas elements references
   readonly trendCanvas = viewChild<ElementRef<HTMLCanvasElement>>('trendCanvas');
   readonly severityCanvas = viewChild<ElementRef<HTMLCanvasElement>>('severityCanvas');
   readonly statesCanvas = viewChild<ElementRef<HTMLCanvasElement>>('statesCanvas');
   readonly hourlyCanvas = viewChild<ElementRef<HTMLCanvasElement>>('hourlyCanvas');
   readonly weatherCanvas = viewChild<ElementRef<HTMLCanvasElement>>('weatherCanvas');
 
-  // KPI Signals
   readonly totalAccidentes = signal<string>('0');
   readonly severidadCritica = signal<string>('0');
   readonly distanciaPromedio = signal<string>('0.00 mi');
@@ -30,8 +28,8 @@ export class DashboardComponent implements OnInit {
 
   readonly cargando = signal<boolean>(true);
   readonly error = signal<string | null>(null);
+  readonly ultimaActualizacion = signal<string>('');
 
-  // Active chart instances to prevent leaks and duplication
   private charts: Chart[] = [];
 
   ngOnInit(): void {
@@ -48,15 +46,14 @@ export class DashboardComponent implements OnInit {
 
     this.accidenteService.getDashboardStats().subscribe({
       next: (data) => {
-        // Set KPIs
         this.totalAccidentes.set(this.formatNumber(data.kpis.total_accidentes));
         this.severidadCritica.set(this.formatNumber(data.kpis.severidad_critica));
         this.distanciaPromedio.set(`${data.kpis.distancia_promedio} mi`);
         this.callesAfectadas.set(this.formatNumber(data.kpis.calles_afectadas));
 
         this.cargando.set(false);
+        this.ultimaActualizacion.set(new Date().toLocaleString('es-EC', { dateStyle: 'medium', timeStyle: 'short' }));
 
-        // Schedule chart construction once Angular renders the canvases
         setTimeout(() => {
           this.destroyCharts();
           this.initCharts(data);
@@ -70,13 +67,16 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  refrescar(): void {
+    this.cargarEstadisticas();
+  }
+
   private destroyCharts(): void {
     this.charts.forEach(c => c.destroy());
     this.charts = [];
   }
 
   private initCharts(data: any): void {
-    // 1. Tendencia Mensual (Area line chart, smooth burgundy gradient)
     const trendCtx = this.trendCanvas()?.nativeElement.getContext('2d');
     if (trendCtx) {
       const trendGrad = trendCtx.createLinearGradient(0, 0, 0, 300);
@@ -93,7 +93,7 @@ export class DashboardComponent implements OnInit {
           datasets: [{
             label: 'Incidentes',
             data: counts,
-            borderColor: '#F43F5E', // Bright rose/red glowing stroke
+            borderColor: '#F43F5E',
             borderWidth: 3,
             backgroundColor: trendGrad,
             fill: true,
@@ -125,7 +125,6 @@ export class DashboardComponent implements OnInit {
       }));
     }
 
-    // 2. Distribucion por Severidad (Donut chart)
     const severityCtx = this.severityCanvas()?.nativeElement.getContext('2d');
     if (severityCtx) {
       const sevNames = data.severity_distribution.map((d: any) => d.name);
@@ -138,10 +137,10 @@ export class DashboardComponent implements OnInit {
           datasets: [{
             data: sevCounts,
             backgroundColor: [
-              '#3B82F6', // Nivel 1 (Blue)
-              '#FBBF24', // Nivel 2 (Yellow)
-              '#F59E0B', // Grave (Orange)
-              '#EF4444'  // Fatal (Red)
+              '#3B82F6',
+              '#FBBF24',
+              '#F59E0B',
+              '#EF4444'
             ],
             borderWidth: 2,
             borderColor: '#111827'
@@ -155,7 +154,7 @@ export class DashboardComponent implements OnInit {
               position: 'bottom',
               labels: {
                 boxWidth: 10,
-                color: '#CBD5E1', // Light slate
+                color: '#CBD5E1',
                 font: { size: 10, weight: 'bold' },
                 padding: 14
               }
@@ -166,7 +165,6 @@ export class DashboardComponent implements OnInit {
       }));
     }
 
-    // 3. Top 10 Estados (Horizontal Bar Chart)
     const statesCtx = this.statesCanvas()?.nativeElement.getContext('2d');
     if (statesCtx) {
       const stateNames = data.top_states.map((d: any) => d.state);
@@ -209,7 +207,6 @@ export class DashboardComponent implements OnInit {
       }));
     }
 
-    // 4. Distribucion por Hora del Día (Smooth Blue Spline Area)
     const hourlyCtx = this.hourlyCanvas()?.nativeElement.getContext('2d');
     if (hourlyCtx) {
       const hourlyGrad = hourlyCtx.createLinearGradient(0, 0, 0, 200);
@@ -225,7 +222,7 @@ export class DashboardComponent implements OnInit {
           datasets: [{
             label: 'Incidentes',
             data: data.hourly_distribution,
-            borderColor: '#60A5FA', // Bright glowing blue stroke
+            borderColor: '#60A5FA',
             borderWidth: 2.5,
             backgroundColor: hourlyGrad,
             fill: true,
@@ -254,7 +251,6 @@ export class DashboardComponent implements OnInit {
       }));
     }
 
-    // 5. Condiciones Climáticas (Vertical colorful bars)
     const weatherCtx = this.weatherCanvas()?.nativeElement.getContext('2d');
     if (weatherCtx) {
       const weatherNames = data.weather_distribution.map((d: any) => d.weather);

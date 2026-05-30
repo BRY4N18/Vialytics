@@ -1,5 +1,6 @@
 import uuid
 import time
+import zlib
 import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -84,11 +85,10 @@ class AccidenteService:
             severity_distribution = []
             for r in sev_res:
                 name = str(r.get('name', ''))
-                # Map standard names to exact legend labels
                 if name == 'Nivel 1':
-                    name = 'Nivel 1'
+                    name = 'Leve'
                 elif name == 'Nivel 2':
-                    name = 'Nivel 2'
+                    name = 'Moderado'
                 elif name == 'Nivel 3':
                     name = 'Grave'
                 elif name == 'Nivel 4':
@@ -196,8 +196,8 @@ class AccidenteService:
                 {"month": "May 2026", "count": 100}
             ],
             "severity_distribution": [
-                {"name": "Nivel 1", "count": 5253},
-                {"name": "Nivel 2", "count": 483879},
+                {"name": "Leve", "count": 5253},
+                {"name": "Moderado", "count": 483879},
                 {"name": "Grave", "count": 101948},
                 {"name": "Fatal", "count": 16084}
             ],
@@ -229,465 +229,6 @@ class AccidenteService:
         }
 
     @staticmethod
-    def _resolver_id_pais(id_pais_front: int) -> int:
-        from accidentes.models import Pais
-        if not id_pais_front:
-            p_obj = Pais.objects.filter(activo=True).first() or Pais.objects.first()
-            return p_obj.idpais if p_obj else 1
-
-        # 1. Try Pinot query first
-        try:
-            rows = PinotRepository.execute_query(f"SELECT pais FROM paises WHERE idpais = {id_pais_front} LIMIT 1")
-            if rows:
-                pais_name = rows[0].get("pais")
-                p_obj, _ = Pais.objects.get_or_create(pais=pais_name)
-                return p_obj.idpais
-        except Exception:
-            pass
-
-        # 2. Known local dict fallback if Pinot is down
-        KNOWN_PAISES = {1954003872: "US", 1: "Ecuador", 2: "US"}
-        if id_pais_front in KNOWN_PAISES:
-            pais_name = KNOWN_PAISES[id_pais_front]
-            p_obj, _ = Pais.objects.get_or_create(pais=pais_name)
-            return p_obj.idpais
-
-        # 3. Fallback to SQLite exists check
-        if Pais.objects.filter(idpais=id_pais_front).exists():
-            return id_pais_front
-
-        p_obj = Pais.objects.filter(activo=True).first() or Pais.objects.first()
-        return p_obj.idpais if p_obj else 1
-
-    @staticmethod
-    def _resolver_id_estado(id_estado_front: int) -> int:
-        from accidentes.models import EstadoGeografico
-        if not id_estado_front:
-            e_obj = EstadoGeografico.objects.filter(activo=True).first() or EstadoGeografico.objects.first()
-            return e_obj.idestado if e_obj else 1
-
-        # 1. Try Pinot query first
-        try:
-            rows = PinotRepository.execute_query(f"SELECT estado, pais FROM estados WHERE idestado = {id_estado_front} LIMIT 1")
-            if rows:
-                estado_name = rows[0].get("estado")
-                pais_name = rows[0].get("pais", "US")
-                e_obj, _ = EstadoGeografico.objects.get_or_create(
-                    estado=estado_name,
-                    defaults={"pais": pais_name}
-                )
-                return e_obj.idestado
-        except Exception:
-            pass
-
-        # 2. Known local dict fallback if Pinot is down
-        KNOWN_ESTADOS = {
-            1833795888: ("TX", "US"),
-            1976532096: ("MN", "US"),
-            983353925: ("VA", "US"),
-            1729918071: ("GA", "US"),
-            1: ("Pichincha", "Ecuador"),
-            7: ("Guayas", "Ecuador")
-        }
-        if id_estado_front in KNOWN_ESTADOS:
-            estado_name, pais_name = KNOWN_ESTADOS[id_estado_front]
-            e_obj, _ = EstadoGeografico.objects.get_or_create(
-                estado=estado_name,
-                defaults={"pais": pais_name}
-            )
-            return e_obj.idestado
-
-        # 3. Fallback to SQLite exists check
-        if EstadoGeografico.objects.filter(idestado=id_estado_front).exists():
-            return id_estado_front
-
-        e_obj = EstadoGeografico.objects.filter(activo=True).first() or EstadoGeografico.objects.first()
-        return e_obj.idestado if e_obj else 1
-
-    @staticmethod
-    def _resolver_id_condado(id_condado_front: int) -> int:
-        from accidentes.models import Condado
-        if not id_condado_front:
-            c_obj = Condado.objects.filter(activo=True).first() or Condado.objects.first()
-            return c_obj.idcondado if c_obj else 1
-
-        # 1. Try Pinot query first
-        try:
-            rows = PinotRepository.execute_query(f"SELECT condado, estado FROM condados WHERE idcondado = {id_condado_front} LIMIT 1")
-            if rows:
-                condado_name = rows[0].get("condado")
-                estado_name = rows[0].get("estado", "")
-                c_obj, _ = Condado.objects.get_or_create(
-                    condado=condado_name,
-                    defaults={"estado": estado_name}
-                )
-                return c_obj.idcondado
-        except Exception:
-            pass
-
-        # 2. Known local dict fallback if Pinot is down
-        KNOWN_CONDADOS = {
-            1788116726: ("Tarrant", "TX"),
-            -1854046373: ("St. Louis", "MN"),
-            -1305131593: ("Chesapeake", "VA"),
-            1446873394: ("DeKalb", "GA"),
-            1: ("Quito D.M.", "Pichincha"),
-            10: ("Guayas", "Guayas")
-        }
-        if id_condado_front in KNOWN_CONDADOS:
-            condado_name, estado_name = KNOWN_CONDADOS[id_condado_front]
-            c_obj, _ = Condado.objects.get_or_create(
-                condado=condado_name,
-                defaults={"estado": estado_name}
-            )
-            return c_obj.idcondado
-
-        # 3. Fallback to SQLite exists check
-        if Condado.objects.filter(idcondado=id_condado_front).exists():
-            return id_condado_front
-
-        c_obj = Condado.objects.filter(activo=True).first() or Condado.objects.first()
-        return c_obj.idcondado if c_obj else 1
-
-    @staticmethod
-    def _resolver_id_ciudad(id_ciudad_front: int) -> int:
-        from accidentes.models import Ciudad
-        if not id_ciudad_front:
-            c_obj = Ciudad.objects.filter(activo=True).first() or Ciudad.objects.first()
-            return c_obj.idciudad if c_obj else 1
-
-        # 1. Try Pinot query first
-        try:
-            rows = PinotRepository.execute_query(f"SELECT ciudad, condado FROM ciudades WHERE idciudad = {id_ciudad_front} LIMIT 1")
-            if rows:
-                ciudad_name = rows[0].get("ciudad")
-                condado_name = rows[0].get("condado", "")
-                c_obj, _ = Ciudad.objects.get_or_create(
-                    ciudad=ciudad_name,
-                    defaults={"condado": condado_name}
-                )
-                return c_obj.idciudad
-        except Exception:
-            pass
-
-        # 2. Known local dict fallback if Pinot is down
-        KNOWN_CIUDADES = {
-            -1483930363: ("Fort Worth", "Tarrant"),
-            -514066125: ("Floodwood", "St. Louis"),
-            -7720717: ("Chesapeake", "Chesapeake"),
-            216885066: ("Stone Mountain", "DeKalb"),
-            1: ("Quito", "Quito D.M."),
-            10: ("Guayaquil", "Guayas")
-        }
-        if id_ciudad_front in KNOWN_CIUDADES:
-            ciudad_name, condado_name = KNOWN_CIUDADES[id_ciudad_front]
-            c_obj, _ = Ciudad.objects.get_or_create(
-                ciudad=ciudad_name,
-                defaults={"condado": condado_name}
-            )
-            return c_obj.idciudad
-
-        # 3. Fallback to SQLite exists check
-        if Ciudad.objects.filter(idciudad=id_ciudad_front).exists():
-            return id_ciudad_front
-
-        c_obj = Ciudad.objects.filter(activo=True).first() or Ciudad.objects.first()
-        return c_obj.idciudad if c_obj else 1
-
-    @staticmethod
-    def _resolver_id_calle(id_calle_front: int) -> int:
-        from accidentes.models import Calle
-        if not id_calle_front:
-            c_obj = Calle.objects.filter(activo=True).first() or Calle.objects.first()
-            return c_obj.idcalle if c_obj else 1
-
-        # 1. Try Pinot query first
-        try:
-            rows = PinotRepository.execute_query(f"SELECT calle, ciudad FROM calles WHERE idcalle = {id_calle_front} LIMIT 1")
-            if rows:
-                calle_name = rows[0].get("calle")
-                ciudad_name = rows[0].get("ciudad", "")
-                c_obj, _ = Calle.objects.get_or_create(
-                    calle=calle_name,
-                    defaults={"ciudad": ciudad_name}
-                )
-                return c_obj.idcalle
-        except Exception:
-            pass
-
-        # 2. Known local dict fallback if Pinot is down
-        KNOWN_CALLES = {
-            665123162: ("I-35W S", "Fort Worth"),
-            1914374434: ("Highway 2", "Floodwood"),
-            1261476550: ("I-64 E", "Chesapeake"),
-            1336244665: ("Stone Mountain Fwy", "Stone Mountain"),
-            1: ("Av. Amazonas", "Quito"),
-            2: ("Av. De los Shyris", "Quito"),
-            3: ("Av. 10 de Agosto", "Quito")
-        }
-        if id_calle_front in KNOWN_CALLES:
-            calle_name, ciudad_name = KNOWN_CALLES[id_calle_front]
-            c_obj, _ = Calle.objects.get_or_create(
-                calle=calle_name,
-                defaults={"ciudad": ciudad_name}
-            )
-            return c_obj.idcalle
-
-        # 3. Fallback to SQLite exists check
-        if Calle.objects.filter(idcalle=id_calle_front).exists():
-            return id_calle_front
-
-        c_obj = Calle.objects.filter(activo=True).first() or Calle.objects.first()
-        return c_obj.idcalle if c_obj else 1
-
-    @staticmethod
-    def _resolver_id_severidad(id_severidad_front: int) -> int:
-        if not id_severidad_front:
-            return 1
-        if 1 <= id_severidad_front <= 4:
-            return id_severidad_front
-        try:
-            rows = PinotRepository.execute_query(f"SELECT severidad FROM severidades WHERE idseveridad = {id_severidad_front} LIMIT 1")
-            if rows:
-                level = int(rows[0].get("severidad", 1))
-                if 1 <= level <= 4:
-                    return level
-        except Exception as e:
-            logger.warning(f"Error resolving idseveridad {id_severidad_front} from Pinot: {e}")
-        return 1
-
-    @staticmethod
-    def _resolver_id_tiporeportado(id_tiporeportado_front: int) -> int:
-        from accidentes.models import TipoReportado
-        if not id_tiporeportado_front:
-            return 1
-        if TipoReportado.objects.filter(idtiporeportado=id_tiporeportado_front).exists():
-            return id_tiporeportado_front
-        tr_obj = TipoReportado.objects.filter(activo=True).first() or TipoReportado.objects.first()
-        return tr_obj.idtiporeportado if tr_obj else 1
-
-    @staticmethod
-    def _resolver_id_fecha(id_fecha_front: int) -> Optional[int]:
-        from accidentes.models import Fecha
-        if not id_fecha_front:
-            return None
-        if Fecha.objects.filter(idfecha=id_fecha_front).exists():
-            return id_fecha_front
-        f_obj = Fecha.objects.first()
-        return f_obj.idfecha if f_obj else None
-
-    @staticmethod
-    def _resolver_id_periododia(id_periodo_front: int) -> Optional[int]:
-        from accidentes.models import PeriodoDia
-        if not id_periodo_front:
-            return None
-        if PeriodoDia.objects.filter(idperiododia=id_periodo_front).exists():
-            return id_periodo_front
-        p_obj = PeriodoDia.objects.first()
-        return p_obj.idperiododia if p_obj else None
-
-    @staticmethod
-    def _resolver_id_estadoclima(id_clima_front: int) -> Optional[int]:
-        from accidentes.models import EstadoClima
-        if not id_clima_front:
-            return None
-
-        # 1. Try Pinot query first to resolve climate hashes
-        try:
-            rows = PinotRepository.execute_query(f"SELECT condicionclima FROM estadoclima WHERE idestadoclima = {id_clima_front} LIMIT 1")
-            if rows:
-                cond = rows[0].get("condicionclima")
-                match_name = cond
-                if cond == 'Fair' or cond == 'Clear':
-                    match_name = 'Despejado'
-                elif cond == 'Cloudy' or 'Cloudy' in cond:
-                    match_name = 'Nublado'
-                elif 'Rain' in cond or 'Drizzle' in cond:
-                    match_name = 'Lluvia Ligera'
-                elif 'Thunderstorm' in cond or 'Storm' in cond:
-                    match_name = 'Tormenta'
-
-                clima_obj = EstadoClima.objects.filter(condicionclima__icontains=match_name).first()
-                if clima_obj:
-                    return clima_obj.idestadoclima
-        except Exception as e:
-            logger.warning(f"Error querying Pinot for idestadoclima {id_clima_front}: {e}")
-
-        # 2. Known local dict fallback if Pinot is down
-        KNOWN_CLIMAS = {
-            1: "Despejado",
-            2: "Lluvia Ligera",
-            3: "Despejado",
-            4: "Tormenta",
-            1620546972: "Despejado",
-            -1674836827: "Despejado",
-            1936944633: "Nublado",
-            2108964035: "Nublado"
-        }
-        if id_clima_front in KNOWN_CLIMAS:
-            cond = KNOWN_CLIMAS[id_clima_front]
-            clima_obj = EstadoClima.objects.filter(condicionclima__icontains=cond).first()
-            if clima_obj:
-                return clima_obj.idestadoclima
-
-        # 3. Fallback to SQLite exists check
-        if EstadoClima.objects.filter(idestadoclima=id_clima_front).exists():
-            return id_clima_front
-
-        c_obj = EstadoClima.objects.first()
-        return c_obj.idestadoclima if c_obj else None
-
-    @staticmethod
-    def _resolver_id_elementofisico(id_ef_front: int) -> Optional[int]:
-        from accidentes.models import ElementoFisico
-        if not id_ef_front:
-            return None
-        if ElementoFisico.objects.filter(idelementofisico=id_ef_front).exists():
-            return id_ef_front
-        ef_obj = ElementoFisico.objects.first()
-        return ef_obj.idelementofisico if ef_obj else None
-
-    @staticmethod
-    def _resolver_id_referenciaestacion(id_estacion_front: int) -> Optional[int]:
-        from accidentes.models import ReferenciaEstacion
-        if not id_estacion_front:
-            return None
-        if ReferenciaEstacion.objects.filter(idreferenciaestacion=id_estacion_front).exists():
-            return id_estacion_front
-        re_obj = ReferenciaEstacion.objects.first()
-        return re_obj.idreferenciaestacion if re_obj else None
-
-    @staticmethod
-    def _obtener_pinot_id_pais(pais_name: str) -> int:
-        if not pais_name:
-            return 1
-        if pais_name == "US":
-            return 1954003872
-        if pais_name in ("Ecuador", "EC"):
-            return 1
-        return 1
-
-    @staticmethod
-    def _obtener_pinot_id_estado(estado_name: str) -> int:
-        if not estado_name:
-            return 1
-        quick_map = {
-            "TX": 1833795888,
-            "AL": 2,
-            "MN": 1976532096,
-            "VA": 983353925,
-            "GA": 1729918071,
-            "SC": 6,
-            "Pichincha": 1,
-            "Guayas": 7
-        }
-        if estado_name in quick_map:
-            return quick_map[estado_name]
-        try:
-            rows = PinotRepository.execute_query(f"SELECT idestado FROM estados WHERE estado = '{estado_name}' LIMIT 1")
-            if rows:
-                return int(rows[0].get("idestado"))
-        except Exception:
-            pass
-        return 1
-
-    @staticmethod
-    def _obtener_pinot_id_condado(condado_name: str) -> int:
-        if not condado_name:
-            return 1
-        quick_map = {
-            "Tarrant": 1788116726,
-            "Harris": 2,
-            "Baldwin": 3,
-            "Chilton": 4,
-            "St. Louis": -1854046373,
-            "Chesapeake": -1305131593,
-            "DeKalb": 1446873394,
-            "Dorchester": 8,
-            "Spartanburg": 9,
-            "Quito D.M.": 1,
-            "Guayas": 10
-        }
-        if condado_name in quick_map:
-            return quick_map[condado_name]
-        try:
-            cond_escaped = condado_name.replace("'", "''")
-            rows = PinotRepository.execute_query(f"SELECT idcondado FROM condados WHERE condado = '{cond_escaped}' LIMIT 1")
-            if rows:
-                return int(rows[0].get("idcondado"))
-        except Exception:
-            pass
-        return 1
-
-    @staticmethod
-    def _obtener_pinot_id_ciudad(ciudad_name: str) -> int:
-        if not ciudad_name:
-            return 1
-        quick_map = {
-            "Fort Worth": -1483930363,
-            "Houston": 2,
-            "Daphne": 3,
-            "Clanton": 4,
-            "Floodwood": -514066125,
-            "Chesapeake": -7720717,
-            "Stone Mountain": 216885066,
-            "Ridgeville": 8,
-            "Spartanburg": 9,
-            "Quito": 1,
-            "Guayaquil": 10
-        }
-        if ciudad_name in quick_map:
-            return quick_map[ciudad_name]
-        try:
-            ciu_escaped = ciudad_name.replace("'", "''")
-            rows = PinotRepository.execute_query(f"SELECT idciudad FROM ciudades WHERE ciudad = '{ciu_escaped}' LIMIT 1")
-            if rows:
-                return int(rows[0].get("idciudad"))
-        except Exception:
-            pass
-        return 1
-
-    @staticmethod
-    def _obtener_pinot_id_calle(calle_name: str) -> int:
-        if not calle_name:
-            return 1
-        quick_map = {
-            "I-35W S": 665123162,
-            "El Dorado Blvd": 2,
-            "I-10 W": 3,
-            "7th St N": 4,
-            "Highway 2": 1914374434,
-            "I-64 E": 1261476550,
-            "Stone Mountain Fwy": 1336244665,
-            "Campbell Thickett Rd": 8,
-            "W Main St": 9,
-            "Av. Amazonas": 1,
-            "Av. De los Shyris": 2,
-            "Av. 10 de Agosto": 3
-        }
-        if calle_name in quick_map:
-            return quick_map[calle_name]
-        try:
-            cal_escaped = calle_name.replace("'", "''")
-            rows = PinotRepository.execute_query(f"SELECT idcalle FROM calles WHERE calle = '{cal_escaped}' LIMIT 1")
-            if rows:
-                return int(rows[0].get("idcalle"))
-        except Exception:
-            pass
-        return 1
-
-    @staticmethod
-    def _resolver_id_usuario(id_usuario_front: int) -> int:
-        from accidentes.models import Usuario
-        if not id_usuario_front:
-            u_obj = Usuario.objects.filter(activo=True).first() or Usuario.objects.first()
-            return u_obj.idusuario if u_obj else 1
-        if Usuario.objects.filter(idusuario=id_usuario_front).exists():
-            return id_usuario_front
-        u_obj = Usuario.objects.filter(activo=True).first() or Usuario.objects.first()
-        return u_obj.idusuario if u_obj else 1
-
-    @staticmethod
     def _obtener_pinot_id_severidad(level: int) -> int:
         if abs(level) > 10:
             return level
@@ -705,7 +246,9 @@ class AccidenteService:
             return 1620546972
         try:
             cond_escaped = condicion.replace("'", "''")
-            rows = PinotRepository.execute_query(f"SELECT idestadoclima FROM estadoclima WHERE condicionclima = '{cond_escaped}' LIMIT 1")
+            rows = PinotRepository.execute_query(
+                f"SELECT idestadoclima FROM estadoclima WHERE condicionclima LIKE '%{cond_escaped}%' LIMIT 1"
+            )
             if rows:
                 return int(rows[0].get("idestadoclima"))
         except Exception:
@@ -725,181 +268,51 @@ class AccidenteService:
         return 1
 
     @staticmethod
+    def _uuid_to_pinot_id(uuid_str: str) -> int:
+        """Convierte un UUID string a un INT (CRC32) para las tablas relacionadas en Pinot."""
+        return zlib.crc32(uuid_str.encode('utf-8')) & 0x7FFFFFFF
+
+    @staticmethod
     def registrar_accidente(datos: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Registra un accidente real enviando eventos a Kafka en tiempo real y persistiendo en SQLite.
+        Registra un accidente publicando eventos a Kafka para ingestion en Apache Pinot.
+        Sin operaciones directas en SQLite.
         """
         idaccidente = str(uuid.uuid4())
         datos['idaccidente'] = idaccidente
-        
-        # Calcular severidad basada en las reglas del negocio (o respetar la enviada manualmente)
+
         numheridos = int(datos.get('numheridos', 0))
         numfallecidos = int(datos.get('numfallecidos', 0))
         numvehiculos = int(datos.get('numvehiculos', 1))
-        
+
         severidad = datos.get('idseveridad_id')
         if severidad is None or severidad == '' or int(severidad) == 0:
             severidad = SeveridadService.calcular(numheridos, numfallecidos, numvehiculos)
         else:
             severidad = int(severidad)
-            
         datos['idseveridad_id'] = severidad
 
-        # Dynamic resolving/creation of advanced dimensions in SQLite DB
-        from accidentes.models import (
-            Accidente, EstadoClima, ElementoFisico, PeriodoDia, ReferenciaEstacion, 
-            EstadoConductor, ConductorAccidente, Conductor, Vehiculo, Pais, 
-            EstadoGeografico, Condado, Ciudad, Calle, TipoReportado, 
-            AccidenteTipoEstadoIncidente, TipoEstadoIncidente, NotaAccidente, Usuario
-        )
-        
-        # 1. Clima Detailed
         clima_cond = datos.get('condicion_clima', '')
-        if clima_cond:
-            clima_obj, _ = EstadoClima.objects.get_or_create(
-                condicionclima=clima_cond,
-                temperaturaf=float(datos.get('temperatura_f', 72.0)),
-                humedadporcentaje=float(datos.get('humedad_porcentaje', 50.0)),
-                visibilidadmillas=float(datos.get('visibilidad_millas', 10.0)),
-                velocidadvientomph=float(datos.get('velocidad_viento_mph', 0.0)),
-                defaults={'sensaciontermicaf': float(datos.get('temperatura_f', 72.0)), 'direccionviento': 'CALM', 'presionpulgadas': 29.9, 'precipitacionpulgadas': 0.0}
-            )
-            idestadoclima_id = clima_obj.idestadoclima
-        else:
-            idestadoclima_id = int(datos.get('idestadoclima_id', 1))
-
-        # 2. Elementos Fisicos Cercanos
-        cruce = bool(datos.get('cerca_cruce', False))
-        semaforo = bool(datos.get('cerca_semaforo', False))
-        parada = bool(datos.get('cerca_parada', False))
-        estacion = bool(datos.get('cerca_estacion', False))
-        bache = bool(datos.get('cerca_bache', False))
-        viatren = bool(datos.get('cerca_viatren', False))
-        
-        if any([cruce, semaforo, parada, estacion, bache, viatren]):
-            ef_obj, _ = ElementoFisico.objects.get_or_create(
-                cercacruce=cruce,
-                cercasemaforo=semaforo,
-                cercaparada=parada,
-                cercaestacion=estacion,
-                cercabache=bache,
-                cercaviatren=viatren
-            )
-            idelementofisico_id = ef_obj.idelementofisico
-        else:
-            idelementofisico_id = int(datos.get('idelementofisico_id', 1))
-
-        # 3. Periodo del Dia
-        amanecer = datos.get('amaneceranochecer', '')
-        if amanecer:
-            pd_obj, _ = PeriodoDia.objects.get_or_create(
-                amaneceranochecer=amanecer,
-                crepusculocivil=datos.get('crepusculocivil', 'Day'),
-                crepusculonautico=datos.get('crepusculonautico', 'Day'),
-                crepusculoastronomico=datos.get('crepusculoastronomico', 'Day')
-            )
-            idperiododia_id = pd_obj.idperiododia
-        else:
-            idperiododia_id = int(datos.get('idperiododia_id', 1))
-
-        # 4. Referencia de Estacion
         apt = datos.get('codigoaeropuerto', '')
-        if apt:
-            re_obj, _ = ReferenciaEstacion.objects.get_or_create(
-                codigoaeropuerto=apt,
-                zonahoraria=datos.get('zonahoraria', 'US/Eastern')
-            )
-            idreferenciaestacion_id = re_obj.idreferenciaestacion
-        else:
-            idreferenciaestacion_id = int(datos.get('idreferenciaestacion_id', 1))
 
-        # Resolve valid SQLite IDs for catalog tables
-        sqlite_pais_id = AccidenteService._resolver_id_pais(int(datos.get('idpais_id', 0)))
-        sqlite_estado_id = AccidenteService._resolver_id_estado(int(datos.get('idestado_id', 0)))
-        sqlite_condado_id = AccidenteService._resolver_id_condado(int(datos.get('idcondado_id', 0)))
-        sqlite_ciudad_id = AccidenteService._resolver_id_ciudad(int(datos.get('idciudad_id', 0)))
-        sqlite_calle_id = AccidenteService._resolver_id_calle(int(datos.get('idcalle_id', 0)))
-        sqlite_severidad_id = AccidenteService._resolver_id_severidad(severidad)
-        sqlite_tiporeportado_id = AccidenteService._resolver_id_tiporeportado(int(datos.get('idtiporeportado_id', 0)))
-
-        sqlite_usuario_id = AccidenteService._resolver_id_usuario(int(datos.get('idusuario_id', 1)))
-        sqlite_fecha_id = AccidenteService._resolver_id_fecha(int(datos.get('idfecha_id', 1)))
-
-        sqlite_periododia_id = AccidenteService._resolver_id_periododia(idperiododia_id)
-        sqlite_estadoclima_id = AccidenteService._resolver_id_estadoclima(idestadoclima_id)
-        sqlite_elementofisico_id = AccidenteService._resolver_id_elementofisico(idelementofisico_id)
-        sqlite_referenciaestacion_id = AccidenteService._resolver_id_referenciaestacion(idreferenciaestacion_id)
-
-        # Create the Accidente record in SQLite using Django ORM
-        try:
-            acc_obj = Accidente.objects.create(
-                idaccidente=idaccidente,
-                idseveridad_id=sqlite_severidad_id,
-                idcalle_id=sqlite_calle_id,
-                idciudad_id=sqlite_ciudad_id,
-                idcondado_id=sqlite_condado_id,
-                idestado_id=sqlite_estado_id,
-                idpais_id=sqlite_pais_id,
-                idperiododia_id=sqlite_periododia_id,
-                idestadoclima_id=sqlite_estadoclima_id,
-                idusuario_id=sqlite_usuario_id,
-                idelementofisico_id=sqlite_elementofisico_id,
-                idtiporeportado_id=sqlite_tiporeportado_id,
-                idreferenciaestacion_id=sqlite_referenciaestacion_id,
-                idfecha_id=sqlite_fecha_id,
-                horainicio=datetime.now().strftime("%H:%M:%S"),
-                descripcion=datos.get('descripcion', ''),
-                codigopostal=datos.get('codigopostal') or '',
-                activo=True,
-                duracionminutos=0,
-                numvehiculos=numvehiculos,
-                numvictimas=numheridos + numfallecidos,
-                numheridos=numheridos,
-                numfallecidos=numfallecidos,
-                latitudinicio=float(datos.get('latitudinicio', -2.1894)),
-                longitudinicio=float(datos.get('longitudinicio', -79.8890)),
-                distanciamillas=0.0
-            )
-            logger.info(f"Accidente {idaccidente} successfully created in SQLite.")
-        except Exception as e:
-            logger.error(f"Error creating Accidente in SQLite: {e}")
-
-        # 5. Estado del Conductor and Pivot ConductorAccidente link
-        try:
-            ec_obj = EstadoConductor.objects.create(
-                estadosobriedad=bool(datos.get('estadosobriedad', True)),
-                nivelatencion=bool(datos.get('nivelatencion', True)),
-                condicionfisica=bool(datos.get('condicionfisica', True)),
-                usoseguridad=bool(datos.get('usoseguridad', True))
-            )
-            cond_obj = Conductor.objects.filter(activo=True).first()
-            veh_obj = Vehiculo.objects.filter(activo=True).first()
-            if cond_obj and veh_obj:
-                ConductorAccidente.objects.create(
-                    idaccidente_id=idaccidente,
-                    idconductor=cond_obj,
-                    idestadoconductor=ec_obj,
-                    idvehiculo=veh_obj
-                )
-        except Exception as exc:
-            logger.warning(f"Could not create or link ConductorAccidente/EstadoConductor in SQLite: {exc}")
-
-        # Fechas y marcas de tiempo en milisegundos para Pinot
-        ahora_ms = int(time.time() * 1000)
-        horainicio = datetime.now().strftime("%H:%M:%S")
-
-        # Resolve correct Pinot hashed IDs for Kafka payload
         pinot_id_pais = int(datos.get('idpais_id', 1))
         pinot_id_estado = int(datos.get('idestado_id', 1))
         pinot_id_condado = int(datos.get('idcondado_id', 1))
         pinot_id_ciudad = int(datos.get('idciudad_id', 1))
         pinot_id_calle = int(datos.get('idcalle_id', 1))
-        
-        pinot_id_severidad = AccidenteService._obtener_pinot_id_severidad(sqlite_severidad_id)
+        pinot_id_severidad = AccidenteService._obtener_pinot_id_severidad(severidad)
         pinot_id_clima = AccidenteService._obtener_pinot_id_clima(clima_cond)
         pinot_id_estacion = AccidenteService._obtener_pinot_id_estacion(apt)
+        pinot_tiporeportado = int(datos.get('idtiporeportado_id', 1))
+        pinot_fecha = int(datos.get('idfecha_id', 1))
+        pinot_periododia = int(datos.get('idperiododia_id', 1))
+        pinot_elementofisico = int(datos.get('idelementofisico_id', 1))
+        pinot_usuario = int(datos.get('idusuario_id', 1))
 
-        # Payload estructurado para la tabla de hechos 'accidentes' en Pinot
+        ahora_ms = int(time.time() * 1000)
+        horainicio = datetime.now().strftime("%H:%M:%S")
+        pinot_id_accidente = AccidenteService._uuid_to_pinot_id(idaccidente)
+
         payload_accidente = {
             "idaccidente": idaccidente,
             "idseveridad": pinot_id_severidad,
@@ -908,13 +321,13 @@ class AccidenteService:
             "idcondado": pinot_id_condado,
             "idestado": pinot_id_estado,
             "idpais": pinot_id_pais,
-            "idperiododia": 1,
+            "idperiododia": pinot_periododia,
             "idestadoclima": pinot_id_clima,
-            "idusuario": int(datos.get('idusuario_id', 1)),
-            "idelementofisico": idelementofisico_id,
-            "idtiporeportado": sqlite_tiporeportado_id,
+            "idusuario": pinot_usuario,
+            "idelementofisico": pinot_elementofisico,
+            "idtiporeportado": pinot_tiporeportado,
             "idreferenciaestacion": pinot_id_estacion,
-            "idfecha": int(datos.get('idfecha_id', 1)),
+            "idfecha": pinot_fecha,
             "horainicio": horainicio,
             "horafin": "",
             "descripcion": datos.get('descripcion', ''),
@@ -932,8 +345,8 @@ class AccidenteService:
             "fecha_actualizacion": ahora_ms
         }
 
-        # Publicar accidente en accidentes_topic de Kafka
         kafka_repo = KafkaRepository()
+
         kafka_repo.enviar_mensaje(
             topic="accidentes_topic",
             clave_primaria=idaccidente,
@@ -941,11 +354,67 @@ class AccidenteService:
             operacion="INSERT"
         )
 
-        # Publicar estado inicial ('Reportado' -> idtipoestadoincidente=1)
+        base_id = int(time.time_ns())
+        vehiculos_detalles = datos.get('vehiculos_detalles', [])
+        for idx, v in enumerate(vehiculos_detalles):
+            idvehiculo = (base_id + idx * 4 + 1) % 10000000000
+            idconductor = (base_id + idx * 4 + 2) % 10000000000
+            idestadoconductor = (base_id + idx * 4 + 3) % 10000000000
+            idconductoraccidente = (base_id + idx * 4 + 4) % 10000000000
+
+            payload_vehiculo = {
+                "idvehiculo": idvehiculo,
+                "tipovehiculo": v.get('tipovehiculo', 'Automóvil'),
+                "modelovehiculo": v.get('modelovehiculo', 'Genérico'),
+                "categoriausovehiculo": v.get('categoriausovehiculo', 'Particular'),
+                "mercanciapeligrosa": bool(v.get('mercanciapeligrosa', False)),
+                "ejes": int(v.get('ejes', 2)),
+                "activo": True,
+                "fecha_actualizacion": ahora_ms
+            }
+            kafka_repo.enviar_mensaje(topic="vehiculos_topic", clave_primaria=idvehiculo, datos_json=payload_vehiculo, operacion="INSERT")
+
+            payload_conductor = {
+                "idconductor": idconductor,
+                "nombres": v.get('nombres', 'Nombre'),
+                "apellidos": v.get('apellidos', 'Apellido'),
+                "identificacion": v.get('identificacion', ''),
+                "genero": v.get('genero', 'M'),
+                "tipolicencia": v.get('tipolicencia', 'B'),
+                "estadolicencia": v.get('estadolicencia', 'Vigente'),
+                "ciudadresidencia": v.get('ciudadresidencia', 'Quito'),
+                "aniosexperiencia": int(v.get('aniosexperiencia', 0)),
+                "activo": True,
+                "fecha_actualizacion": ahora_ms
+            }
+            kafka_repo.enviar_mensaje(topic="conductores_topic", clave_primaria=idconductor, datos_json=payload_conductor, operacion="INSERT")
+
+            payload_estado = {
+                "idestadoconductor": idestadoconductor,
+                "estadosobriedad": bool(v.get('estadosobriedad', True)),
+                "nivelatencion": bool(v.get('nivelatencion', True)),
+                "condicionfisica": bool(v.get('condicionfisica', True)),
+                "usoseguridad": bool(v.get('usoseguridad', True)),
+                "activo": True,
+                "fecha_actualizacion": ahora_ms
+            }
+            kafka_repo.enviar_mensaje(topic="estadosconductores_topic", clave_primaria=idestadoconductor, datos_json=payload_estado, operacion="INSERT")
+
+            payload_link = {
+                "idconductoraccidente": idconductoraccidente,
+                "idaccidente": pinot_id_accidente,
+                "idconductor": idconductor,
+                "idestadoconductor": idestadoconductor,
+                "idvehiculo": idvehiculo,
+                "activo": True,
+                "fecha_actualizacion": ahora_ms
+            }
+            kafka_repo.enviar_mensaje(topic="conductoresaccidentes_topic", clave_primaria=idconductoraccidente, datos_json=payload_link, operacion="INSERT")
+
         id_estado_rel = int(time.time() * 1000) % 1000000000
         payload_estado = {
             "idaccidentetipoestadoincidente": id_estado_rel,
-            "idaccidente": idaccidente,
+            "idaccidente": pinot_id_accidente,
             "idtipoestadoincidente": 1,
             "activo": True,
             "fechahoramodificado": ahora_ms,
@@ -958,27 +427,13 @@ class AccidenteService:
             operacion="INSERT"
         )
 
-        # Save initial state relation in SQLite
-        try:
-            tei_obj = TipoEstadoIncidente.objects.filter(idtipoestadoincidente=1).first() or TipoEstadoIncidente.objects.first()
-            if tei_obj:
-                AccidenteTipoEstadoIncidente.objects.create(
-                    idaccidentetipoestadoincidente=id_estado_rel,
-                    idaccidente_id=idaccidente,
-                    idtipoestadoincidente=tei_obj,
-                    activo=True
-                )
-        except Exception as exc:
-            logger.warning(f"Could not create AccidenteTipoEstadoIncidente in SQLite: {exc}")
-
-        # Publicar nota descriptiva inicial de bitácora
         nota_inicial = datos.get('nota_inicial')
         if nota_inicial:
             id_nota = int(time.time() * 1000) % 1000000000
             payload_nota = {
                 "idnotaaccidentes": id_nota,
-                "idaccidente": idaccidente,
-                "idusuario": 1,
+                "idaccidente": pinot_id_accidente,
+                "idusuario": pinot_usuario,
                 "nota": nota_inicial,
                 "tipo": True,
                 "activo": True,
@@ -990,20 +445,6 @@ class AccidenteService:
                 datos_json=payload_nota,
                 operacion="INSERT"
             )
-            # Save initial note in SQLite
-            try:
-                u_obj = Usuario.objects.filter(idusuario=1).first() or Usuario.objects.first()
-                if u_obj:
-                    NotaAccidente.objects.create(
-                        idnotaaccidentes=id_nota,
-                        idaccidente_id=idaccidente,
-                        idusuario=u_obj,
-                        nota=nota_inicial,
-                        tipo=True,
-                        activo=True
-                    )
-            except Exception as exc:
-                logger.warning(f"Could not create NotaAccidente in SQLite: {exc}")
 
         return payload_accidente
 
@@ -1013,8 +454,6 @@ class AccidenteService:
         Consulta Pinot para obtener los accidentes del mapa
         con fallback a Django ORM.
         """
-        from accidentes.models import Calle, Ciudad, Accidente
-        
         severidad_param = filtros.get('severidad')
         horas = filtros.get('horas')
         
@@ -1030,6 +469,85 @@ class AccidenteService:
             sev_map[sid] = slevel
             sev_id_for_level[slevel] = sid
         
+        # --- Resolver jerarquÃ­a de ubicaciÃ³n ---
+        idpais = filtros.get('idpais')
+        idestado = filtros.get('idestado')
+        idcondado = filtros.get('idcondado')
+        idciudad = filtros.get('idciudad')
+        idcalle = filtros.get('idcalle')
+
+        idcalles_filter = None
+        if idcalle:
+            idcalles_filter = [int(idcalle)]
+        elif idciudad:
+            try:
+                ciudad_rows = PinotRepository.execute_query(
+                    f"SELECT idcalle FROM calles WHERE activo = true AND ciudad = '{idciudad}' LIMIT 5000"
+                )
+                idcalles_filter = [r['idcalle'] for r in ciudad_rows if r.get('idcalle') is not None]
+            except Exception as e:
+                logger.warning(f"Error resolving calles from ciudad: {e}")
+        elif idcondado:
+            try:
+                ciudad_rows = PinotRepository.execute_query(
+                    f"SELECT idciudad, ciudad FROM ciudades WHERE activo = true AND condado = '{idcondado}' LIMIT 2000"
+                )
+                ciudades_nombres = [r['ciudad'] for r in ciudad_rows if r.get('ciudad') is not None]
+                if ciudades_nombres:
+                    ci_str = ', '.join(f"'{c}'" for c in ciudades_nombres)
+                    calle_rows = PinotRepository.execute_query(
+                        f"SELECT idcalle FROM calles WHERE activo = true AND ciudad IN ({ci_str}) LIMIT 5000"
+                    )
+                    idcalles_filter = [r['idcalle'] for r in calle_rows if r.get('idcalle') is not None]
+            except Exception as e:
+                logger.warning(f"Error resolving calles from condado: {e}")
+        elif idestado:
+            try:
+                condado_rows = PinotRepository.execute_query(
+                    f"SELECT condado FROM condados WHERE activo = true AND estado = '{idestado}' LIMIT 2000"
+                )
+                condados = [r['condado'] for r in condado_rows if r.get('condado') is not None]
+                if condados:
+                    co_str = ', '.join(f"'{c}'" for c in condados)
+                    ciudad_rows = PinotRepository.execute_query(
+                        f"SELECT idciudad, ciudad FROM ciudades WHERE activo = true AND condado IN ({co_str}) LIMIT 2000"
+                    )
+                    ciudades_nombres = [r['ciudad'] for r in ciudad_rows if r.get('ciudad') is not None]
+                    if ciudades_nombres:
+                        ci_str = ', '.join(f"'{c}'" for c in ciudades_nombres)
+                        calle_rows = PinotRepository.execute_query(
+                            f"SELECT idcalle FROM calles WHERE activo = true AND ciudad IN ({ci_str}) LIMIT 5000"
+                        )
+                        idcalles_filter = [r['idcalle'] for r in calle_rows if r.get('idcalle') is not None]
+            except Exception as e:
+                logger.warning(f"Error resolving calles from estado: {e}")
+        elif idpais:
+            try:
+                estado_rows = PinotRepository.execute_query(
+                    f"SELECT estado FROM estados WHERE activo = true AND pais = '{idpais}' LIMIT 2000"
+                )
+                estados_list = [r['estado'] for r in estado_rows if r.get('estado') is not None]
+                if estados_list:
+                    es_str = ', '.join(f"'{e}'" for e in estados_list)
+                    condado_rows = PinotRepository.execute_query(
+                        f"SELECT condado FROM condados WHERE activo = true AND estado IN ({es_str}) LIMIT 2000"
+                    )
+                    condados = [r['condado'] for r in condado_rows if r.get('condado') is not None]
+                    if condados:
+                        co_str = ', '.join(f"'{c}'" for c in condados)
+                        ciudad_rows = PinotRepository.execute_query(
+                            f"SELECT idciudad, ciudad FROM ciudades WHERE activo = true AND condado IN ({co_str}) LIMIT 2000"
+                        )
+                        ciudades_nombres = [r['ciudad'] for r in ciudad_rows if r.get('ciudad') is not None]
+                        if ciudades_nombres:
+                            ci_str = ', '.join(f"'{c}'" for c in ciudades_nombres)
+                            calle_rows = PinotRepository.execute_query(
+                                f"SELECT idcalle FROM calles WHERE activo = true AND ciudad IN ({ci_str}) LIMIT 5000"
+                            )
+                            idcalles_filter = [r['idcalle'] for r in calle_rows if r.get('idcalle') is not None]
+            except Exception as e:
+                logger.warning(f"Error resolving calles from pais: {e}")
+
         # 2. Consultar accidentes
         query = (
             "SELECT idaccidente, latitudinicio, longitudinicio, idseveridad, activo, "
@@ -1041,31 +559,71 @@ class AccidenteService:
         if severidad_param and int(severidad_param) in sev_id_for_level:
             severidad_hash = sev_id_for_level[int(severidad_param)]
             query += f" AND idseveridad = {severidad_hash}"
+
+        # Filtrar por ubicaciÃ³n (calles resueltas)
+        if idcalles_filter is not None:
+            if idcalles_filter:
+                query += f" AND idcalle IN ({', '.join(map(str, idcalles_filter))})"
+            else:
+                # No hay calles que cumplan, forzar resultado vacÃ­o
+                query += " AND 1 = 0"
         
-        # Filtros de fecha de inicio y fin (rango específico)
+        # Filtros de fecha de inicio y fin (rango específico de idfecha)
         fecha_inicio = filtros.get('fecha_inicio')
         fecha_fin = filtros.get('fecha_fin')
         
-        if fecha_inicio:
+        start_str = fecha_inicio
+        end_str = fecha_fin
+        
+        if not start_str and filtros.get('solo_ultima_semana'):
+            from datetime import timedelta
+            start_str = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+            end_str = datetime.now().strftime("%Y-%m-%d")
+            
+        if start_str or end_str:
+            date_ids = []
+            
+            # Obtener idfecha desde Pinot
+            pinot_date_query = "SELECT idfecha FROM fechas WHERE activo = true"
+            if start_str:
+                pinot_date_query += f" AND fechacompleta >= '{start_str}'"
+            if end_str:
+                pinot_date_query += f" AND fechacompleta <= '{end_str}'"
+            pinot_date_query += " LIMIT 5000"
             try:
-                fi_dt = datetime.strptime(fecha_inicio, "%Y-%m-%d")
-                fi_ms = int(fi_dt.timestamp() * 1000)
-                query += f" AND fecha_actualizacion >= {fi_ms}"
-            except Exception:
-                pass
+                pinot_date_rows = PinotRepository.execute_query(pinot_date_query)
+                for r in pinot_date_rows:
+                    fid = r.get('idfecha')
+                    if fid is not None:
+                        date_ids.append(fid)
+            except Exception as e:
+                logger.warning(f"Error querying dates from Pinot: {e}")
                 
-        if fecha_fin:
-            try:
-                ff_dt = datetime.strptime(fecha_fin + " 23:59:59", "%Y-%m-%d %H:%M:%S")
-                ff_ms = int(ff_dt.timestamp() * 1000)
-                query += f" AND fecha_actualizacion <= {ff_ms}"
-            except Exception:
-                pass
-
-        # Si no se especifica rango de fechas y es ciudadano, forzar última semana
-        if not fecha_inicio and filtros.get('solo_ultima_semana'):
-            seven_days_ago_ms = int(time.time() * 1000) - (7 * 24 * 60 * 60 * 1000)
-            query += f" AND fecha_actualizacion >= {seven_days_ago_ms}"
+            # Eliminar duplicados
+            date_ids = list(set(date_ids))
+            
+            # Calcular milisegundos para legacy fallback
+            start_ms = 0
+            end_ms = 0
+            if start_str:
+                start_ms = int(datetime.strptime(start_str, "%Y-%m-%d").timestamp() * 1000)
+            if end_str:
+                end_ms = int(datetime.strptime(end_str + " 23:59:59", "%Y-%m-%d %H:%M:%S").timestamp() * 1000)
+                
+            clauses = []
+            if date_ids:
+                clauses.append(f"idfecha IN ({', '.join(map(str, date_ids))})")
+                
+            legacy_clause = []
+            legacy_clause.append("idfecha <= 1")
+            if start_ms:
+                legacy_clause.append(f"fecha_actualizacion >= {start_ms}")
+            if end_ms:
+                legacy_clause.append(f"fecha_actualizacion <= {end_ms}")
+            legacy_clause_str = "(" + " AND ".join(legacy_clause) + ")"
+            clauses.append(legacy_clause_str)
+            
+            query += f" AND ({' OR '.join(clauses)})"
         
         query += " LIMIT 500"
         
@@ -1090,15 +648,6 @@ class AccidenteService:
                     calles_map = {r['idcalle']: r.get('calle', '') for r in calle_rows}
                 except Exception:
                     pass
-                # Enriquecer/Fallback con SQLite (Django ORM)
-                try:
-                    from accidentes.models import Calle
-                    sqlite_calles = Calle.objects.filter(idcalle__in=list(calle_ids))
-                    for c in sqlite_calles:
-                        if c.idcalle not in calles_map or not calles_map[c.idcalle] or calles_map[c.idcalle] == "Ubicación Registrada":
-                            calles_map[c.idcalle] = c.calle
-                except Exception as ex:
-                    logger.warning(f"Error enriching calles from SQLite for map: {ex}")
                 
             ciudades_map = {}
             if ciudad_ids:
@@ -1110,15 +659,6 @@ class AccidenteService:
                     ciudades_map = {r['idciudad']: r.get('ciudad', '') for r in ciudad_rows}
                 except Exception:
                     pass
-                # Enriquecer/Fallback con SQLite (Django ORM)
-                try:
-                    from accidentes.models import Ciudad
-                    sqlite_ciudades = Ciudad.objects.filter(idciudad__in=list(ciudad_ids))
-                    for c in sqlite_ciudades:
-                        if c.idciudad not in ciudades_map or not ciudades_map[c.idciudad] or ciudades_map[c.idciudad] == "Ubicación Registrada":
-                            ciudades_map[c.idciudad] = c.ciudad
-                except Exception as ex:
-                    logger.warning(f"Error enriching ciudades from SQLite for map: {ex}")
                 
             resultados = []
             for row in rows:
@@ -1150,593 +690,343 @@ class AccidenteService:
                 calle_nombre = calles_map.get(idcalle, "Ubicación Registrada")
                 ciudad_nombre = ciudades_map.get(idciudad, "Ubicación Registrada")
                 
+                public_mode = filtros.get('public', False)
                 resultados.append({
                     "idaccidente": str(idaccidente),
                     "latitudinicio": lat,
                     "longitudinicio": lng,
                     "severidad_nivel": sev,
                     "estado_actual": "ACTIVO",
-                    "numheridos": int(row.get('numheridos', 0)),
-                    "numfallecidos": int(row.get('numfallecidos', 0)),
+                    "numheridos": 0 if public_mode else int(row.get('numheridos', 0)),
+                    "numfallecidos": 0 if public_mode else int(row.get('numfallecidos', 0)),
                     "fecha_actualizacion": fa_iso,
-                    "descripcion": str(row.get('descripcion') or ''),
+                    "descripcion": "" if public_mode else str(row.get('descripcion') or ''),
                     "calle_nombre": calle_nombre,
                     "ciudad_nombre": ciudad_nombre
                 })
             return resultados
 
-        # 2. Fallback a Django ORM
-        qs = Accidente.objects.filter(activo=True).select_related(
-            'idcalle', 'idciudad', 'idseveridad'
-        ).prefetch_related('accidentetipoestadoincidente_set__idtipoestadoincidente')
-        
-        if severidad:
-            qs = qs.filter(idseveridad__severidad=severidad)
-            
-        if fecha_inicio:
+        return []
+
+    @staticmethod
+    def _obtener_vehiculos_desde_pinot(accidente_id: str) -> List[Dict[str, Any]]:
+        """Obtiene los detalles de vehículos/conductores desde Pinot vía conductoresaccidentes."""
+        pinot_id = AccidenteService._uuid_to_pinot_id(accidente_id)
+        try:
+            ca_rows = PinotRepository.execute_query(
+                f"SELECT idconductor, idvehiculo, idestadoconductor "
+                f"FROM conductoresaccidentes WHERE idaccidente = {pinot_id} AND activo = true LIMIT 50"
+            )
+        except Exception:
+            return []
+        if not ca_rows:
+            return []
+
+        c_ids = list({r['idconductor'] for r in ca_rows if r.get('idconductor')})
+        v_ids = list({r['idvehiculo'] for r in ca_rows if r.get('idvehiculo')})
+        ec_ids = list({r['idestadoconductor'] for r in ca_rows if r.get('idestadoconductor')})
+
+        conductores_map = {}
+        if c_ids:
+            ids_str = ", ".join(str(x) for x in c_ids)
             try:
-                fi_dt = datetime.strptime(fecha_inicio, "%Y-%m-%d")
-                qs = qs.filter(fecha_actualizacion__gte=fi_dt)
-            except Exception:
-                pass
-                
-        if fecha_fin:
-            try:
-                ff_dt = datetime.strptime(fecha_fin + " 23:59:59", "%Y-%m-%d %H:%M:%S")
-                qs = qs.filter(fecha_actualizacion__lte=ff_dt)
+                for r in PinotRepository.execute_query(f"SELECT idconductor, nombres, apellidos, identificacion, genero, tipolicencia, estadolicencia, ciudadresidencia, aniosexperiencia FROM conductores WHERE idconductor IN ({ids_str}) LIMIT 50"):
+                    conductores_map[r['idconductor']] = r
             except Exception:
                 pass
 
-        if not fecha_inicio and filtros.get('solo_ultima_semana'):
-            from datetime import timedelta
-            from django.utils import timezone
-            seven_days_ago = timezone.now() - timedelta(days=7)
-            qs = qs.filter(fecha_actualizacion__gte=seven_days_ago)
-            
-        resultados = []
-        for acc in qs[:500]:
-            estado_actual = "Reportado"
-            estado_rels = acc.accidentetipoestadoincidente_set.all()
-            if estado_rels:
-                ultimo_estado = list(estado_rels)[0]
-                estado_actual = ultimo_estado.idtipoestadoincidente.tipoestadoincidente
-            
-            if estado_actual in excluir_estados:
-                continue
-                
-            calle_nombre = acc.idcalle.calle if acc.idcalle else "Calle No Especificada"
-            ciudad_nombre = acc.idciudad.ciudad if acc.idciudad else "Ciudad No Especificada"
-            
-            resultados.append({
-                "idaccidente": str(acc.idaccidente),
-                "latitudinicio": float(acc.latitudinicio),
-                "longitudinicio": float(acc.longitudinicio),
-                "severidad_nivel": acc.idseveridad.severidad if acc.idseveridad else 1,
-                "estado_actual": estado_actual,
-                "numheridos": acc.numheridos,
-                "numfallecidos": acc.numfallecidos,
-                "fecha_actualizacion": acc.fecha_actualizacion.isoformat(),
-                "descripcion": acc.descripcion,
-                "calle_nombre": calle_nombre,
-                "ciudad_nombre": ciudad_nombre
+        vehiculos_map = {}
+        if v_ids:
+            ids_str = ", ".join(str(x) for x in v_ids)
+            try:
+                for r in PinotRepository.execute_query(f"SELECT idvehiculo, tipovehiculo, modelovehiculo, categoriausovehiculo, mercanciapeligrosa, ejes FROM vehiculos WHERE idvehiculo IN ({ids_str}) LIMIT 50"):
+                    vehiculos_map[r['idvehiculo']] = r
+            except Exception:
+                pass
+
+        estados_map = {}
+        if ec_ids:
+            ids_str = ", ".join(str(x) for x in ec_ids)
+            try:
+                for r in PinotRepository.execute_query(f"SELECT idestadoconductor, estadosobriedad, nivelatencion, condicionfisica, usoseguridad FROM estadosconductores WHERE idestadoconductor IN ({ids_str}) LIMIT 50"):
+                    estados_map[r['idestadoconductor']] = r
+            except Exception:
+                pass
+
+        resultado = []
+        for ca in ca_rows:
+            c = conductores_map.get(ca.get('idconductor'), {})
+            v = vehiculos_map.get(ca.get('idvehiculo'), {})
+            ec = estados_map.get(ca.get('idestadoconductor'), {})
+            resultado.append({
+                "tipovehiculo": v.get('tipovehiculo', 'Automóvil'),
+                "modelovehiculo": v.get('modelovehiculo', 'Genérico'),
+                "categoriausovehiculo": v.get('categoriausovehiculo', 'Particular'),
+                "mercanciapeligrosa": bool(v.get('mercanciapeligrosa', False)),
+                "ejes": int(v.get('ejes', 2)) if v.get('ejes') else 2,
+                "nombres": c.get('nombres', 'Nombre'),
+                "apellidos": c.get('apellidos', 'Apellido'),
+                "identificacion": c.get('identificacion', ''),
+                "genero": c.get('genero', 'M'),
+                "tipolicencia": c.get('tipolicencia', 'B'),
+                "estadolicencia": c.get('estadolicencia', 'Vigente'),
+                "ciudadresidencia": c.get('ciudadresidencia', 'Quito'),
+                "aniosexperiencia": int(c.get('aniosexperiencia', 0)),
+                "estadosobriedad": bool(ec.get('estadosobriedad', True)),
+                "nivelatencion": bool(ec.get('nivelatencion', True)),
+                "condicionfisica": bool(ec.get('condicionfisica', True)),
+                "usoseguridad": bool(ec.get('usoseguridad', True)),
             })
-            
-        return resultados
+        return resultado
 
     @staticmethod
     def obtener_detalle(accidente_id: str) -> Optional[Dict[str, Any]]:
         """
-        Obtiene el detalle completo de un accidente específico.
-        Intenta consultar Pinot primero, y si no existe o falla, recurre a Django ORM (PostgreSQL).
+        Obtiene el detalle completo de un accidente desde Apache Pinot.
+        Sin operaciones directas en SQLite.
         """
-        from accidentes.models import (
-            Calle, Ciudad, Severidad, Despacho, NotaAccidente,
-            AccidenteTipoEstadoIncidente, Accidente,
-            EstadoClima, PeriodoDia, ElementoFisico, ReferenciaEstacion
-        )
-        from accidentes.models.personas import ConductorAccidente
-
-        def _dimensiones_desde_orm(acc_obj):
-            """Extrae los datos de dimensiones directamente del objeto ORM."""
-            # Map SQLite sequential IDs to Pinot hashes or uniform IDs
-            pais_name = acc_obj.idpais.pais if acc_obj.idpais else ""
-            estado_name = acc_obj.idestado.estado if acc_obj.idestado else ""
-            condado_name = acc_obj.idcondado.condado if acc_obj.idcondado else ""
-            ciudad_name = acc_obj.idciudad.ciudad if acc_obj.idciudad else ""
-            calle_name = acc_obj.idcalle.calle if acc_obj.idcalle else ""
-
-            idpais_id = AccidenteService._obtener_pinot_id_pais(pais_name)
-            idestado_id = AccidenteService._obtener_pinot_id_estado(estado_name)
-            idcondado_id = AccidenteService._obtener_pinot_id_condado(condado_name)
-            idciudad_id = AccidenteService._obtener_pinot_id_ciudad(ciudad_name)
-            idcalle_id = AccidenteService._obtener_pinot_id_calle(calle_name)
-
-            dims = {
-                # Clima
-                'condicion_clima': 'Despejado',
-                'temperatura_f': 72.0,
-                'humedad_porcentaje': 50.0,
-                'visibilidad_millas': 10.0,
-                'velocidad_viento_mph': 0.0,
-                # Período del día
-                'amaneceranochecer': 'Day',
-                'crepusculocivil': 'Day',
-                'crepusculonautico': 'Day',
-                'crepusculoastronomico': 'Day',
-                # Elementos físicos
-                'cerca_cruce': False,
-                'cerca_semaforo': False,
-                'cerca_parada': False,
-                'cerca_estacion': False,
-                'cerca_bache': False,
-                'cerca_viatren': False,
-                # Estado conductor
-                'estadosobriedad': True,
-                'nivelatencion': True,
-                'condicionfisica': True,
-                'usoseguridad': True,
-                # Estación
-                'codigoaeropuerto': 'KJFK',
-                'zonahoraria': 'US/Eastern',
-                # Location IDs
-                'idpais_id': idpais_id,
-                'idestado_id': idestado_id,
-                'idcondado_id': idcondado_id,
-                'idciudad_id': idciudad_id,
-                'idcalle_id': idcalle_id,
-                'idtiporeportado_id': acc_obj.idtiporeportado_id if acc_obj.idtiporeportado_id else None,
-                'idseveridad_id': acc_obj.idseveridad.severidad if acc_obj.idseveridad else 1,
-                'idperiododia_id': acc_obj.idperiododia_id if acc_obj.idperiododia_id else None,
-                'idreferenciaestacion_id': acc_obj.idreferenciaestacion_id if acc_obj.idreferenciaestacion_id else None,
-            }
-            # EstadoClima
-            if acc_obj.idestadoclima:
-                ec = acc_obj.idestadoclima
-                dims['condicion_clima'] = ec.condicionclima or 'Despejado'
-                dims['temperatura_f'] = float(ec.temperaturaf or 72.0)
-                dims['humedad_porcentaje'] = float(ec.humedadporcentaje or 50.0)
-                dims['visibilidad_millas'] = float(ec.visibilidadmillas or 10.0)
-                dims['velocidad_viento_mph'] = float(ec.velocidadvientomph or 0.0)
-            # PeriodoDia
-            if acc_obj.idperiododia:
-                pd = acc_obj.idperiododia
-                dims['amaneceranochecer'] = pd.amaneceranochecer or 'Day'
-                dims['crepusculocivil'] = pd.crepusculocivil or 'Day'
-                dims['crepusculonautico'] = pd.crepusculonautico or 'Day'
-                dims['crepusculoastronomico'] = pd.crepusculoastronomico or 'Day'
-            # ElementoFisico
-            if acc_obj.idelementofisico:
-                ef = acc_obj.idelementofisico
-                dims['cerca_cruce'] = bool(ef.cercacruce)
-                dims['cerca_semaforo'] = bool(ef.cercasemaforo)
-                dims['cerca_parada'] = bool(ef.cercaparada)
-                dims['cerca_estacion'] = bool(ef.cercaestacion)
-                dims['cerca_bache'] = bool(ef.cercabache)
-                dims['cerca_viatren'] = bool(ef.cercaviatren)
-            # ReferenciaEstacion
-            if acc_obj.idreferenciaestacion:
-                re = acc_obj.idreferenciaestacion
-                dims['codigoaeropuerto'] = re.codigoaeropuerto or 'KJFK'
-                dims['zonahoraria'] = re.zonahoraria or 'US/Eastern'
-            # EstadoConductor via ConductorAccidente
-            try:
-                ca = ConductorAccidente.objects.filter(
-                    idaccidente=acc_obj.idaccidente
-                ).select_related('idestadoconductor').first()
-                if ca and ca.idestadoconductor:
-                    ec2 = ca.idestadoconductor
-                    dims['estadosobriedad'] = bool(ec2.estadosobriedad)
-                    dims['nivelatencion'] = bool(ec2.nivelatencion)
-                    dims['condicionfisica'] = bool(ec2.condicionfisica)
-                    dims['usoseguridad'] = bool(ec2.usoseguridad)
-            except Exception:
-                pass
-            return dims
-        
-        # 1. Intentar consultar en Pinot
         pinot_query = (
             f"SELECT idaccidente, latitudinicio, longitudinicio, idseveridad, activo, "
             f"numheridos, numfallecidos, numvehiculos, numvictimas, descripcion, "
             f"horainicio, horafin, codigopostal, duracionminutos, fechahoraclima, "
-            f"idcalle, idciudad, fecha_actualizacion "
+            f"idcalle, idciudad, idpais, idestado, idcondado, "
+            f"idperiododia, idestadoclima, idelementofisico, "
+            f"idtiporeportado, idreferenciaestacion, idfecha, idusuario, "
+            f"fecha_actualizacion "
             f"FROM accidentes WHERE idaccidente = '{accidente_id}' LIMIT 1"
         )
-        
+
         rows = []
         try:
             rows = PinotRepository.execute_query(pinot_query)
         except Exception as e:
-            logger.warning(f"Error consultando detalle en Pinot: {e}. Se intentará con ORM.")
-            
-        if rows:
-            row = rows[0]
-            
-            # Resolver dimensiones desde Pinot
-            idcalle = row.get('idcalle')
-            idciudad = row.get('idciudad')
-            idseveridad = row.get('idseveridad')
-            
-            # Resolver calle desde Pinot
-            calle_nombre = "Ubicación Registrada"
-            if idcalle is not None:
-                try:
-                    calle_rows = PinotRepository.execute_query(
-                        f"SELECT calle FROM calles WHERE idcalle = {idcalle} LIMIT 1"
-                    )
-                    if calle_rows:
-                        calle_nombre = calle_rows[0].get('calle', calle_nombre)
-                except Exception:
-                    pass
-                if calle_nombre == "Ubicación Registrada":
-                    try:
-                        calle_obj = Calle.objects.filter(idcalle=idcalle).first()
-                        if calle_obj:
-                            calle_nombre = calle_obj.calle
-                    except Exception:
-                        pass
-            
-            # Resolver ciudad desde Pinot
-            ciudad_nombre = "Ubicación Registrada"
-            if idciudad is not None:
-                try:
-                    ciudad_rows = PinotRepository.execute_query(
-                        f"SELECT ciudad FROM ciudades WHERE idciudad = {idciudad} LIMIT 1"
-                    )
-                    if ciudad_rows:
-                        ciudad_nombre = ciudad_rows[0].get('ciudad', ciudad_nombre)
-                except Exception:
-                    pass
-                if ciudad_nombre == "Ubicación Registrada":
-                    try:
-                        ciudad_obj = Ciudad.objects.filter(idciudad=idciudad).first()
-                        if ciudad_obj:
-                            ciudad_nombre = ciudad_obj.ciudad
-                    except Exception:
-                        pass
-            
-            # Resolver severidad desde Pinot
-            severidad_desc = "Leve"
-            severidad_nivel = 1
-            if idseveridad is not None:
+            logger.warning(f"Error consultando detalle en Pinot: {e}")
+            return None
+
+        if not rows:
+            return None
+
+        row = rows[0]
+
+        idcalle = row.get('idcalle')
+        idciudad = row.get('idciudad')
+        idseveridad = row.get('idseveridad')
+
+        calle_nombre = "Ubicación Registrada"
+        if idcalle is not None:
+            try:
+                calle_rows = PinotRepository.execute_query(
+                    f"SELECT calle FROM calles WHERE idcalle = {idcalle} LIMIT 1"
+                )
+                if calle_rows:
+                    calle_nombre = calle_rows[0].get('calle', calle_nombre)
+            except Exception:
+                pass
+
+        ciudad_nombre = "Ubicación Registrada"
+        if idciudad is not None:
+            try:
+                ciudad_rows = PinotRepository.execute_query(
+                    f"SELECT ciudad FROM ciudades WHERE idciudad = {idciudad} LIMIT 1"
+                )
+                if ciudad_rows:
+                    ciudad_nombre = ciudad_rows[0].get('ciudad', ciudad_nombre)
+            except Exception:
+                pass
+
+        severidad_desc = "Leve"
+        severidad_nivel = 1
+        if idseveridad is not None:
+            try:
                 sev_rows = PinotRepository.execute_query(
                     f"SELECT severidad, descripcion FROM severidades WHERE idseveridad = {idseveridad} LIMIT 1"
                 )
                 if sev_rows:
                     severidad_nivel = sev_rows[0].get('severidad', 1)
                     severidad_desc = sev_rows[0].get('descripcion', 'Leve')
-            
-            # Formatear fechas - Pinot puede devolver string o epoch
-            fa = row.get('fecha_actualizacion')
-            if isinstance(fa, (int, float)):
-                fa_iso = datetime.fromtimestamp(fa / 1000.0).isoformat()
-            elif isinstance(fa, str) and fa:
-                try:
-                    fa_dt = datetime.strptime(fa.split('.')[0], '%Y-%m-%d %H:%M:%S')
-                    fa_iso = fa_dt.isoformat()
-                except (ValueError, TypeError):
-                    fa_iso = fa
-            else:
-                fa_iso = str(fa or "")
-                    
-            fhc = row.get('fechahoraclima')
-            if isinstance(fhc, (int, float)) and fhc > 0:
-                fhc_iso = datetime.fromtimestamp(fhc / 1000.0).isoformat()
-            elif isinstance(fhc, str) and fhc:
-                try:
-                    fhc_dt = datetime.strptime(fhc.split('.')[0], '%Y-%m-%d %H:%M:%S')
-                    fhc_iso = fhc_dt.isoformat()
-                except (ValueError, TypeError):
-                    fhc_iso = fhc
-            else:
-                fhc_iso = str(fhc or "")
-            
-            # Consultar estado actual, despachos y notas asociados en Django ORM
-            estado_rels = AccidenteTipoEstadoIncidente.objects.filter(
-                idaccidente=accidente_id, activo=True
-            ).select_related('idtipoestadoincidente')
-            
-            estado_actual = "ACTIVO"
-            if estado_rels:
-                estado_actual = estado_rels[0].idtipoestadoincidente.tipoestadoincidente
-                
-            despachos_qs = Despacho.objects.filter(idaccidente=accidente_id).select_related('idunidademergencia')
-            despachos_list = []
-            for d in despachos_qs:
-                despachos_list.append({
-                    "iddespacho": d.iddespacho,
-                    "idaccidente": str(accidente_id),
-                    "idunidademergencia": d.idunidademergencia.idunidademergencia,
-                    "unidad_nombre": d.idunidademergencia.unidademergencia,
-                    "tipo_unidad": d.idunidademergencia.tipounidademergencia,
-                    "fechahoradespacho": d.fechahoradespacho.isoformat() if d.fechahoradespacho else "",
-                    "fechahoraconfirmacion": d.fechahoraconfirmacion.isoformat() if d.fechahoraconfirmacion else "",
-                    "fechahorallegada": d.fechahorallegada.isoformat() if d.fechahorallegada else ""
-                })
-                
-            notas_qs = NotaAccidente.objects.filter(idaccidente=accidente_id)
-            notas_list = []
-            for n in notas_qs:
-                notas_list.append({
-                    "idnotaaccidentes": n.idnotaaccidentes,
-                    "idaccidente": str(accidente_id),
-                    "nota": n.nota,
-                    "tipo": n.tipo,
-                    "fecha_actualizacion": n.fecha_actualizacion.isoformat() if hasattr(n.fecha_actualizacion, 'isoformat') else str(n.fecha_actualizacion)
-                })
+            except Exception:
+                pass
 
-            # Obtener dimensiones completas desde SQLite para pre-llenado del formulario de edición
-            dims = {
-                'condicion_clima': 'Despejado', 'temperatura_f': 72.0, 'humedad_porcentaje': 50.0,
-                'visibilidad_millas': 10.0, 'velocidad_viento_mph': 0.0,
-                'amaneceranochecer': 'Day', 'crepusculocivil': 'Day',
-                'crepusculonautico': 'Day', 'crepusculoastronomico': 'Day',
-                'cerca_cruce': False, 'cerca_semaforo': False, 'cerca_parada': False,
-                'cerca_estacion': False, 'cerca_bache': False, 'cerca_viatren': False,
-                'estadosobriedad': True, 'nivelatencion': True, 'condicionfisica': True, 'usoseguridad': True,
-                'codigoaeropuerto': 'KJFK', 'zonahoraria': 'US/Eastern',
-                'idpais_id': None, 'idestado_id': None, 'idcondado_id': None,
-                'idciudad_id': None, 'idcalle_id': None, 'idtiporeportado_id': None,
-                'idseveridad_id': severidad_nivel,
-                'idperiododia_id': None,
-                'idreferenciaestacion_id': None,
-            }
-            codigo_postal_final = str(row.get('codigopostal') or '')
+        fa = row.get('fecha_actualizacion')
+        if isinstance(fa, (int, float)):
+            fa_iso = datetime.fromtimestamp(fa / 1000.0).isoformat()
+        elif isinstance(fa, str) and fa:
             try:
-                acc_orm = Accidente.objects.select_related(
-                    'idestadoclima', 'idperiododia', 'idelementofisico', 'idreferenciaestacion',
-                    'idpais', 'idestado', 'idcondado', 'idciudad', 'idcalle', 'idtiporeportado', 'idseveridad'
-                ).get(idaccidente=accidente_id)
-                dims = _dimensiones_desde_orm(acc_orm)
-                if acc_orm.codigopostal:
-                    codigo_postal_final = acc_orm.codigopostal
-            except Exception as e:
-                logger.warning(f"No se pudo enriquecer dimensiones desde ORM para Pinot path: {e}")
-                
-            return {
-                "idaccidente": str(row.get('idaccidente')),
-                "latitudinicio": float(row.get('latitudinicio')) if row.get('latitudinicio') is not None else 0.0,
-                "longitudinicio": float(row.get('longitudinicio')) if row.get('longitudinicio') is not None else 0.0,
-                "numvehiculos": int(row.get('numvehiculos')) if row.get('numvehiculos') is not None else 1,
-                "numheridos": int(row.get('numheridos')) if row.get('numheridos') is not None else 0,
-                "numfallecidos": int(row.get('numfallecidos')) if row.get('numfallecidos') is not None else 0,
-                "numvictimas": int(row.get('numvictimas')) if row.get('numvictimas') is not None else 0,
-                "descripcion": str(row.get('descripcion') or ''),
-                "horainicio": str(row.get('horainicio') or ''),
-                "horafin": str(row.get('horafin') or ''),
-                "codigopostal": codigo_postal_final,
-                "activo": bool(row.get('activo')) if row.get('activo') is not None else True,
-                "duracionminutos": int(row.get('duracionminutos')) if row.get('duracionminutos') is not None else 0,
-                "fecha_actualizacion": fa_iso,
-                "fechahoraclima": fhc_iso,
-                "estado_actual": estado_actual,
-                "calle_nombre": calle_nombre,
-                "ciudad_nombre": ciudad_nombre,
-                "severidad_nivel": severidad_nivel,
-                "severidad_descripcion": severidad_desc,
-                "despachos": despachos_list,
-                "notas": notas_list,
-                # Dimensiones para edición
-                **dims,
-            }
-            
-        # 2. Fallback a Django ORM
-        try:
-            acc = Accidente.objects.select_related(
-                'idcalle', 'idciudad', 'idseveridad',
-                'idestadoclima', 'idperiododia', 'idelementofisico', 'idreferenciaestacion',
-                'idpais', 'idestado', 'idcondado', 'idtiporeportado'
-            ).prefetch_related(
-                'accidentetipoestadoincidente_set__idtipoestadoincidente',
-                'despacho_set__idunidademergencia',
-                'notaaccidente_set'
-            ).get(idaccidente=accidente_id)
-        except Accidente.DoesNotExist:
-            return None
-            
-        estado_actual = "Reportado"
-        estado_rels = acc.accidentetipoestadoincidente_set.all()
-        if estado_rels:
-            ultimo_estado = list(estado_rels)[0]
-            estado_actual = ultimo_estado.idtipoestadoincidente.tipoestadoincidente
-            
-        despachos_list = []
-        for d in acc.despacho_set.all():
-            despachos_list.append({
-                "iddespacho": d.iddespacho,
-                "idaccidente": str(acc.idaccidente),
-                "idunidademergencia": d.idunidademergencia.idunidademergencia,
-                "unidad_nombre": d.idunidademergencia.unidademergencia,
-                "tipo_unidad": d.idunidademergencia.tipounidademergencia,
-                "fechahoradespacho": d.fechahoradespacho.isoformat() if d.fechahoradespacho else "",
-                "fechahoraconfirmacion": d.fechahoraconfirmacion.isoformat() if d.fechahoraconfirmacion else "",
-                "fechahorallegada": d.fechahorallegada.isoformat() if d.fechahorallegada else ""
-            })
-            
-        notas_list = []
-        for n in acc.notaaccidente_set.all():
-            notas_list.append({
-                "idnotaaccidentes": n.idnotaaccidentes,
-                "idaccidente": str(acc.idaccidente),
-                "nota": n.nota,
-                "tipo": n.tipo,
-                "fecha_actualizacion": n.fecha_actualizacion.isoformat() if hasattr(n.fecha_actualizacion, 'isoformat') else str(n.fecha_actualizacion)
-            })
-            
-        calle_nombre = acc.idcalle.calle if acc.idcalle else "Calle No Especificada"
-        ciudad_nombre = acc.idciudad.ciudad if acc.idciudad else "Ciudad No Especificada"
-        severidad_desc = acc.idseveridad.descripcion if acc.idseveridad else "Leve"
+                fa_dt = datetime.strptime(fa.split('.')[0], '%Y-%m-%d %H:%M:%S')
+                fa_iso = fa_dt.isoformat()
+            except (ValueError, TypeError):
+                fa_iso = fa
+        else:
+            fa_iso = str(fa or "")
 
-        # Extraer dimensiones para pre-llenado del formulario de edición
-        dims = _dimensiones_desde_orm(acc)
-        
+        fhc = row.get('fechahoraclima')
+        if isinstance(fhc, (int, float)) and fhc > 0:
+            fhc_iso = datetime.fromtimestamp(fhc / 1000.0).isoformat()
+        elif isinstance(fhc, str) and fhc:
+            try:
+                fhc_dt = datetime.strptime(fhc.split('.')[0], '%Y-%m-%d %H:%M:%S')
+                fhc_iso = fhc_dt.isoformat()
+            except (ValueError, TypeError):
+                fhc_iso = fhc
+        else:
+            fhc_iso = str(fhc or "")
+
+        pinot_id_detalle = AccidenteService._uuid_to_pinot_id(accidente_id)
+
+        estado_actual = "ACTIVO"
+        try:
+            estado_rows = PinotRepository.execute_query(
+                f"SELECT idtipoestadoincidente FROM accidentestiposestadosincidentes "
+                f"WHERE idaccidente = {pinot_id_detalle} AND activo = true ORDER BY fechahoramodificado DESC LIMIT 1"
+            )
+            if estado_rows:
+                eid = estado_rows[0].get('idtipoestadoincidente')
+                estado_map = {1: "ACTIVO", 2: "EN_ATENCION", 3: "EN_ATENCION", 4: "CONTROLADO", 5: "ARCHIVADO"}
+                estado_actual = estado_map.get(eid, "ACTIVO")
+        except Exception:
+            pass
+
+        despachos_list = []
+        try:
+            desp_rows = PinotRepository.execute_query(
+                f"SELECT iddespacho, idunidademergencia, fechahoradespacho, fechahoraconfirmacion, fechahorallegada "
+                f"FROM despachos WHERE idaccidente = {pinot_id_detalle} LIMIT 20"
+            )
+            for d in desp_rows:
+                despachos_list.append({
+                    "iddespacho": d.get('iddespacho'),
+                    "idaccidente": str(accidente_id),
+                    "idunidademergencia": d.get('idunidademergencia'),
+                    "unidad_nombre": "",
+                    "tipo_unidad": "",
+                    "fechahoradespacho": str(d.get('fechahoradespacho') or ''),
+                    "fechahoraconfirmacion": str(d.get('fechahoraconfirmacion') or ''),
+                    "fechahorallegada": str(d.get('fechahorallegada') or '')
+                })
+        except Exception:
+            pass
+
+        notas_list = []
+        try:
+            nota_rows = PinotRepository.execute_query(
+                f"SELECT idnotaaccidentes, nota, tipo, fecha_actualizacion FROM notasaccidentes "
+                f"WHERE idaccidente = {pinot_id_detalle} LIMIT 50"
+            )
+            for n in nota_rows:
+                nfa = n.get('fecha_actualizacion')
+                if isinstance(nfa, (int, float)):
+                    nfa_iso = datetime.fromtimestamp(nfa / 1000.0).isoformat()
+                else:
+                    nfa_iso = str(nfa or '')
+                notas_list.append({
+                    "idnotaaccidentes": n.get('idnotaaccidentes'),
+                    "idaccidente": str(accidente_id),
+                    "nota": n.get('nota', ''),
+                    "tipo": n.get('tipo', False),
+                    "fecha_actualizacion": nfa_iso
+                })
+        except Exception:
+            pass
+
+        vehiculos_detalles = AccidenteService._obtener_vehiculos_desde_pinot(accidente_id)
+
+        dims = {
+            'condicion_clima': 'Despejado', 'temperatura_f': 72.0,
+            'humedad_porcentaje': 50.0, 'visibilidad_millas': 10.0,
+            'velocidad_viento_mph': 0.0,
+            'amaneceranochecer': 'Day', 'crepusculocivil': 'Day',
+            'crepusculonautico': 'Day', 'crepusculoastronomico': 'Day',
+            'cerca_cruce': False, 'cerca_semaforo': False,
+            'cerca_parada': False, 'cerca_estacion': False,
+            'cerca_bache': False, 'cerca_viatren': False,
+            'estadosobriedad': True, 'nivelatencion': True,
+            'condicionfisica': True, 'usoseguridad': True,
+            'codigoaeropuerto': 'KJFK', 'zonahoraria': 'US/Eastern',
+            'idpais_id': row.get('idpais'),
+            'idestado_id': row.get('idestado'),
+            'idcondado_id': row.get('idcondado'),
+            'idciudad_id': idciudad,
+            'idcalle_id': idcalle,
+            'idtiporeportado_id': row.get('idtiporeportado'),
+            'idseveridad_id': severidad_nivel,
+            'idperiododia_id': row.get('idperiododia'),
+            'idestadoclima_id': row.get('idestadoclima'),
+            'idreferenciaestacion_id': row.get('idreferenciaestacion'),
+            'idfecha_id': row.get('idfecha'),
+            'idusuario_id': row.get('idusuario'),
+            'idelementofisico_id': row.get('idelementofisico'),
+            'vehiculos_detalles': vehiculos_detalles,
+        }
+
         return {
-            "idaccidente": str(acc.idaccidente),
-            "latitudinicio": float(acc.latitudinicio),
-            "longitudinicio": float(acc.longitudinicio),
-            "numvehiculos": acc.numvehiculos,
-            "numheridos": acc.numheridos,
-            "numfallecidos": acc.numfallecidos,
-            "numvictimas": acc.numvictimas,
-            "descripcion": acc.descripcion,
-            "horainicio": acc.horainicio.isoformat() if hasattr(acc.horainicio, 'isoformat') else str(acc.horainicio),
-            "horafin": acc.horafin.isoformat() if hasattr(acc.horafin, 'isoformat') and acc.horafin else "",
-            "codigopostal": acc.codigopostal,
-            "activo": acc.activo,
-            "duracionminutos": acc.duracionminutos or 0,
-            "fecha_actualizacion": acc.fecha_actualizacion.isoformat(),
-            "fechahoraclima": acc.fechahoraclima.isoformat() if acc.fechahoraclima else "",
+            "idaccidente": str(row.get('idaccidente')),
+            "latitudinicio": float(row.get('latitudinicio', 0.0)),
+            "longitudinicio": float(row.get('longitudinicio', 0.0)),
+            "numvehiculos": int(row.get('numvehiculos', 1)),
+            "numheridos": int(row.get('numheridos', 0)),
+            "numfallecidos": int(row.get('numfallecidos', 0)),
+            "numvictimas": int(row.get('numvictimas', 0)),
+            "descripcion": str(row.get('descripcion') or ''),
+            "horainicio": str(row.get('horainicio') or ''),
+            "horafin": str(row.get('horafin') or ''),
+            "codigopostal": str(row.get('codigopostal') or ''),
+            "activo": bool(row.get('activo', True)),
+            "duracionminutos": int(row.get('duracionminutos', 0)),
+            "fecha_actualizacion": fa_iso,
+            "fechahoraclima": fhc_iso,
             "estado_actual": estado_actual,
             "calle_nombre": calle_nombre,
             "ciudad_nombre": ciudad_nombre,
-            "severidad_nivel": acc.idseveridad.severidad if acc.idseveridad else 1,
+            "severidad_nivel": severidad_nivel,
             "severidad_descripcion": severidad_desc,
             "despachos": despachos_list,
             "notas": notas_list,
-            # Dimensiones para edición
             **dims,
         }
 
     @staticmethod
     def actualizar_accidente(accidente_id: str, datos: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
-        Actualiza un accidente existente modificando la base de datos SQLite y enviando un evento UPDATE a Kafka.
+        Actualiza un accidente existente publicando eventos a Kafka para Apache Pinot.
+        Sin operaciones directas en SQLite.
         """
-        from accidentes.models import Accidente, EstadoClima, ElementoFisico
-        from accidentes.models import Calle, Ciudad, Condado, EstadoGeografico, Pais, Severidad, TipoReportado
-
         try:
-            acc = Accidente.objects.get(idaccidente=accidente_id)
-        except Accidente.DoesNotExist:
+            existe = PinotRepository.execute_query(
+                f"SELECT idaccidente FROM accidentes WHERE idaccidente = '{accidente_id}' LIMIT 1"
+            )
+            if not existe:
+                return None
+        except Exception:
             return None
-
         numheridos = int(datos.get('numheridos', 0))
         numfallecidos = int(datos.get('numfallecidos', 0))
         numvehiculos = int(datos.get('numvehiculos', 1))
-        
+
         severidad = datos.get('idseveridad_id')
         if severidad is None or severidad == '' or int(severidad) == 0:
             severidad = SeveridadService.calcular(numheridos, numfallecidos, numvehiculos)
         else:
             severidad = int(severidad)
 
-        # Clima Detailed
         clima_cond = datos.get('condicion_clima', '')
-        if clima_cond:
-            clima_obj, _ = EstadoClima.objects.get_or_create(
-                condicionclima=clima_cond,
-                temperaturaf=float(datos.get('temperatura_f', 72.0)),
-                humedadporcentaje=float(datos.get('humedad_porcentaje', 50.0)),
-                visibilidadmillas=float(datos.get('visibilidad_millas', 10.0)),
-                velocidadvientomph=float(datos.get('velocidad_viento_mph', 0.0)),
-                defaults={
-                    'sensaciontermicaf': float(datos.get('temperatura_f', 72.0)),
-                    'direccionviento': 'CALM',
-                    'presionpulgadas': 29.9,
-                    'precipitacionpulgadas': 0.0
-                }
-            )
-            idestadoclima_id = clima_obj.idestadoclima
-        else:
-            idestadoclima_id = 1
-
-
-        # Elementos Fisicos
-        cruce = bool(datos.get('cerca_cruce', False))
-        semaforo = bool(datos.get('cerca_semaforo', False))
-        parada = bool(datos.get('cerca_parada', False))
-        estacion = bool(datos.get('cerca_estacion', False))
-        bache = bool(datos.get('cerca_bache', False))
-        viatren = bool(datos.get('cerca_viatren', False))
-        
-        if any([cruce, semaforo, parada, estacion, bache, viatren]):
-            ef_obj, _ = ElementoFisico.objects.get_or_create(
-                cercacruce=cruce,
-                cercasemaforo=semaforo,
-                cercaparada=parada,
-                cercaestacion=estacion,
-                cercabache=bache,
-                cercaviatren=viatren
-            )
-            idelementofisico_id = ef_obj.idelementofisico
-        else:
-            idelementofisico_id = 1
-
-        # PeriodoDia
-        from accidentes.models import PeriodoDia, ReferenciaEstacion
-        amanecer = datos.get('amaneceranochecer', '')
-        if amanecer:
-            pd_obj, _ = PeriodoDia.objects.get_or_create(
-                amaneceranochecer=amanecer,
-                crepusculocivil=datos.get('crepusculocivil', 'Day'),
-                crepusculonautico=datos.get('crepusculonautico', 'Day'),
-                crepusculoastronomico=datos.get('crepusculoastronomico', 'Day')
-            )
-            idperiododia_id = pd_obj.idperiododia
-        else:
-            idperiododia_id = 1
-
-        # ReferenciaEstacion
         apt = datos.get('codigoaeropuerto', '')
-        if apt:
-            re_obj, _ = ReferenciaEstacion.objects.get_or_create(
-                codigoaeropuerto=apt,
-                zonahoraria=datos.get('zonahoraria', 'US/Eastern')
-            )
-            idreferenciaestacion_id = re_obj.idreferenciaestacion
-        else:
-            idreferenciaestacion_id = 1
 
-        # Update SQLite record fields
-        acc.latitudinicio = float(datos.get('latitudinicio', acc.latitudinicio))
-        acc.longitudinicio = float(datos.get('longitudinicio', acc.longitudinicio))
-        acc.numvehiculos = numvehiculos
-        acc.numheridos = numheridos
-        acc.numfallecidos = numfallecidos
-        acc.numvictimas = numheridos + numfallecidos
-        acc.descripcion = datos.get('descripcion', acc.descripcion)
-        acc.codigopostal = datos.get('codigopostal') if datos.get('codigopostal') is not None else acc.codigopostal
-        
-        try:
-            # Resolve valid SQLite IDs for catalog tables
-            sqlite_pais_id = AccidenteService._resolver_id_pais(int(datos.get('idpais_id', 0)))
-            sqlite_estado_id = AccidenteService._resolver_id_estado(int(datos.get('idestado_id', 0)))
-            sqlite_condado_id = AccidenteService._resolver_id_condado(int(datos.get('idcondado_id', 0)))
-            sqlite_ciudad_id = AccidenteService._resolver_id_ciudad(int(datos.get('idciudad_id', 0)))
-            sqlite_calle_id = AccidenteService._resolver_id_calle(int(datos.get('idcalle_id', 0)))
-            sqlite_severidad_id = AccidenteService._resolver_id_severidad(severidad)
-            sqlite_tiporeportado_id = AccidenteService._resolver_id_tiporeportado(int(datos.get('idtiporeportado_id', 0)))
-
-            acc.idpais_id = sqlite_pais_id
-            acc.idestado_id = sqlite_estado_id
-            acc.idcondado_id = sqlite_condado_id
-            acc.idciudad_id = sqlite_ciudad_id
-            acc.idcalle_id = sqlite_calle_id
-            acc.idseveridad_id = sqlite_severidad_id
-            acc.idtiporeportado_id = sqlite_tiporeportado_id
-
-            # Actualizar FK de dimensiones de clima, periodo, elementos y estacion
-            acc.idestadoclima_id = idestadoclima_id
-            acc.idelementofisico_id = idelementofisico_id
-            acc.idperiododia_id = idperiododia_id
-            acc.idreferenciaestacion_id = idreferenciaestacion_id
-        except Exception as e:
-            logger.warning(f"Error resolving catalog dimensions for update: {e}")
-            
-        acc.save()
-
-
-        # Build payload for Pinot (via Kafka UPDATE)
-        ahora_ms = int(time.time() * 1000)
-        
         pinot_id_pais = int(datos.get('idpais_id', 1))
         pinot_id_estado = int(datos.get('idestado_id', 1))
         pinot_id_condado = int(datos.get('idcondado_id', 1))
         pinot_id_ciudad = int(datos.get('idciudad_id', 1))
         pinot_id_calle = int(datos.get('idcalle_id', 1))
-        
-        pinot_id_severidad = AccidenteService._obtener_pinot_id_severidad(sqlite_severidad_id)
+        pinot_id_severidad = AccidenteService._obtener_pinot_id_severidad(severidad)
         pinot_id_clima = AccidenteService._obtener_pinot_id_clima(clima_cond)
         pinot_id_estacion = AccidenteService._obtener_pinot_id_estacion(apt)
+        pinot_tiporeportado = int(datos.get('idtiporeportado_id', 1))
+        pinot_fecha = int(datos.get('idfecha_id', 1))
+        pinot_periododia = int(datos.get('idperiododia_id', 1))
+        pinot_elementofisico = int(datos.get('idelementofisico_id', 1))
+        pinot_usuario = int(datos.get('idusuario_id', 1))
+
+        ahora_ms = int(time.time() * 1000)
+        pinot_id_accidente = AccidenteService._uuid_to_pinot_id(accidente_id)
 
         payload_accidente = {
             "idaccidente": accidente_id,
@@ -1746,19 +1036,19 @@ class AccidenteService:
             "idcondado": pinot_id_condado,
             "idestado": pinot_id_estado,
             "idpais": pinot_id_pais,
-            "idperiododia": 1,
+            "idperiododia": pinot_periododia,
             "idestadoclima": pinot_id_clima,
-            "idusuario": 1,
-            "idelementofisico": idelementofisico_id,
-            "idtiporeportado": sqlite_tiporeportado_id,
+            "idusuario": pinot_usuario,
+            "idelementofisico": pinot_elementofisico,
+            "idtiporeportado": pinot_tiporeportado,
             "idreferenciaestacion": pinot_id_estacion,
-            "idfecha": 1,
-            "horainicio": acc.horainicio.strftime("%H:%M:%S") if hasattr(acc.horainicio, 'strftime') else str(acc.horainicio),
-            "horafin": "",
+            "idfecha": pinot_fecha,
+            "horainicio": str(datos.get('horainicio', '')),
+            "horafin": str(datos.get('horafin', '')),
             "descripcion": datos.get('descripcion', ''),
             "codigopostal": datos.get('codigopostal', ''),
             "activo": True,
-            "duracionminutos": acc.duracionminutos or 0,
+            "duracionminutos": int(datos.get('duracionminutos', 0)),
             "numvehiculos": numvehiculos,
             "numvictimas": numheridos + numfallecidos,
             "numheridos": numheridos,
@@ -1770,7 +1060,6 @@ class AccidenteService:
             "fecha_actualizacion": ahora_ms
         }
 
-        # Send event to Kafka
         kafka_repo = KafkaRepository()
         kafka_repo.enviar_mensaje(
             topic="accidentes_topic",
@@ -1778,6 +1067,47 @@ class AccidenteService:
             datos_json=payload_accidente,
             operacion="INSERT"
         )
+
+        base_id = int(time.time_ns())
+        vehiculos_detalles = datos.get('vehiculos_detalles', [])
+        for idx, v in enumerate(vehiculos_detalles):
+            idvehiculo = (base_id + idx * 4 + 1) % 10000000000
+            idconductor = (base_id + idx * 4 + 2) % 10000000000
+            idestadoconductor = (base_id + idx * 4 + 3) % 10000000000
+            idconductoraccidente = (base_id + idx * 4 + 4) % 10000000000
+
+            kafka_repo.enviar_mensaje(topic="vehiculos_topic", clave_primaria=idvehiculo, datos_json={
+                "idvehiculo": idvehiculo, "tipovehiculo": v.get('tipovehiculo', 'Automóvil'),
+                "modelovehiculo": v.get('modelovehiculo', 'Genérico'),
+                "categoriausovehiculo": v.get('categoriausovehiculo', 'Particular'),
+                "mercanciapeligrosa": bool(v.get('mercanciapeligrosa', False)),
+                "ejes": int(v.get('ejes', 2)), "activo": True, "fecha_actualizacion": ahora_ms
+            }, operacion="INSERT")
+
+            kafka_repo.enviar_mensaje(topic="conductores_topic", clave_primaria=idconductor, datos_json={
+                "idconductor": idconductor, "nombres": v.get('nombres', 'Nombre'),
+                "apellidos": v.get('apellidos', 'Apellido'), "identificacion": v.get('identificacion', ''),
+                "genero": v.get('genero', 'M'), "tipolicencia": v.get('tipolicencia', 'B'),
+                "estadolicencia": v.get('estadolicencia', 'Vigente'),
+                "ciudadresidencia": v.get('ciudadresidencia', 'Quito'),
+                "aniosexperiencia": int(v.get('aniosexperiencia', 0)), "activo": True,
+                "fecha_actualizacion": ahora_ms
+            }, operacion="INSERT")
+
+            kafka_repo.enviar_mensaje(topic="estadosconductores_topic", clave_primaria=idestadoconductor, datos_json={
+                "idestadoconductor": idestadoconductor,
+                "estadosobriedad": bool(v.get('estadosobriedad', True)),
+                "nivelatencion": bool(v.get('nivelatencion', True)),
+                "condicionfisica": bool(v.get('condicionfisica', True)),
+                "usoseguridad": bool(v.get('usoseguridad', True)),
+                "activo": True, "fecha_actualizacion": ahora_ms
+            }, operacion="INSERT")
+
+            kafka_repo.enviar_mensaje(topic="conductoresaccidentes_topic", clave_primaria=idconductoraccidente, datos_json={
+                "idconductoraccidente": idconductoraccidente, "idaccidente": pinot_id_accidente,
+                "idconductor": idconductor, "idestadoconductor": idestadoconductor,
+                "idvehiculo": idvehiculo, "activo": True, "fecha_actualizacion": ahora_ms
+            }, operacion="INSERT")
 
         return payload_accidente
 
@@ -1792,12 +1122,13 @@ class AccidenteService:
         Actualiza el estado de un accidente publicando eventos a Kafka.
         """
         ahora_ms = int(time.time() * 1000)
+        pinot_id_accidente = AccidenteService._uuid_to_pinot_id(accidente_id)
         kafka_repo = KafkaRepository()
 
         id_estado_rel = int(time.time() * 1000) % 1000000000
         payload_estado = {
             "idaccidentetipoestadoincidente": id_estado_rel,
-            "idaccidente": accidente_id,
+            "idaccidente": pinot_id_accidente,
             "idtipoestadoincidente": nuevo_estado_id,
             "activo": True,
             "fechahoramodificado": ahora_ms,
@@ -1814,7 +1145,7 @@ class AccidenteService:
             id_nota = int(time.time() * 1000) % 1000000000
             payload_nota = {
                 "idnotaaccidentes": id_nota,
-                "idaccidente": accidente_id,
+                "idaccidente": pinot_id_accidente,
                 "idusuario": idusuario_id,
                 "nota": nota,
                 "tipo": True,
@@ -1828,16 +1159,11 @@ class AccidenteService:
                 operacion="INSERT"
             )
 
-        estados_catalogo = {
-            1: "Reportado",
-            2: "Asignado",
-            3: "En Escena",
-            4: "Despejado",
-            5: "Archivado"
-        }
+        estado_map_nombre = {1: "ACTIVO", 2: "EN_ATENCION", 3: "EN_ATENCION", 4: "CONTROLADO", 5: "ARCHIVADO"}
+        estado_nombre = estado_map_nombre.get(nuevo_estado_id, "Reportado")
 
         return {
-            "estado": estados_catalogo.get(nuevo_estado_id, "Reportado"),
+            "estado": estado_nombre,
             "idaccidente": accidente_id
         }
 
@@ -1855,6 +1181,14 @@ class AccidenteService:
         severidad_param = filtros.get('severidad')
         estado_param = filtros.get('estado', '')
         solo_activos = filtros.get('solo_activos', False)
+        ciudad_id = filtros.get('ciudad_id')
+        min_heridos = filtros.get('min_heridos')
+        max_heridos = filtros.get('max_heridos')
+        min_fallecidos = filtros.get('min_fallecidos')
+        max_fallecidos = filtros.get('max_fallecidos')
+        fecha_desde = filtros.get('fecha_desde', '')
+        fecha_hasta = filtros.get('fecha_hasta', '')
+        matricula = filtros.get('matricula', '').strip()
 
         # 1. Cargar catálogo de severidades desde Pinot para mapear
         sev_rows = PinotRepository.execute_query(
@@ -1874,6 +1208,37 @@ class AccidenteService:
         if severidad_param and int(severidad_param) in sev_id_for_level:
             sev_hash = sev_id_for_level[int(severidad_param)]
             where_clauses.append(f"idseveridad = {sev_hash}")
+
+        if ciudad_id is not None:
+            where_clauses.append(f"idciudad = {ciudad_id}")
+
+        if min_heridos is not None:
+            where_clauses.append(f"numheridos >= {min_heridos}")
+        if max_heridos is not None:
+            where_clauses.append(f"numheridos <= {max_heridos}")
+
+        if min_fallecidos is not None:
+            where_clauses.append(f"numfallecidos >= {min_fallecidos}")
+        if max_fallecidos is not None:
+            where_clauses.append(f"numfallecidos <= {max_fallecidos}")
+
+        if fecha_desde:
+            try:
+                from datetime import datetime as dt_parse
+                fd = dt_parse.strptime(fecha_desde, '%Y-%m-%d')
+                fd_ms = int(fd.timestamp() * 1000)
+                where_clauses.append(f"fecha_actualizacion >= {fd_ms}")
+            except (ValueError, OSError):
+                pass
+
+        if fecha_hasta:
+            try:
+                from datetime import datetime as dt_parse
+                fh = dt_parse.strptime(fecha_hasta, '%Y-%m-%d')
+                fh_ms = int(fh.timestamp() * 1000) + 86399999
+                where_clauses.append(f"fecha_actualizacion <= {fh_ms}")
+            except (ValueError, OSError):
+                pass
 
         if search:
             # Buscar coincidencia parcial en descripción o idaccidente
@@ -1900,7 +1265,25 @@ class AccidenteService:
                 
             where_clauses.append(f"({' OR '.join(clauses)})")
 
-        # Filtrado por estado:
+        if matricula:
+            search_escaped = matricula.replace("'", "''")
+            veh_rows = PinotRepository.execute_query(
+                f"SELECT idvehiculo FROM vehiculos WHERE "
+                f"LOWER(modelovehiculo) LIKE '%{search_escaped.lower()}%' "
+                f"OR LOWER(tipovehiculo) LIKE '%{search_escaped.lower()}%' "
+                f"LIMIT 500"
+            )
+            if veh_rows:
+                veh_ids = [str(r['idvehiculo']) for r in veh_rows]
+                ca_rows = PinotRepository.execute_query(
+                    f"SELECT DISTINCT idaccidente FROM conductoresaccidentes "
+                    f"WHERE idvehiculo IN ({', '.join(veh_ids)}) LIMIT 500"
+                )
+                if ca_rows:
+                    acc_ids = [f"'{r['idaccidente']}'" for r in ca_rows]
+                    where_clauses.append(f"idaccidente IN ({', '.join(acc_ids)})")
+
+        # Filtrado por estado (usando el Ãºltimo estado de cada accidente):
         if estado_param or solo_activos:
             estado_ids = []
             if estado_param == 'ACTIVO':
@@ -1913,15 +1296,29 @@ class AccidenteService:
                 estado_ids = [5]
                 
             if solo_activos:
-                estado_ids = [1, 2, 3] # Solo activos
+                estado_ids = [1, 2, 3]
                 
             if estado_ids:
-                ids_str = ", ".join(str(eid) for eid in estado_ids)
-                estado_rows = PinotRepository.execute_query(
-                    f"SELECT idaccidente FROM accidentestiposestadosincidentes WHERE activo = true AND idtipoestadoincidente IN ({ids_str}) LIMIT 20000"
+                # Obtener TODOS los registros de estado para resolver el Ãºltimo estado de cada accidente
+                todos_estados = PinotRepository.execute_query(
+                    f"SELECT idaccidente, idtipoestadoincidente, fechahoramodificado "
+                    f"FROM accidentestiposestadosincidentes "
+                    f"WHERE activo = true LIMIT 100000"
                 )
-                if estado_rows:
-                    acc_ids = {f"'{r['idaccidente']}'" for r in estado_rows if r.get('idaccidente')}
+                if todos_estados:
+                    ultimo_estado_por_accidente = {}
+                    for r in todos_estados:
+                        aid = r.get('idaccidente')
+                        eid = r.get('idtipoestadoincidente')
+                        fhm = r.get('fechahoramodificado', 0)
+                        if aid and eid:
+                            prev = ultimo_estado_por_accidente.get(aid)
+                            if prev is None or fhm > prev['fecha']:
+                                ultimo_estado_por_accidente[aid] = {'id': eid, 'fecha': fhm}
+                    acc_ids = set()
+                    for aid, info in ultimo_estado_por_accidente.items():
+                        if info['id'] in estado_ids:
+                            acc_ids.add(f"'{aid}'")
                     if acc_ids:
                         where_clauses.append(f"idaccidente IN ({', '.join(acc_ids)})")
                     else:
@@ -1972,15 +1369,6 @@ class AccidenteService:
                     calles_map = {r['idcalle']: r.get('calle', '') for r in calle_rows}
                 except Exception:
                     pass
-                # Enriquecer/Fallback con SQLite (Django ORM)
-                try:
-                    from accidentes.models import Calle
-                    sqlite_calles = Calle.objects.filter(idcalle__in=list(calle_ids))
-                    for c in sqlite_calles:
-                        if c.idcalle not in calles_map or not calles_map[c.idcalle] or calles_map[c.idcalle] == "Ubicación Registrada":
-                            calles_map[c.idcalle] = c.calle
-                except Exception as ex:
-                    logger.warning(f"Error enriching calles from SQLite: {ex}")
                 
             ciudades_map = {}
             if ciudad_ids:
@@ -1992,22 +1380,14 @@ class AccidenteService:
                     ciudades_map = {r['idciudad']: r.get('ciudad', '') for r in ciudad_rows}
                 except Exception:
                     pass
-                # Enriquecer/Fallback con SQLite (Django ORM)
-                try:
-                    from accidentes.models import Ciudad
-                    sqlite_ciudades = Ciudad.objects.filter(idciudad__in=list(ciudad_ids))
-                    for c in sqlite_ciudades:
-                        if c.idciudad not in ciudades_map or not ciudades_map[c.idciudad] or ciudades_map[c.idciudad] == "Ubicación Registrada":
-                            ciudades_map[c.idciudad] = c.ciudad
-                except Exception as ex:
-                    logger.warning(f"Error enriching ciudades from SQLite: {ex}")
                 
             # Resolver estado actual de cada accidente
             acc_ids = [f"'{r['idaccidente']}'" for r in rows if r.get('idaccidente')]
             estado_map = {}
             if acc_ids:
                 estado_rows = PinotRepository.execute_query(
-                    f"SELECT idaccidente, idtipoestadoincidente FROM accidentestiposestadosincidentes "
+                    f"SELECT idaccidente, idtipoestadoincidente, fechahoramodificado "
+                    f"FROM accidentestiposestadosincidentes "
                     f"WHERE idaccidente IN ({', '.join(acc_ids)}) AND activo = true LIMIT 500"
                 )
                 estados_catalogo = {
@@ -2017,10 +1397,16 @@ class AccidenteService:
                     4: "CONTROLADO",
                     5: "ARCHIVADO"
                 }
+                latest_estado = {}
                 for r in estado_rows:
                     aid = r.get('idaccidente')
                     eid = r.get('idtipoestadoincidente')
-                    estado_map[aid] = estados_catalogo.get(eid, "ACTIVO")
+                    fhm = r.get('fechahoramodificado', 0)
+                    if aid and eid:
+                        if aid not in latest_estado or fhm > latest_estado[aid]['fecha']:
+                            latest_estado[aid] = {'id': eid, 'fecha': fhm}
+                for aid, info in latest_estado.items():
+                    estado_map[aid] = estados_catalogo.get(info['id'], "ACTIVO")
 
             for row in rows:
                 idaccidente = row.get('idaccidente')
@@ -2069,4 +1455,81 @@ class AccidenteService:
             "page_size": page_size,
             "results": resultados
         }
+
+    @staticmethod
+    def obtener_expediente_completo(accidente_id: str) -> Optional[Dict[str, Any]]:
+        try:
+            detalle = AccidenteService.obtener_detalle(accidente_id)
+            if not detalle:
+                return None
+
+            pinot_id = AccidenteService._uuid_to_pinot_id(accidente_id)
+
+            fotos = []
+            try:
+                foto_rows = PinotRepository.execute_query(
+                    f"SELECT urlevidenciafoto, fechahora FROM evidenciasfotos "
+                    f"WHERE idaccidente = {pinot_id} AND activo = true LIMIT 50"
+                )
+                for r in foto_rows:
+                    fotos.append({
+                        'url': str(r.get('urlevidenciafoto', '')),
+                        'fecha': str(r.get('fechahora', ''))
+                    })
+            except Exception:
+                pass
+
+            clima = {}
+            if detalle.get('idestadoclima'):
+                try:
+                    id_clima = detalle.get('idestadoclima')
+                    clima_rows = PinotRepository.execute_query(
+                        f"SELECT * FROM estadoclima WHERE idestadoclima = {id_clima} LIMIT 1"
+                    )
+                    if clima_rows:
+                        r = clima_rows[0]
+                        clima = {
+                            'condicion': str(r.get('condicionclima', '')),
+                            'temperatura_f': r.get('temperaturaf'),
+                            'humedad': r.get('humedadporcentaje'),
+                            'visibilidad_millas': r.get('visibilidadmillas'),
+                            'velocidad_viento_mph': r.get('velocidadvientomph'),
+                            'precipitacion_pulgadas': r.get('precipitacionpulgadas'),
+                            'presion_pulgadas': r.get('presionpulgadas'),
+                        }
+                except Exception:
+                    pass
+
+            vehiculos = []
+            try:
+                ca_rows = PinotRepository.execute_query(
+                    f"SELECT idvehiculo FROM conductoresaccidentes "
+                    f"WHERE idaccidente = {pinot_id} AND activo = true LIMIT 20"
+                )
+                for ca in ca_rows:
+                    veh_id = ca.get('idvehiculo')
+                    if veh_id:
+                        veh_rows = PinotRepository.execute_query(
+                            f"SELECT * FROM vehiculos WHERE idvehiculo = {veh_id} LIMIT 1"
+                        )
+                        if veh_rows:
+                            v = veh_rows[0]
+                            vehiculos.append({
+                                'tipo': str(v.get('tipovehiculo', '')),
+                                'modelo': str(v.get('modelovehiculo', '')),
+                                'categoria_uso': str(v.get('categoriausovehiculo', '')),
+                                'ejes': v.get('ejes', 0),
+                            })
+            except Exception:
+                pass
+
+            return {
+                'accidente': detalle,
+                'evidencias': {'fotos': fotos},
+                'clima': clima,
+                'vehiculos': vehiculos,
+            }
+        except Exception as exc:
+            logger.error('Error building expediente for %s: %s', accidente_id, exc)
+            return None
 

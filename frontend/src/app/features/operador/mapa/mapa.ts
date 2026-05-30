@@ -59,6 +59,26 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     4: '#7C3AED',
   };
 
+  private readonly SEVERITY_LABELS: Record<number, string> = {
+    1: 'Leve',
+    2: 'Moderado',
+    3: 'Grave',
+    4: 'Fatal',
+  };
+
+  private formatearFecha(iso: string): string {
+    if (!iso) return '';
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString('es-EC', {
+        day: '2-digit', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    } catch {
+      return iso;
+    }
+  }
+
   constructor() {
     // React to refrescarTrigger changes
     effect(() => {
@@ -167,9 +187,11 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cargando.set(true);
     this.error.set(null);
 
+    const isPublic = !this.authService.isLoggedIn();
     const params = {
       ...this.filtros(),
-      solo_ultima_semana: !this.authService.isLoggedIn()
+      solo_ultima_semana: isPublic,
+      public: isPublic
     };
 
     this.accidenteService.getAccidentesMapa(params).subscribe({
@@ -211,7 +233,10 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       );
 
-      // Popup
+      // Popup - menos detalle para pÃºblico (ya viene con datos limpiados del backend)
+      const isPublic = !this.authService.isLoggedIn();
+      const sevLabel = this.SEVERITY_LABELS[acc.severidad_nivel] || '';
+      const fechaStr = this.formatearFecha(acc.fecha_actualizacion);
       const popupContent = `
         <div class="sga-popup">
           <div class="sga-popup-header" style="border-left: 4px solid ${color};">
@@ -223,13 +248,19 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
               <span>Estado:</span><strong>${acc.estado_actual}</strong>
             </div>
             <div class="sga-popup-row">
+              <span>Severidad:</span><strong style="color:${color}">${sevLabel}</strong>
+            </div>
+            ${fechaStr ? `<div class="sga-popup-row"><span>Fecha:</span><strong>${fechaStr}</strong></div>` : ''}
+            ${!isPublic ? `
+            <div class="sga-popup-row">
               <span>Heridos:</span><strong style="color:#F59E0B">${acc.numheridos}</strong>
             </div>
             <div class="sga-popup-row">
               <span>Fallecidos:</span><strong style="color:#EF4444">${acc.numfallecidos}</strong>
             </div>
+            ` : ''}
           </div>
-          <div class="sga-popup-footer">${acc.descripcion?.substring(0, 80) || ''}...</div>
+          ${!isPublic && acc.descripcion ? `<div class="sga-popup-footer">${acc.descripcion.substring(0, 80)}...</div>` : ''}
         </div>
       `;
 
@@ -242,16 +273,22 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
       });
 
       // Pulse animation for active accidents
-      if (acc.estado_actual === 'ACTIVO' || acc.estado_actual === 'EN_ATENCION') {
+      if (
+        acc.estado_actual === 'Reportado' ||
+        acc.estado_actual === 'Asignado' ||
+        acc.estado_actual === 'En Escena' ||
+        acc.estado_actual === 'ACTIVO' ||
+        acc.estado_actual === 'EN_ATENCION'
+      ) {
         const pulseMarker = L.circleMarker(
           [acc.latitudinicio, acc.longitudinicio],
           {
-            radius: 18,
+            radius: 24,
             fillColor: color,
             color: color,
-            weight: 1,
-            opacity: 0.3,
-            fillOpacity: 0.1,
+            weight: 2,
+            opacity: 0.25,
+            fillOpacity: 0.06,
           }
         );
         this.markersLayer.addLayer(pulseMarker);
@@ -286,6 +323,9 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
               fillOpacity: 0.9,
             }).addTo(this.markersLayer);
 
+            const isPublic = !this.authService.isLoggedIn();
+            const sevLabel = this.SEVERITY_LABELS[acc.severidad_nivel] || '';
+            const fechaStr = this.formatearFecha(acc.fecha_actualizacion);
             const popupContent = `
               <div class="sga-popup">
                 <div class="sga-popup-header" style="border-left: 4px solid ${color};">
@@ -297,13 +337,19 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
                     <span>Estado:</span><strong>${acc.estado_actual}</strong>
                   </div>
                   <div class="sga-popup-row">
+                    <span>Severidad:</span><strong style="color:${color}">${sevLabel}</strong>
+                  </div>
+                  ${fechaStr ? `<div class="sga-popup-row"><span>Fecha:</span><strong>${fechaStr}</strong></div>` : ''}
+                  ${!isPublic ? `
+                  <div class="sga-popup-row">
                     <span>Heridos:</span><strong style="color:#F59E0B">${acc.numheridos}</strong>
                   </div>
                   <div class="sga-popup-row">
                     <span>Fallecidos:</span><strong style="color:#EF4444">${acc.numfallecidos}</strong>
                   </div>
+                  ` : ''}
                 </div>
-                <div class="sga-popup-footer">${acc.descripcion?.substring(0, 80) || ''}...</div>
+                ${!isPublic && acc.descripcion ? `<div class="sga-popup-footer">${acc.descripcion.substring(0, 80)}...</div>` : ''}
               </div>
             `;
             tempMarker.bindPopup(popupContent, { maxWidth: 260 });

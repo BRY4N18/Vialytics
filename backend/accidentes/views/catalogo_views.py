@@ -2,6 +2,7 @@ import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 from accidentes.repositories import PinotRepository
 from accidentes.serializers import (
     SeveridadSerializer, TipoReportadoSerializer, TipoEstadoIncidenteSerializer,
@@ -119,8 +120,17 @@ SEED_PERIODOS = [
     {"idperiododia": 2, "amaneceranochecer": "Night", "crepusculocivil": "Night", "crepusculonautico": "Night", "crepusculoastronomico": "Night"}
 ]
 
+SEED_TIPOS_ESTADOS = [
+    {"idtipoestadoincidente": 1, "tipoestadoincidente": "ACTIVO"},
+    {"idtipoestadoincidente": 2, "tipoestadoincidente": "EN_ATENCION"},
+    {"idtipoestadoincidente": 3, "tipoestadoincidente": "EN_TRASLADO"},
+    {"idtipoestadoincidente": 4, "tipoestadoincidente": "CONTROLADO"},
+    {"idtipoestadoincidente": 5, "tipoestadoincidente": "ARCHIVADO"}
+]
+
 
 class SeveridadListView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request):
         try:
             data = PinotRepository.execute_query("SELECT idseveridad, severidad, descripcion FROM severidades WHERE activo = true LIMIT 10")
@@ -144,31 +154,65 @@ class SeveridadListView(APIView):
 
 
 class TipoReportadoListView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request):
-        data = [
-            {"idtiporeportado": 1, "tiporeportado": "Llamada de Emergencia (911)"},
-            {"idtiporeportado": 2, "tiporeportado": "Aplicación Móvil / Botón de Pánico"},
-            {"idtiporeportado": 3, "tiporeportado": "Cámara de Seguridad / Tránsito"},
-            {"idtiporeportado": 4, "tiporeportado": "Automático (Sensor de Vehículo eCall)"}
-        ]
+        data = []
+        try:
+            # Query from primary database (Apache Pinot)
+            query = "SELECT idtiporeportado, tiporeportado FROM tiposreportados WHERE activo = true LIMIT 50"
+            rows = PinotRepository.execute_query(query)
+            data = [
+                {
+                    "idtiporeportado": int(r["idtiporeportado"]),
+                    "tiporeportado": r["tiporeportado"]
+                } for r in rows if r.get("tiporeportado") != "N/A"
+            ]
+        except Exception as exc:
+            logger.warning(f"Error querying report types from Pinot: {exc}")
+
+        # Fallback ONLY if Pinot is empty/fails
+        if not data:
+            data = [
+                {"idtiporeportado": 1, "tiporeportado": "Llamada de emergencia 911"},
+                {"idtiporeportado": 2, "tiporeportado": "Camara de seguridad/ transito"}
+            ]
+
+        # Ensure order by ID
+        data.sort(key=lambda x: x["idtiporeportado"])
         serializer = TipoReportadoSerializer(data, many=True)
         return Response(serializer.data)
 
 
 class TipoEstadoListView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request):
-        data = [
-            {"idtipoestadoincidente": 1, "tipoestadoincidente": "Reportado"},
-            {"idtipoestadoincidente": 2, "tipoestadoincidente": "Asignado"},
-            {"idtipoestadoincidente": 3, "tipoestadoincidente": "En Escena"},
-            {"idtipoestadoincidente": 4, "tipoestadoincidente": "Despejado"},
-            {"idtipoestadoincidente": 5, "tipoestadoincidente": "Archivado"}
-        ]
+        data = []
+        try:
+            # Query from primary database (Apache Pinot)
+            query = "SELECT idtipoestadoincidente, tipoestadoincidente FROM tiposestadosincidentes WHERE activo = true LIMIT 100"
+            rows = PinotRepository.execute_query(query)
+            # Exclude fallback "N/A" state if present
+            data = [
+                {
+                    "idtipoestadoincidente": int(r["idtipoestadoincidente"]),
+                    "tipoestadoincidente": r["tipoestadoincidente"]
+                } for r in rows if r.get("tipoestadoincidente") != "N/A"
+            ]
+        except Exception as exc:
+            logger.warning(f"Error querying state catalog from Pinot: {exc}")
+            
+        # Fallback to seed data only if Pinot returned empty or failed
+        if not data:
+            data = SEED_TIPOS_ESTADOS
+
+        # Ensure order by ID
+        data.sort(key=lambda x: x["idtipoestadoincidente"])
         serializer = TipoEstadoIncidenteSerializer(data, many=True)
         return Response(serializer.data)
 
 
 class PaisListView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request):
         try:
             data = PinotRepository.execute_query("SELECT idpais, pais FROM paises WHERE activo = true LIMIT 100")
@@ -185,6 +229,7 @@ class PaisListView(APIView):
 
 
 class EstadoListView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request):
         pais_param = request.query_params.get("pais")
         try:
@@ -209,6 +254,7 @@ class EstadoListView(APIView):
 
 
 class CondadoListView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request):
         estado_param = request.query_params.get("estado")
         try:
@@ -233,6 +279,7 @@ class CondadoListView(APIView):
 
 
 class CiudadListView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request):
         condado_param = request.query_params.get("condado")
         try:
@@ -257,6 +304,7 @@ class CiudadListView(APIView):
 
 
 class CalleListView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request):
         ciudad_param = request.query_params.get("ciudad")
         try:
@@ -281,6 +329,7 @@ class CalleListView(APIView):
 
 
 class ClimaListView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request):
         try:
             data = PinotRepository.execute_query("SELECT idestadoclima, condicionclima, direccionviento, temperaturaf, sensaciontermicaf, humedadporcentaje, presionpulgadas, visibilidadmillas, velocidadvientomph, precipitacionpulgadas FROM estadoclima WHERE activo = true LIMIT 100")
@@ -297,6 +346,7 @@ class ClimaListView(APIView):
 
 
 class ElementoFisicoListView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request):
         try:
             data = PinotRepository.execute_query("SELECT idelementofisico, cercacruce, cercasemaforo, cercaparada, cercaestacion, cercabache, cercaviatren FROM elementosfisicos WHERE activo = true LIMIT 100")
@@ -312,6 +362,7 @@ class ElementoFisicoListView(APIView):
 
 
 class PeriodoDiaListView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request):
         try:
             data = PinotRepository.execute_query("SELECT idperiododia, amaneceranochecer, crepusculocivil, crepusculonautico, crepusculoastronomico FROM periodosdias WHERE activo = true LIMIT 100")

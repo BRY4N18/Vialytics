@@ -22,6 +22,25 @@
     </button>
   </div>
 
+  <!-- Step Progress Indicator -->
+  <div class="step-indicator">
+    @for (label of pasos(); track $index; let i = $index) {
+      <div class="step-item" (click)="irAPaso(i + 1)">
+        <div class="step-circle" [class.active]="pasoActual() === i + 1" [class.completed]="(i + 1) < pasoActual()">
+          @if ((i + 1) < pasoActual()) {
+            <span class="step-check">✓</span>
+          } @else {
+            <span class="step-num">{{ i + 1 }}</span>
+          }
+        </div>
+        <span class="step-label">{{ label }}</span>
+      </div>
+      @if (i < pasos().length - 1) {
+        <div class="step-line" [class.completed]="(i + 1) < pasoActual()"></div>
+      }
+    }
+  </div>
+
   <!-- Form content -->
   <div class="panel-content">
     @if (error()) {
@@ -35,450 +54,726 @@
       </div>
     }
 
+    @if (form.dirty && form.invalid) {
+      <div class="validation-summary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>Campos requeridos incompletos. Revise los campos marcados en rojo.</span>
+      </div>
+    }
+
     <form [formGroup]="form" (ngSubmit)="submit()" class="form-body" novalidate>
-      
-      <!-- Seccion 1: Ubicación Interactiva -->
-      <div class="form-section">
-        <h3 class="section-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
-            <circle cx="12" cy="10" r="3"/>
-          </svg>
-          UBICACIÓN DEL ACCIDENTE
-        </h3>
 
-        <!-- Latitud y Longitud síncronas del mapa -->
-        <div class="form-row">
-          <div class="form-group">
-            <label class="required">Latitud</label>
-            <div class="input-with-icon">
-              <input type="text" class="form-control font-mono" formControlName="latitudinicio" [class.invalid]="isInvalid('latitudinicio')" placeholder="Ej. -1.8312" />
-            </div>
-            @if (isInvalid('latitudinicio')) {
-              <span class="error-text">{{ getError('latitudinicio') }}</span>
-            }
-          </div>
-          <div class="form-group">
-            <label class="required">Longitud</label>
-            <div class="input-with-icon">
-              <input type="text" class="form-control font-mono" formControlName="longitudinicio" [class.invalid]="isInvalid('longitudinicio')" placeholder="Ej. -78.1834" />
-            </div>
-            @if (isInvalid('longitudinicio')) {
-              <span class="error-text">{{ getError('longitudinicio') }}</span>
-            }
-          </div>
-        </div>
-
-        <div class="map-action-wrapper">
-          <button type="button" class="btn-open-map-modal" (click)="abrirMapaModal()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
-              <circle cx="12" cy="10" r="3"/>
-              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
-            </svg>
-            UBICAR EN EL MAPA INTERACTIVO
-          </button>
-        </div>
-
-        <!-- Cascada de Ubicación Síncrona -->
-        <div class="form-row">
-          <div class="form-group">
-            <label class="required">País</label>
-            <select class="form-control select-premium" formControlName="idpais_id" [class.invalid]="isInvalid('idpais_id')">
-              <option value="">Seleccionar País...</option>
-              @for (p of paises(); track p.idpais) {
-                <option [value]="p.idpais">{{ p.pais }}</option>
-              }
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="required">Estado</label>
-            <select class="form-control select-premium" formControlName="idestado_id" [class.invalid]="isInvalid('idestado_id')">
-              <option value="">Seleccionar Estado...</option>
-              @for (e of estados(); track e.idestado) {
-                <option [value]="e.idestado">{{ e.estado }}</option>
-              }
-            </select>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="required">Condado</label>
-            <select class="form-control select-premium" formControlName="idcondado_id" [class.invalid]="isInvalid('idcondado_id')">
-              <option value="">Seleccionar Condado...</option>
-              @for (c of condados(); track c.idcondado) {
-                <option [value]="c.idcondado">{{ c.condado }}</option>
-              }
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="required">Ciudad</label>
-            <select class="form-control select-premium" formControlName="idciudad_id" [class.invalid]="isInvalid('idciudad_id')">
-              <option value="">Seleccionar Ciudad...</option>
-              @for (c of ciudades(); track c.idciudad) {
-                <option [value]="c.idciudad">{{ c.ciudad }}</option>
-              }
-            </select>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="required">Calle / Intersección</label>
-          <select class="form-control select-premium" formControlName="idcalle_id" [class.invalid]="isInvalid('idcalle_id')">
-            <option value="">Seleccionar Calle...</option>
-            @for (cal of calles(); track cal.idcalle) {
-              <option [value]="cal.idcalle">{{ cal.calle }}</option>
-            }
-          </select>
-        </div>
-      </div>
-
-      <!-- Seccion 2: Datos de Impacto (Counters SGA03) -->
-      <div class="form-section">
-        <h3 class="section-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-          </svg>
-          MÉTRICAS DE IMPACTO
-        </h3>
-
-        <div class="counters-grid">
-          <!-- Vehículos -->
-          <div class="counter-card">
-            <span class="counter-label">Vehículos Involucrados</span>
-            <div class="counter-control">
-              <button type="button" class="btn-counter" (click)="decrement('numvehiculos', 1)" [disabled]="form.get('numvehiculos')?.value <= 1">—</button>
-              <span class="counter-value">{{ form.get('numvehiculos')?.value || 1 }}</span>
-              <button type="button" class="btn-counter" (click)="increment('numvehiculos', 50)">+</button>
-            </div>
-          </div>
-
-          <!-- Heridos -->
-          <div class="counter-card warning">
-            <span class="counter-label text-warning">Personas Heridas</span>
-            <div class="counter-control">
-              <button type="button" class="btn-counter" (click)="decrement('numheridos', 0)" [disabled]="form.get('numheridos')?.value <= 0">—</button>
-              <span class="counter-value text-warning">{{ form.get('numheridos')?.value || 0 }}</span>
-              <button type="button" class="btn-counter" (click)="increment('numheridos', 200)">+</button>
-            </div>
-          </div>
-
-          <!-- Fallecidos -->
-          <div class="counter-card danger">
-            <span class="counter-label text-danger">Víctimas Mortales</span>
-            <div class="counter-control">
-              <button type="button" class="btn-counter" (click)="decrement('numfallecidos', 0)" [disabled]="form.get('numfallecidos')?.value <= 0">—</button>
-              <span class="counter-value text-danger">{{ form.get('numfallecidos')?.value || 0 }}</span>
-              <button type="button" class="btn-counter" (click)="increment('numfallecidos', 100)">+</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Seccion 3: Severidad Calculada en Vivo (SGA03) -->
-      <div class="form-section">
-        <div class="section-header">
+      <!-- STEP 1: UBICACIÓN -->
+      @if (pasoActual() === 1) {
+        <div class="form-section">
           <h3 class="section-title">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-              <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+              <circle cx="12" cy="10" r="3"/>
             </svg>
-            EVALUACIÓN DE SEVERIDAD
+            UBICACIÓN DEL ACCIDENTE
           </h3>
-          <button type="button" class="btn-toggle-manual" [class.manual]="modoManualSeveridad()" (click)="toggleModoManualSeveridad()">
-            <span class="indicator-dot"></span>
-            {{ modoManualSeveridad() ? 'Modo Manual' : 'Modo Automático' }}
-          </button>
-        </div>
 
-
-        <div class="severity-assessment-grid">
-          <!-- Leve -->
-          <div class="severity-box leve" [class.active]="severidadFinal() === 1" [class.clickable]="modoManualSeveridad()" (click)="seleccionarSeveridadManual(1)">
-            <span class="severity-num">1</span>
-            <span class="severity-name">LEVE</span>
-            <span class="severity-desc">Daños Materiales</span>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">Latitud</label>
+              <div class="input-with-icon">
+                <input type="text" class="form-control font-mono" formControlName="latitudinicio" [class.invalid]="isInvalid('latitudinicio')" placeholder="Ej. -1.8312" />
+              </div>
+              @if (isInvalid('latitudinicio')) {
+                <span class="error-text">{{ getError('latitudinicio') }}</span>
+              }
+            </div>
+            <div class="form-group">
+              <label class="required">Longitud</label>
+              <div class="input-with-icon">
+                <input type="text" class="form-control font-mono" formControlName="longitudinicio" [class.invalid]="isInvalid('longitudinicio')" placeholder="Ej. -78.1834" />
+              </div>
+              @if (isInvalid('longitudinicio')) {
+                <span class="error-text">{{ getError('longitudinicio') }}</span>
+              }
+            </div>
           </div>
 
-          <!-- Moderada -->
-          <div class="severity-box moderada" [class.active]="severidadFinal() === 2" [class.clickable]="modoManualSeveridad()" (click)="seleccionarSeveridadManual(2)">
-            <span class="severity-num">2</span>
-            <span class="severity-name">MODERADA</span>
-            <span class="severity-desc">Heridos Leves</span>
+          <div class="map-action-wrapper">
+            <button type="button" class="btn-open-map-modal" (click)="abrirMapaModal()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+                <circle cx="12" cy="10" r="3"/>
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+              </svg>
+              UBICAR EN EL MAPA INTERACTIVO
+            </button>
           </div>
 
-          <!-- Grave -->
-          <div class="severity-box grave" [class.active]="severidadFinal() === 3" [class.clickable]="modoManualSeveridad()" (click)="seleccionarSeveridadManual(3)">
-            <span class="severity-num">3</span>
-            <span class="severity-name">GRAVE</span>
-            <span class="severity-desc">Obstrucción Vial</span>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">País</label>
+              <select class="form-control select-premium" formControlName="idpais_id" [class.invalid]="isInvalid('idpais_id')">
+                <option value="">Seleccionar País...</option>
+                @for (p of paises(); track p.idpais) {
+                  <option [value]="p.idpais">{{ p.pais }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="required">Estado</label>
+              <select class="form-control select-premium" formControlName="idestado_id" [class.invalid]="isInvalid('idestado_id')">
+                <option value="">Seleccionar Estado...</option>
+                @for (e of estados(); track e.idestado) {
+                  <option [value]="e.idestado">{{ e.estado }}</option>
+                }
+              </select>
+            </div>
           </div>
 
-          <!-- Critica -->
-          <div class="severity-box critica" [class.active]="severidadFinal() === 4" [class.clickable]="modoManualSeveridad()" (click)="seleccionarSeveridadManual(4)">
-            <span class="severity-num">4</span>
-            <span class="severity-name">CRÍTICA</span>
-            <span class="severity-desc">Víctimas Fatales</span>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">Condado</label>
+              <select class="form-control select-premium" formControlName="idcondado_id" [class.invalid]="isInvalid('idcondado_id')">
+                <option value="">Seleccionar Condado...</option>
+                @for (c of condados(); track c.idcondado) {
+                  <option [value]="c.idcondado">{{ c.condado }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="required">Ciudad</label>
+              <select class="form-control select-premium" formControlName="idciudad_id" [class.invalid]="isInvalid('idciudad_id')">
+                <option value="">Seleccionar Ciudad...</option>
+                @for (c of ciudades(); track c.idciudad) {
+                  <option [value]="c.idciudad">{{ c.ciudad }}</option>
+                }
+              </select>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <!-- Seccion 4: Condición Climática Detallada -->
-      <div class="form-section">
-        <h3 class="section-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
-          </svg>
-          CONDICIÓN CLIMÁTICA DETALLADA
-        </h3>
-
-        <div class="form-row">
           <div class="form-group">
-            <label class="required">Condición Climática</label>
-            <select class="form-control select-premium" formControlName="condicion_clima" (change)="onClimaChange($event)">
-              <option value="Despejado">Despejado</option>
-              <option value="Nublado">Nublado</option>
-              <option value="Lluvia Ligera">Lluvia Ligera</option>
-              <option value="Tormenta">Tormenta</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="required">Temperatura (°F)</label>
-            <input type="number" class="form-control" formControlName="temperatura_f" />
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="required">Humedad (%)</label>
-            <input type="number" class="form-control" formControlName="humedad_porcentaje" />
-          </div>
-          <div class="form-group">
-            <label class="required">Visibilidad (millas)</label>
-            <input type="number" class="form-control" formControlName="visibilidad_millas" />
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="required">Velocidad Viento (mph)</label>
-            <input type="number" class="form-control" formControlName="velocidad_viento_mph" />
-          </div>
-          <div class="form-group">
-            <label class="required">Fuente / Canal de Reporte</label>
-            <select class="form-control select-premium" formControlName="idtiporeportado_id" [class.invalid]="isInvalid('idtiporeportado_id')">
-              <option value="">Seleccionar Fuente...</option>
-              @for (tr of tiposReportado(); track tr.idtiporeportado) {
-                <option [value]="tr.idtiporeportado">{{ tr.tiporeportado }}</option>
+            <label class="required">Calle / Intersección</label>
+            <select class="form-control select-premium" formControlName="idcalle_id" [class.invalid]="isInvalid('idcalle_id')">
+              <option value="">Seleccionar Calle...</option>
+              @for (cal of calles(); track cal.idcalle) {
+                <option [value]="cal.idcalle">{{ cal.calle }}</option>
               }
             </select>
           </div>
         </div>
-      </div>
-
-      <!-- Seccion 5: Estado del Conductor -->
-      <div class="form-section">
-        <h3 class="section-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="color: #EF4444;">
-            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-          </svg>
-          5. ESTADO DEL CONDUCTOR
-        </h3>
-        
-        <div class="checkbox-premium-grid">
-          <label class="checkbox-premium-card">
-            <input type="checkbox" formControlName="estadosobriedad" />
-            <span class="custom-checkbox"></span>
-            <span class="checkbox-label">Sobriedad</span>
-          </label>
-
-          <label class="checkbox-premium-card">
-            <input type="checkbox" formControlName="nivelatencion" />
-            <span class="custom-checkbox"></span>
-            <span class="checkbox-label">Nivel Atención</span>
-          </label>
-
-          <label class="checkbox-premium-card">
-            <input type="checkbox" formControlName="condicionfisica" />
-            <span class="custom-checkbox"></span>
-            <span class="checkbox-label">Condición Física</span>
-          </label>
-
-          <label class="checkbox-premium-card">
-            <input type="checkbox" formControlName="usoseguridad" />
-            <span class="custom-checkbox"></span>
-            <span class="checkbox-label">Uso Seguridad</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- Seccion 6: Elementos Físicos Cercanos -->
-      <div class="form-section">
-        <h3 class="section-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="color: #F59E0B;">
-            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-            <line x1="12" y1="9" x2="12" y2="13"/>
-            <line x1="12" y1="17" x2="12.01" y2="17"/>
-          </svg>
-          6. ELEMENTOS FÍSICOS CERCANOS
-        </h3>
-        
-        <div class="checkbox-premium-grid cols-3">
-          <label class="checkbox-premium-card">
-            <input type="checkbox" formControlName="cerca_cruce" />
-            <span class="custom-checkbox-orange"></span>
-            <span class="checkbox-label">Cerca Cruce</span>
-          </label>
-
-          <label class="checkbox-premium-card">
-            <input type="checkbox" formControlName="cerca_semaforo" />
-            <span class="custom-checkbox-orange"></span>
-            <span class="checkbox-label">Cerca Semáforo</span>
-          </label>
-
-          <label class="checkbox-premium-card">
-            <input type="checkbox" formControlName="cerca_parada" />
-            <span class="custom-checkbox-orange"></span>
-            <span class="checkbox-label">Cerca Parada</span>
-          </label>
-
-          <label class="checkbox-premium-card">
-            <input type="checkbox" formControlName="cerca_estacion" />
-            <span class="custom-checkbox-orange"></span>
-            <span class="checkbox-label">Cerca Estación</span>
-          </label>
-
-          <label class="checkbox-premium-card">
-            <input type="checkbox" formControlName="cerca_bache" />
-            <span class="custom-checkbox-orange"></span>
-            <span class="checkbox-label">Cerca Bache</span>
-          </label>
-
-          <label class="checkbox-premium-card">
-            <input type="checkbox" formControlName="cerca_viatren" />
-            <span class="custom-checkbox-orange"></span>
-            <span class="checkbox-label">Cerca Vía Tren</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- Seccion 7: Periodo del Día y Estación -->
-      <div class="form-section">
-        <h3 class="section-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="color: #38BDF8;">
-            <circle cx="12" cy="12" r="5"/>
-            <line x1="12" y1="1" x2="12" y2="3"/>
-            <line x1="12" y1="21" x2="12" y2="23"/>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-            <line x1="1" y1="12" x2="3" y2="12"/>
-            <line x1="21" y1="12" x2="23" y2="12"/>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-          </svg>
-          7. PERIODO DEL DÍA Y ESTACIÓN
-        </h3>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="required">Amanecer / Anochecer</label>
-            <select class="form-control select-premium" formControlName="amaneceranochecer">
-              <option value="Day">Día</option>
-              <option value="Night">Noche</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="required">Crepúsculo Civil</label>
-            <select class="form-control select-premium" formControlName="crepusculocivil">
-              <option value="Day">Día</option>
-              <option value="Night">Noche</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="required">Crepúsculo Náutico</label>
-            <select class="form-control select-premium" formControlName="crepusculonautico">
-              <option value="Day">Día</option>
-              <option value="Night">Noche</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="required">Crepúsculo Astronómico</label>
-            <select class="form-control select-premium" formControlName="crepusculoastronomico">
-              <option value="Day">Día</option>
-              <option value="Night">Noche</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>Código Aeropuerto (Estación)</label>
-            <input type="text" class="form-control select-premium" formControlName="codigoaeropuerto" placeholder="Ej: KJFK" />
-          </div>
-          <div class="form-group">
-            <label>Zona Horaria</label>
-            <input type="text" class="form-control select-premium" formControlName="zonahoraria" placeholder="Ej: US/Eastern" />
-          </div>
-        </div>
-      </div>
-
-      <!-- Seccion 8: Descripción y Bitácora -->
-      <div class="form-section">
-        <h3 class="section-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
-            <polyline points="10 9 9 9 8 9"/>
-          </svg>
-          DESCRIPCIÓN Y BITÁCORA
-        </h3>
-
-        <div class="form-group">
-          <label>Código Postal <span class="optional-tag">Opcional</span></label>
-          <input type="text" class="form-control select-premium" formControlName="codigopostal" placeholder="Ej. 090150" />
-        </div>
-
-        <div class="form-group">
-          <label class="required">Descripción del Suceso</label>
-          <textarea class="form-control select-premium text-area" formControlName="descripcion" rows="3" [class.invalid]="isInvalid('descripcion')" placeholder="Describa el accidente (choque por alcance, colisión múltiple, etc.)..."></textarea>
-          @if (isInvalid('descripcion')) {
-            <span class="error-text">{{ getError('descripcion') }}</span>
-          }
-        </div>
-      </div>
-    </form>
-  </div>
-
-  <!-- Footer Actions (SGA03) -->
-  <div class="panel-footer">
-    <button type="button" class="btn-secondary" (click)="onCancelar()">
-      CANCELAR
-    </button>
-    <button type="button" class="btn-primary" (click)="submit()" [disabled]="cargando() || form.invalid">
-      @if (cargando()) {
-        <span class="spinner-sm"></span>
-        {{ modoEdicion() ? 'GUARDANDO...' : 'REGISTRANDO...' }}
-      } @else {
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-          @if (modoEdicion()) {
-            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-            <polyline points="17 21 17 13 7 13 7 21"/>
-            <polyline points="7 3 7 8 15 8"/>
-          } @else {
-            <polygon points="5 3 19 12 5 21 5 3"/>
-          }
-        </svg>
-        {{ modoEdicion() ? 'GUARDAR CAMBIOS' : 'REGISTRAR Y DESPACHAR UNIDADES' }}
       }
-    </button>
+
+      <!-- STEP 2: IMPACTO -->
+      @if (pasoActual() === 2) {
+        <div class="form-section">
+          <h3 class="section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+            </svg>
+            MÉTRICAS DE IMPACTO
+          </h3>
+
+          <div class="counters-grid">
+            <div class="counter-card">
+              <span class="counter-label">Vehículos Involucrados</span>
+              <div class="counter-control">
+                <button type="button" class="btn-counter" (click)="decrement('numvehiculos', 1)" [disabled]="form.get('numvehiculos')?.value <= 1">—</button>
+                <span class="counter-value">{{ form.get('numvehiculos')?.value || 1 }}</span>
+                <button type="button" class="btn-counter" (click)="increment('numvehiculos', 50)">+</button>
+              </div>
+            </div>
+
+            <div class="counter-card warning">
+              <span class="counter-label text-warning">Personas Heridas</span>
+              <div class="counter-control">
+                <button type="button" class="btn-counter" (click)="decrement('numheridos', 0)" [disabled]="form.get('numheridos')?.value <= 0">—</button>
+                <span class="counter-value text-warning">{{ form.get('numheridos')?.value || 0 }}</span>
+                <button type="button" class="btn-counter" (click)="increment('numheridos', 200)">+</button>
+              </div>
+            </div>
+
+            <div class="counter-card danger">
+              <span class="counter-label text-danger">Víctimas Mortales</span>
+              <div class="counter-control">
+                <button type="button" class="btn-counter" (click)="decrement('numfallecidos', 0)" [disabled]="form.get('numfallecidos')?.value <= 0">—</button>
+                <span class="counter-value text-danger">{{ form.get('numfallecidos')?.value || 0 }}</span>
+                <button type="button" class="btn-counter" (click)="increment('numfallecidos', 100)">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-header" style="margin-top: 16px;">
+            <h3 class="section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              EVALUACIÓN DE SEVERIDAD
+            </h3>
+            <button type="button" class="btn-toggle-manual" [class.manual]="modoManualSeveridad()" (click)="toggleModoManualSeveridad()">
+              <span class="indicator-dot"></span>
+              {{ modoManualSeveridad() ? 'Modo Manual' : 'Modo Automático' }}
+            </button>
+          </div>
+
+          <div class="severity-assessment-grid">
+            <div class="severity-box leve" [class.active]="severidadFinal() === 1" [class.clickable]="modoManualSeveridad()" (click)="seleccionarSeveridadManual(1)">
+              <span class="severity-num">1</span>
+              <span class="severity-name">LEVE</span>
+              <span class="severity-desc">Daños Materiales</span>
+            </div>
+            <div class="severity-box moderada" [class.active]="severidadFinal() === 2" [class.clickable]="modoManualSeveridad()" (click)="seleccionarSeveridadManual(2)">
+              <span class="severity-num">2</span>
+              <span class="severity-name">MODERADA</span>
+              <span class="severity-desc">Heridos Leves</span>
+            </div>
+            <div class="severity-box grave" [class.active]="severidadFinal() === 3" [class.clickable]="modoManualSeveridad()" (click)="seleccionarSeveridadManual(3)">
+              <span class="severity-num">3</span>
+              <span class="severity-name">GRAVE</span>
+              <span class="severity-desc">Obstrucción Vial</span>
+            </div>
+            <div class="severity-box critica" [class.active]="severidadFinal() === 4" [class.clickable]="modoManualSeveridad()" (click)="seleccionarSeveridadManual(4)">
+              <span class="severity-num">4</span>
+              <span class="severity-name">CRÍTICA</span>
+              <span class="severity-desc">Víctimas Fatales</span>
+            </div>
+          </div>
+
+          <div class="switch-premium-card">
+            <div class="switch-premium-info">
+              <div class="switch-premium-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                  <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/>
+                  <circle cx="7.5" cy="17.5" r="2.5"/>
+                  <circle cx="16.5" cy="17.5" r="2.5"/>
+                </svg>
+              </div>
+              <div class="switch-premium-text">
+                <h4>¿Desea registrar los detalles de los vehículos y conductores involucrados?</h4>
+                <p>Habilite esta opción para ingresar datos detallados de cada unidad, chofer y su estado de sobriedad/atención.</p>
+              </div>
+            </div>
+            <label class="switch-premium">
+              <input type="checkbox" [checked]="registrarDetallesVehiculos()" (change)="toggleRegistrarDetallesVehiculos()" />
+              <span class="slider-premium"></span>
+            </label>
+          </div>
+        </div>
+      }
+
+      <!-- STEP 3: VEHÍCULOS -->
+      @if (pasoActual() === 3) {
+        @if (registrarDetallesVehiculos()) {
+          <div class="form-section">
+            <h3 class="section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 8v8M8 12h8"/>
+              </svg>
+              DETALLES DE VEHÍCULOS Y CONDUCTORES
+            </h3>
+
+            <div class="vehiculos-detalles-container" formArrayName="vehiculos_detalles">
+              @for (ctrl of vehiculosDetalles.controls; track $index) {
+                <div class="vehiculo-detalle-card" [formGroupName]="$index">
+                  <div class="card-header-premium">
+                    <div class="card-header-title">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="color: #3B82F6;">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 8v8M8 12h8"/>
+                      </svg>
+                      <h4>VEHÍCULO #{{ $index + 1 }} - DETALLES & CONDUCTOR</h4>
+                    </div>
+                  </div>
+
+                  <div class="card-body-premium">
+                    <div class="sub-section">
+                      <h5 class="sub-section-title">DETALLES DEL VEHÍCULO</h5>
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label class="required">Tipo de Vehículo</label>
+                          <select class="form-control select-premium" formControlName="tipovehiculo">
+                            <option value="Automóvil">Automóvil</option>
+                            <option value="Motocicleta">Motocicleta</option>
+                            <option value="Camión">Camión</option>
+                            <option value="Autobús">Autobús</option>
+                            <option value="Bicicleta">Bicicleta</option>
+                            <option value="Vehículo de Carga Pesada">Carga Pesada</option>
+                            <option value="Otro">Otro</option>
+                          </select>
+                        </div>
+                        <div class="form-group">
+                          <label class="required">Modelo / Marca</label>
+                          <input type="text" class="form-control" formControlName="modelovehiculo" placeholder="Ej. Chevrolet Sail 2020" />
+                        </div>
+                      </div>
+
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label class="required">Categoría de Uso</label>
+                          <select class="form-control select-premium" formControlName="categoriausovehiculo">
+                            <option value="Particular">Particular</option>
+                            <option value="Público">Público / Comercial</option>
+                            <option value="Oficial">Oficial / Estatal</option>
+                            <option value="Emergencia">Emergencia</option>
+                            <option value="Otros">Otros</option>
+                          </select>
+                        </div>
+                        <div class="form-group">
+                          <label class="required">Número de Ejes</label>
+                          <input type="number" class="form-control" formControlName="ejes" min="1" max="20" />
+                        </div>
+                      </div>
+
+                      <div class="form-group">
+                        <label class="checkbox-premium-card">
+                          <input type="checkbox" formControlName="mercanciapeligrosa" />
+                          <span class="custom-checkbox-orange"></span>
+                          <span class="checkbox-label text-warning">¿Transporta mercancía peligrosa (químicos, inflamables, etc.)?</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div class="sub-section">
+                      <h5 class="sub-section-title">DATOS DEL CONDUCTOR</h5>
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label class="required">Nombres</label>
+                          <input type="text" class="form-control" formControlName="nombres" placeholder="Nombres del conductor" />
+                        </div>
+                        <div class="form-group">
+                          <label class="required">Apellidos</label>
+                          <input type="text" class="form-control" formControlName="apellidos" placeholder="Apellidos del conductor" />
+                        </div>
+                      </div>
+
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label>Identificación (DNI / Cédula)</label>
+                          <input type="text" class="form-control" formControlName="identificacion" placeholder="Ej. 1712345678" />
+                        </div>
+                        <div class="form-group">
+                          <label class="required">Género</label>
+                          <select class="form-control select-premium" formControlName="genero">
+                            <option value="M">Masculino</option>
+                            <option value="F">Femenino</option>
+                            <option value="O">Otro</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label class="required">Tipo Licencia</label>
+                          <select class="form-control select-premium" formControlName="tipolicencia">
+                            <option value="A">A (Motos)</option>
+                            <option value="B">B (Livianos / Automóviles)</option>
+                            <option value="C">C (Profesional / Taxis)</option>
+                            <option value="D">D (Autobuses)</option>
+                            <option value="E">E (Pesados / Tráileres)</option>
+                            <option value="F">F (Especiales / Discapacitados)</option>
+                          </select>
+                        </div>
+                        <div class="form-group">
+                          <label class="required">Estado de Licencia</label>
+                          <select class="form-control select-premium" formControlName="estadolicencia">
+                            <option value="Vigente">Vigente</option>
+                            <option value="Caducada">Caducada</option>
+                            <option value="Suspendida">Suspendida</option>
+                            <option value="Sin Licencia">Sin Licencia</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label class="required">Ciudad de Residencia</label>
+                          <input type="text" class="form-control" formControlName="ciudadresidencia" placeholder="Ej. Quito" />
+                        </div>
+                        <div class="form-group">
+                          <label class="required">Años de Experiencia</label>
+                          <input type="number" class="form-control" formControlName="aniosexperiencia" min="0" max="80" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="sub-section">
+                      <h5 class="sub-section-title">ESTADO DE SOBRIEDAD Y ATENCIÓN DEL CONDUCTOR</h5>
+                      <div class="checkbox-premium-grid">
+                        <label class="checkbox-premium-card">
+                          <input type="checkbox" formControlName="estadosobriedad" />
+                          <span class="custom-checkbox"></span>
+                          <span class="checkbox-label">¿Sobrio? (Sin influencia de alcohol)</span>
+                        </label>
+                        <label class="checkbox-premium-card">
+                          <input type="checkbox" formControlName="nivelatencion" />
+                          <span class="custom-checkbox"></span>
+                          <span class="checkbox-label">¿Atento? (Sin distracción/celular)</span>
+                        </label>
+                        <label class="checkbox-premium-card">
+                          <input type="checkbox" formControlName="condicionfisica" />
+                          <span class="custom-checkbox"></span>
+                          <span class="checkbox-label">¿Físicamente apto? (Sin sueño/cansancio)</span>
+                        </label>
+                        <label class="checkbox-premium-card">
+                          <input type="checkbox" formControlName="usoseguridad" />
+                          <span class="custom-checkbox"></span>
+                          <span class="checkbox-label">¿Usaba cinturón/casco de seguridad?</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        } @else {
+          <div class="form-section">
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32" style="color: #64748B;">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 8v8M8 12h8"/>
+              </svg>
+              <p>No se solicitaron detalles de vehículos.</p>
+              <p class="empty-hint">Puede habilitar esta opción en el paso de Impacto si es necesario.</p>
+            </div>
+          </div>
+        }
+      }
+
+      <!-- STEP 4: ENTORNO -->
+      @if (pasoActual() === 4) {
+        <div class="form-section">
+          <h3 class="section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+            </svg>
+            CONDICIÓN CLIMÁTICA DETALLADA
+          </h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">Condición Climática</label>
+              <select class="form-control select-premium" formControlName="condicion_clima" (change)="onClimaChange($event)">
+                <option value="Despejado">Despejado</option>
+                <option value="Nublado">Nublado</option>
+                <option value="Lluvia Ligera">Lluvia Ligera</option>
+                <option value="Tormenta">Tormenta</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="required">Temperatura (°F)</label>
+              <input type="number" class="form-control" formControlName="temperatura_f" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">Humedad (%)</label>
+              <input type="number" class="form-control" formControlName="humedad_porcentaje" />
+            </div>
+            <div class="form-group">
+              <label class="required">Visibilidad (millas)</label>
+              <input type="number" class="form-control" formControlName="visibilidad_millas" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">Velocidad Viento (mph)</label>
+              <input type="number" class="form-control" formControlName="velocidad_viento_mph" />
+            </div>
+            <div class="form-group">
+              <label class="required">Fuente / Canal de Reporte</label>
+              <select class="form-control select-premium" formControlName="idtiporeportado_id" [class.invalid]="isInvalid('idtiporeportado_id')">
+                <option value="">Seleccionar Fuente...</option>
+                @for (tr of tiposReportado(); track tr.idtiporeportado) {
+                  <option [value]="tr.idtiporeportado">{{ tr.tiporeportado }}</option>
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3 class="section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="color: #F59E0B;">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            ELEMENTOS FÍSICOS CERCANOS
+          </h3>
+
+          <div class="checkbox-premium-grid cols-3">
+            <label class="checkbox-premium-card">
+              <input type="checkbox" formControlName="cerca_cruce" />
+              <span class="custom-checkbox-orange"></span>
+              <span class="checkbox-label">Cerca Cruce</span>
+            </label>
+            <label class="checkbox-premium-card">
+              <input type="checkbox" formControlName="cerca_semaforo" />
+              <span class="custom-checkbox-orange"></span>
+              <span class="checkbox-label">Cerca Semáforo</span>
+            </label>
+            <label class="checkbox-premium-card">
+              <input type="checkbox" formControlName="cerca_parada" />
+              <span class="custom-checkbox-orange"></span>
+              <span class="checkbox-label">Cerca Parada</span>
+            </label>
+            <label class="checkbox-premium-card">
+              <input type="checkbox" formControlName="cerca_estacion" />
+              <span class="custom-checkbox-orange"></span>
+              <span class="checkbox-label">Cerca Estación</span>
+            </label>
+            <label class="checkbox-premium-card">
+              <input type="checkbox" formControlName="cerca_bache" />
+              <span class="custom-checkbox-orange"></span>
+              <span class="checkbox-label">Cerca Bache</span>
+            </label>
+            <label class="checkbox-premium-card">
+              <input type="checkbox" formControlName="cerca_viatren" />
+              <span class="custom-checkbox-orange"></span>
+              <span class="checkbox-label">Cerca Vía Tren</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3 class="section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="color: #38BDF8;">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/>
+              <line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/>
+              <line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+            PERIODO DEL DÍA Y ESTACIÓN
+          </h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">Amanecer / Anochecer</label>
+              <select class="form-control select-premium" formControlName="amaneceranochecer">
+                <option value="Day">Día</option>
+                <option value="Night">Noche</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="required">Crepúsculo Civil</label>
+              <select class="form-control select-premium" formControlName="crepusculocivil">
+                <option value="Day">Día</option>
+                <option value="Night">Noche</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="required">Crepúsculo Náutico</label>
+              <select class="form-control select-premium" formControlName="crepusculonautico">
+                <option value="Day">Día</option>
+                <option value="Night">Noche</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="required">Crepúsculo Astronómico</label>
+              <select class="form-control select-premium" formControlName="crepusculoastronomico">
+                <option value="Day">Día</option>
+                <option value="Night">Noche</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Código Aeropuerto (Estación)</label>
+              <input type="text" class="form-control select-premium" formControlName="codigoaeropuerto" placeholder="Ej: KJFK" />
+            </div>
+            <div class="form-group">
+              <label>Zona Horaria</label>
+              <input type="text" class="form-control select-premium" formControlName="zonahoraria" placeholder="Ej: US/Eastern" />
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- STEP 5: REVISIÓN -->
+      @if (pasoActual() === 5) {
+        <div class="form-section">
+          <h3 class="section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+            RESUMEN DEL REGISTRO
+          </h3>
+
+          <div class="summary-grid">
+            <div class="summary-column">
+              <div class="summary-block">
+                <h4 class="summary-block-title">UBICACIÓN</h4>
+                <div class="summary-row">
+                  <span class="summary-label">Latitud:</span>
+                  <span class="summary-value">{{ form.get('latitudinicio')?.value || '—' }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Longitud:</span>
+                  <span class="summary-value">{{ form.get('longitudinicio')?.value || '—' }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">País:</span>
+                  <span class="summary-value">{{ paises().find(p => p.idpais === numVal('idpais_id'))?.pais || '—' }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Estado:</span>
+                  <span class="summary-value">{{ estados().find(e => e.idestado === numVal('idestado_id'))?.estado || '—' }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Condado:</span>
+                  <span class="summary-value">{{ condados().find(c => c.idcondado === numVal('idcondado_id'))?.condado || '—' }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Ciudad:</span>
+                  <span class="summary-value">{{ ciudades().find(c => c.idciudad === numVal('idciudad_id'))?.ciudad || '—' }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Calle:</span>
+                  <span class="summary-value">{{ calles().find(c => c.idcalle === numVal('idcalle_id'))?.calle || '—' }}</span>
+                </div>
+              </div>
+
+              <div class="summary-block">
+                <h4 class="summary-block-title">IMPACTO</h4>
+                <div class="summary-row">
+                  <span class="summary-label">Vehículos:</span>
+                  <span class="summary-value">{{ form.get('numvehiculos')?.value || 1 }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Heridos:</span>
+                  <span class="summary-value">{{ form.get('numheridos')?.value || 0 }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Fallecidos:</span>
+                  <span class="summary-value">{{ form.get('numfallecidos')?.value || 0 }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Severidad:</span>
+                  <span class="summary-value severity-badge" [class.sev-1]="severidadFinal() === 1" [class.sev-2]="severidadFinal() === 2" [class.sev-3]="severidadFinal() === 3" [class.sev-4]="severidadFinal() === 4">
+                    {{ severidadFinal() === 1 ? 'LEVE' : severidadFinal() === 2 ? 'MODERADA' : severidadFinal() === 3 ? 'GRAVE' : 'CRÍTICA' }}
+                  </span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Detalles Vehículos:</span>
+                  <span class="summary-value">{{ registrarDetallesVehiculos() ? 'Sí' : 'No' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="summary-column">
+              <div class="summary-block">
+                <h4 class="summary-block-title">ENTORNO</h4>
+                <div class="summary-row">
+                  <span class="summary-label">Clima:</span>
+                  <span class="summary-value">{{ form.get('condicion_clima')?.value || '—' }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Temperatura:</span>
+                  <span class="summary-value">{{ form.get('temperatura_f')?.value || '—' }} °F</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Humedad:</span>
+                  <span class="summary-value">{{ form.get('humedad_porcentaje')?.value || '—' }}%</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Visibilidad:</span>
+                  <span class="summary-value">{{ form.get('visibilidad_millas')?.value || '—' }} millas</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Viento:</span>
+                  <span class="summary-value">{{ form.get('velocidad_viento_mph')?.value || '—' }} mph</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Fuente Reporte:</span>
+                  <span class="summary-value">{{ tiposReportado().find(t => t.idtiporeportado === numVal('idtiporeportado_id'))?.tiporeportado || '—' }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Período:</span>
+                  <span class="summary-value">{{ getPeriodLabel() }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Estación:</span>
+                  <span class="summary-value">{{ form.get('codigoaeropuerto')?.value || '—' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3 class="section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            DESCRIPCIÓN Y BITÁCORA
+          </h3>
+
+          <div class="form-group">
+            <label>Código Postal <span class="optional-tag">Opcional</span></label>
+            <input type="text" class="form-control select-premium" formControlName="codigopostal" placeholder="Ej. 090150" />
+          </div>
+
+          <div class="form-group">
+            <label class="required">Descripción del Suceso</label>
+            <textarea class="form-control select-premium text-area" formControlName="descripcion" rows="3" [class.invalid]="isInvalid('descripcion')" placeholder="Describa el accidente (choque por alcance, colisión múltiple, etc.)..."></textarea>
+            @if (isInvalid('descripcion')) {
+              <span class="error-text">{{ getError('descripcion') }}</span>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Navigation Buttons -->
+      <div class="nav-buttons">
+        @if (pasoActual() > 1) {
+          <button type="button" class="btn-nav btn-prev" (click)="retrocederPaso()">
+            ← Anterior
+          </button>
+        } @else {
+          <button type="button" class="btn-nav btn-prev" (click)="onCancelar()" style="visibility: hidden">
+            ← Anterior
+          </button>
+        }
+        @if (!esUltimoPaso()) {
+          <button type="button" class="btn-nav btn-next" (click)="avanzarPaso()">
+            Siguiente →
+          </button>
+        } @else {
+          <button type="button" class="btn-nav btn-submit" (click)="submit()" [disabled]="cargando() || form.invalid">
+            @if (cargando()) {
+              <span class="spinner-sm"></span>
+              {{ modoEdicion() ? 'GUARDANDO...' : 'REGISTRANDO...' }}
+            } @else {
+              {{ modoEdicion() ? 'Guardar Cambios' : 'Registrar Accidente' }}
+            }
+          </button>
+        }
+      </div>
+
+    </form>
   </div>
 
   <!-- Modal Mapa Interactivo -->
@@ -494,14 +789,14 @@
           </div>
           <button class="btn-close-modal" (click)="cerrarMapaModal()">✕</button>
         </div>
-        
+
         <div class="modal-map-body">
           <div id="modal-map-container" class="modal-map-element"></div>
           <p class="map-hint">
             Haga clic en cualquier parte del mapa para marcar el punto exacto del accidente.
           </p>
         </div>
-        
+
         <div class="modal-map-footer">
           @if (seleccionadoModalCoords()) {
             <div class="selected-coords-badge font-mono">

@@ -1,8 +1,34 @@
 from rest_framework import serializers
 
 
+class VehiculoDetalleSerializer(serializers.Serializer):
+    # Vehiculo fields
+    tipovehiculo = serializers.CharField(max_length=50, required=False, default="Automóvil")
+    modelovehiculo = serializers.CharField(max_length=100, required=False, default="Genérico")
+    categoriausovehiculo = serializers.CharField(max_length=50, required=False, default="Particular")
+    mercanciapeligrosa = serializers.BooleanField(required=False, default=False)
+    ejes = serializers.IntegerField(required=False, default=2)
+
+    # Conductor fields
+    nombres = serializers.CharField(max_length=100, required=False, default="Nombre")
+    apellidos = serializers.CharField(max_length=100, required=False, default="Apellido")
+    identificacion = serializers.CharField(max_length=20, required=False, default="")
+    genero = serializers.CharField(max_length=1, required=False, default="M")
+    tipolicencia = serializers.CharField(max_length=10, required=False, default="B")
+    estadolicencia = serializers.CharField(max_length=20, required=False, default="Vigente")
+    ciudadresidencia = serializers.CharField(max_length=100, required=False, default="Quito")
+    aniosexperiencia = serializers.IntegerField(required=False, default=0)
+
+    # Estado Conductor fields
+    estadosobriedad = serializers.BooleanField(required=False, default=True)
+    nivelatencion = serializers.BooleanField(required=False, default=True)
+    condicionfisica = serializers.BooleanField(required=False, default=True)
+    usoseguridad = serializers.BooleanField(required=False, default=True)
+
+
 class AccidenteRegistroSerializer(serializers.Serializer):
     idaccidente = serializers.CharField(read_only=True)
+    vehiculos_detalles = VehiculoDetalleSerializer(many=True, required=False)
     latitudinicio = serializers.FloatField()
     longitudinicio = serializers.FloatField()
     numvehiculos = serializers.IntegerField(min_value=1, max_value=50)
@@ -20,6 +46,7 @@ class AccidenteRegistroSerializer(serializers.Serializer):
     idestadoclima_id = serializers.IntegerField(required=False)
     idelementofisico_id = serializers.IntegerField(required=False)
     idtiporeportado_id = serializers.IntegerField()
+    idfecha_id = serializers.IntegerField(required=False)
     
     idseveridad_id = serializers.IntegerField(required=False)
     nota_inicial = serializers.CharField(required=False, allow_blank=True, default="")

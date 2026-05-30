@@ -2,16 +2,15 @@
   <!-- Section Header -->
   <div class="section-header">
     <div class="header-info">
-      <span class="badge-accent">BASE DE DATOS APACHE PINOT (2M+ REGISTROS)</span>
       <h1 class="main-title">Registro General de Accidentes</h1>
       <p class="subtitle">Consola de control, auditoría y análisis de incidentes reportados en el sistema.</p>
     </div>
     <div class="header-actions">
-      <button class="btn-action btn-refresh" (click)="cargarAccidentes()" [disabled]="isLoading()" title="Recargar base de datos">
+      <button class="btn-action btn-freshen" (click)="cargarAccidentes()" [disabled]="isLoading()" title="Refrescar datos">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon" [class.spin]="isLoading()">
-          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+          <path d="M1 4v6h6M23 20v-6h-6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
         </svg>
-        <span>Recargar</span>
+        <span>Refrescar</span>
       </button>
     </div>
   </div>
@@ -31,7 +30,7 @@
     </div>
   }
 
-  <!-- Stats Grid -->
+  <!-- Stats Grid (Bento-like row) -->
   <div class="stats-grid">
     <div class="stat-card glass-card">
       <div class="stat-icon-wrapper blue">
@@ -91,17 +90,17 @@
     </div>
   </div>
 
-  <!-- Filters Dashboard (CU-02) -->
+  <!-- Filters Dashboard -->
   <div class="filters-panel glass-card">
     <div class="search-box">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="11" cy="11" r="8"/>
         <line x1="21" y1="21" x2="16.65" y2="16.65"/>
       </svg>
-      <input 
-        type="text" 
-        class="search-input" 
-        placeholder="Buscar por ID, calle, ciudad o descripción..." 
+      <input
+        type="text"
+        class="search-input glass-input"
+        placeholder="Buscar por ID, calle, ciudad o descripción..."
         [ngModel]="searchTerm()"
         (ngModelChange)="searchTerm.set($event); currentPage.set(1)"
       />
@@ -109,9 +108,9 @@
 
     <div class="filter-controls">
       <div class="select-group">
-        <select 
-          class="control-select" 
-          [ngModel]="filterSeveridad() === null ? 'null' : filterSeveridad()" 
+        <select
+          class="control-select glass-select"
+          [ngModel]="filterSeveridad() === null ? 'null' : filterSeveridad()"
           (ngModelChange)="onSeveridadSelect($event)"
         >
           <option value="null">Todas las Severidades</option>
@@ -122,9 +121,9 @@
       </div>
 
       <div class="select-group">
-        <select 
-          class="control-select" 
-          [ngModel]="filterEstado()" 
+        <select
+          class="control-select glass-select"
+          [ngModel]="filterEstado()"
           (ngModelChange)="filterEstado.set($event); currentPage.set(1)"
         >
           <option value="">Todos los Estados</option>
@@ -134,13 +133,80 @@
         </select>
       </div>
 
+      <div class="select-group">
+        <select
+          class="control-select glass-select"
+          [ngModel]="filterCiudadId() === null ? 'null' : filterCiudadId()"
+          (ngModelChange)="onCiudadSelect($event)"
+        >
+          <option value="null">Todas las Ciudades</option>
+          @for (ciu of ciudades(); track ciu.idciudad) {
+            <option [value]="ciu.idciudad">{{ ciu.ciudad }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="select-group range-group">
+        <input
+          type="number" min="0"
+          class="control-select glass-select range-input"
+          placeholder="Heridos min"
+          [ngModel]="filterMinHeridos()"
+          (ngModelChange)="filterMinHeridos.set($event !== '' ? +$event : null); currentPage.set(1)"
+        />
+        <span class="range-sep">–</span>
+        <input
+          type="number" min="0"
+          class="control-select glass-select range-input"
+          placeholder="Heridos max"
+          [ngModel]="filterMaxHeridos()"
+          (ngModelChange)="filterMaxHeridos.set($event !== '' ? +$event : null); currentPage.set(1)"
+        />
+      </div>
+
+      <div class="select-group range-group">
+        <input
+          type="number" min="0"
+          class="control-select glass-select range-input"
+          placeholder="Fallecidos min"
+          [ngModel]="filterMinFallecidos()"
+          (ngModelChange)="filterMinFallecidos.set($event !== '' ? +$event : null); currentPage.set(1)"
+        />
+        <span class="range-sep">–</span>
+        <input
+          type="number" min="0"
+          class="control-select glass-select range-input"
+          placeholder="Fallecidos max"
+          [ngModel]="filterMaxFallecidos()"
+          (ngModelChange)="filterMaxFallecidos.set($event !== '' ? +$event : null); currentPage.set(1)"
+        />
+      </div>
+
+      <div class="select-group range-group">
+        <input
+          type="date"
+          class="control-select glass-select range-input"
+          placeholder="Fecha desde"
+          [ngModel]="filterFechaDesde()"
+          (ngModelChange)="filterFechaDesde.set($event); currentPage.set(1)"
+        />
+        <span class="range-sep">–</span>
+        <input
+          type="date"
+          class="control-select glass-select range-input"
+          placeholder="Fecha hasta"
+          [ngModel]="filterFechaHasta()"
+          (ngModelChange)="filterFechaHasta.set($event); currentPage.set(1)"
+        />
+      </div>
+
       <label class="toggle-control">
-        <input 
-          type="checkbox" 
-          [ngModel]="filterSoloActivos()" 
+        <input
+          type="checkbox"
+          [ngModel]="filterSoloActivos()"
           (ngModelChange)="filterSoloActivos.set($event); currentPage.set(1)"
         />
-        <span class="toggle-label">Solo Activos (En Proceso)</span>
+        <span class="toggle-label">Solo Activos</span>
       </label>
 
       <button class="btn-clear" (click)="limpiarFiltros()" title="Limpiar todos los filtros">
@@ -154,92 +220,127 @@
 
   <!-- Loading State -->
   @if (isLoading()) {
-    <div class="loading-container glass-card">
-      <div class="loading-spinner"></div>
-      <p class="loading-text">Cargando base de datos de accidentes...</p>
+    <div class="double-bezel-outer">
+      <div class="double-bezel-inner">
+        <table class="premium-table">
+          <thead>
+            <tr>
+              <th>Fecha y Hora</th>
+              <th>Ubicación</th>
+              <th>Severidad</th>
+              <th>Estado</th>
+              <th class="text-center">Heridos</th>
+              <th class="text-center">Fallecidos</th>
+              <th class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of [1,2,3,4,5]; track $index) {
+              <tr class="table-row">
+                <td><div class="skeleton skeleton-date"></div></td>
+                <td><div class="skeleton skeleton-location"></div></td>
+                <td><div class="skeleton skeleton-badge"></div></td>
+                <td><div class="skeleton skeleton-badge"></div></td>
+                <td class="text-center"><div class="skeleton skeleton-num"></div></td>
+                <td class="text-center"><div class="skeleton skeleton-num"></div></td>
+                <td class="text-right"><div class="skeleton skeleton-actions"></div></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
   } @else {
-    <!-- Table Container -->
-    <div class="table-container glass-card">
-      <table class="premium-table">
-        <thead>
-          <tr>
-            <th>Fecha y Hora</th>
-            <th>Ubicación</th>
-            <th>Severidad</th>
-            <th>Estado</th>
-            <th class="text-center">Heridos</th>
-            <th class="text-center">Fallecidos</th>
-            <th class="text-right">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (acc of paginatedAccidentes(); track acc.idaccidente) {
-            <tr class="table-row">
-              <td class="td-date">
-                <span class="date-text">{{ acc.fecha_actualizacion | date:'dd/MM/yyyy HH:mm' }}</span>
-              </td>
-              <td class="td-location">
-                <div class="location-details">
-                  <span class="street-name">
-                    {{ (acc.calle_nombre && acc.calle_nombre !== 'Ubicación Registrada') ? acc.calle_nombre : 'Sin registrar' }}
-                  </span>
-                  @if (acc.ciudad_nombre && acc.ciudad_nombre !== 'Ubicación Registrada') {
-                    <span class="city-name">{{ acc.ciudad_nombre }}</span>
-                  }
-                </div>
-              </td>
-              <td class="td-badge">
-                <span class="badge-pill" [ngStyle]="getSeveridadStyles(acc.severidad_nivel)">
-                  {{ getSeveridadLabel(acc.severidad_nivel) }}
-                </span>
-              </td>
-              <td class="td-badge">
-                <span class="badge-pill" [ngStyle]="getEstadoStyles(acc.estado_actual)">
-                  {{ getEstadoLabel(acc.estado_actual) }}
-                </span>
-              </td>
-              <td class="td-num text-center">
-                <span class="num-indicator" [class.danger]="acc.numheridos > 0">{{ acc.numheridos }}</span>
-              </td>
-              <td class="td-num text-center">
-                <span class="num-indicator fatal" [class.danger]="acc.numfallecidos > 0">{{ acc.numfallecidos }}</span>
-              </td>
-              <td class="td-actions text-right">
-                <div class="actions-wrapper">
-                  <a class="btn-action-view" [routerLink]="['/mapa']" [queryParams]="{ selected: acc.idaccidente }">
-                    Ver en Mapa
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="action-icon">
-                      <polygon points="5 3 19 12 5 21 5 3"/>
-                    </svg>
-                  </a>
-                  <a class="btn-action-edit" [routerLink]="['/registro-accidente']" [queryParams]="{ edit: acc.idaccidente }" title="Editar incidente">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="action-icon-pencil">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                      <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
-                  </a>
-                </div>
-              </td>
-            </tr>
-          } @empty {
+    <!-- Table Container (Double-Bezel) -->
+    <div class="double-bezel-outer">
+      <div class="double-bezel-inner">
+        <table class="premium-table">
+          <thead>
             <tr>
-              <td colspan="7" class="empty-state">
-                <div class="empty-message-wrapper">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
-                    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
-                    <line x1="8" y1="2" x2="8" y2="18"/>
-                    <line x1="16" y1="6" x2="16" y2="22"/>
-                  </svg>
-                  <h3>No se encontraron incidentes</h3>
-                  <p>Intenta ajustar los criterios de búsqueda o recargar la base de datos.</p>
-                  <button class="btn-action" (click)="limpiarFiltros()">Restaurar Filtros</button>
-                </div>
-              </td>
+              <th>Fecha y Hora</th>
+              <th>Ubicación</th>
+              <th>Severidad</th>
+              <th>Estado</th>
+              <th class="text-center">Heridos</th>
+              <th class="text-center">Fallecidos</th>
+              <th class="text-right">Acciones</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (acc of paginatedAccidentes(); track acc.idaccidente) {
+              <tr class="table-row">
+                <td class="td-date">
+                  <span class="date-text">{{ acc.fecha_actualizacion | date:'dd/MM/yyyy HH:mm' }}</span>
+                </td>
+                <td class="td-location">
+                  <div class="location-details">
+                    <span class="street-name">
+                      {{ (acc.calle_nombre && acc.calle_nombre !== 'Ubicación Registrada') ? acc.calle_nombre : 'Sin registrar' }}
+                    </span>
+                    @if (acc.ciudad_nombre && acc.ciudad_nombre !== 'Ubicación Registrada') {
+                      <span class="city-name">{{ acc.ciudad_nombre }}</span>
+                    }
+                  </div>
+                </td>
+                <td class="td-badge">
+                  <span class="badge-pill" [ngStyle]="getSeveridadStyles(acc.severidad_nivel)">
+                    {{ getSeveridadLabel(acc.severidad_nivel) }}
+                  </span>
+                </td>
+                <td class="td-badge">
+                  <span class="badge-pill" [ngStyle]="getEstadoStyles(acc.estado_actual)">
+                    {{ getEstadoLabel(acc.estado_actual) }}
+                  </span>
+                </td>
+                <td class="td-num text-center">
+                  <span class="num-indicator" [class.danger]="acc.numheridos > 0">{{ acc.numheridos }}</span>
+                </td>
+                <td class="td-num text-center">
+                  <span class="num-indicator fatal" [class.danger]="acc.numfallecidos > 0">{{ acc.numfallecidos }}</span>
+                </td>
+                <td class="td-actions text-right">
+                  <div class="actions-wrapper">
+                    <a class="btn-action-circle btn-circle-map" [routerLink]="['/mapa']" [queryParams]="{ selected: acc.idaccidente }" title="Ver en mapa">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="action-icon">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                      </svg>
+                      <span class="tooltip-label">Ver Mapa</span>
+                    </a>
+                    <button class="btn-action-circle btn-circle-status" (click)="onAbrirActualizarEstado(acc)" title="Actualizar Estado">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="action-icon-status">
+                        <path d="M9 5H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9l2 2 4-4"/>
+                      </svg>
+                      <span class="tooltip-label">Estado</span>
+                    </button>
+                    <a class="btn-action-circle btn-circle-edit" [routerLink]="['/registro-accidente']" [queryParams]="{ edit: acc.idaccidente }" title="Editar incidente">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="action-icon-pencil">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                      <span class="tooltip-label">Editar</span>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="empty-state">
+                  <div class="empty-message-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
+                      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+                      <line x1="8" y1="2" x2="8" y2="18"/>
+                      <line x1="16" y1="6" x2="16" y2="22"/>
+                    </svg>
+                    <h3>No se encontraron accidentes con los filtros actuales</h3>
+                    <p>Intente ajustar los criterios de búsqueda o recargar la base de datos.</p>
+                    <button class="btn-action" (click)="limpiarFiltros()">Restaurar Filtros</button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Pagination Footer -->
@@ -286,5 +387,18 @@
         </div>
       </div>
     }
+  }
+
+  <!-- Modal Actualizar Estado -->
+  @if (mostrarActualizarEstado() && selectedAccidenteId()) {
+    <div class="sga-modal-backdrop" (click)="onCerrarActualizarEstado()">
+      <div class="sga-modal-content glass-card animate-zoom-in" (click)="$event.stopPropagation()">
+        <app-actualizar-estado
+          [accidenteId]="selectedAccidenteId()!"
+          [estadoActual]="selectedAccidenteEstado() || 'ACTIVO'"
+          (cerrar)="onCerrarActualizarEstado()">
+        </app-actualizar-estado>
+      </div>
+    </div>
   }
 </div>

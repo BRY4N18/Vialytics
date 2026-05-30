@@ -7,6 +7,7 @@ import {
   RegistroAccidentePayload,
   ActualizarEstadoPayload,
   DespachoPayload,
+  ExpedienteAccidente,
   Severidad,
   TipoReportado,
   TipoEstadoIncidente,
@@ -44,6 +45,14 @@ export class AccidenteService {
     severidad?: number; 
     estado?: string; 
     solo_activos?: boolean; 
+    ciudad_id?: number;
+    fecha_desde?: string;
+    fecha_hasta?: string;
+    min_heridos?: number;
+    max_heridos?: number;
+    min_fallecidos?: number;
+    max_fallecidos?: number;
+    matricula?: string;
   }): Observable<{ total_records: number; page: number; page_size: number; results: AccidenteMapa[] }> {
     let params = new HttpParams()
       .set('page', filtros.page.toString())
@@ -61,6 +70,30 @@ export class AccidenteService {
     if (filtros.solo_activos !== undefined) {
       params = params.set('solo_activos', filtros.solo_activos.toString());
     }
+    if (filtros.ciudad_id !== undefined && filtros.ciudad_id !== null) {
+      params = params.set('ciudad_id', filtros.ciudad_id.toString());
+    }
+    if (filtros.fecha_desde) {
+      params = params.set('fecha_desde', filtros.fecha_desde);
+    }
+    if (filtros.fecha_hasta) {
+      params = params.set('fecha_hasta', filtros.fecha_hasta);
+    }
+    if (filtros.min_heridos !== undefined && filtros.min_heridos !== null) {
+      params = params.set('min_heridos', filtros.min_heridos.toString());
+    }
+    if (filtros.max_heridos !== undefined && filtros.max_heridos !== null) {
+      params = params.set('max_heridos', filtros.max_heridos.toString());
+    }
+    if (filtros.min_fallecidos !== undefined && filtros.min_fallecidos !== null) {
+      params = params.set('min_fallecidos', filtros.min_fallecidos.toString());
+    }
+    if (filtros.max_fallecidos !== undefined && filtros.max_fallecidos !== null) {
+      params = params.set('max_fallecidos', filtros.max_fallecidos.toString());
+    }
+    if (filtros.matricula) {
+      params = params.set('matricula', filtros.matricula);
+    }
 
     return this.http
       .get<{ total_records: number; page: number; page_size: number; results: AccidenteMapa[] }>(`${this.baseUrl}/accidentes/`, { params })
@@ -74,6 +107,12 @@ export class AccidenteService {
     solo_ultima_semana?: boolean;
     fecha_inicio?: string;
     fecha_fin?: string;
+    public?: boolean;
+    idpais?: string;
+    idestado?: string;
+    idcondado?: string;
+    idciudad?: string;
+    idcalle?: string;
   }): Observable<AccidenteMapa[]> {
     let params = new HttpParams();
     if (filtros?.severidad) {
@@ -94,6 +133,24 @@ export class AccidenteService {
     if (filtros?.fecha_fin) {
       params = params.set('fecha_fin', filtros.fecha_fin);
     }
+    if (filtros?.public !== undefined) {
+      params = params.set('public', filtros.public.toString());
+    }
+    if (filtros?.idpais) {
+      params = params.set('idpais', filtros.idpais);
+    }
+    if (filtros?.idestado) {
+      params = params.set('idestado', filtros.idestado);
+    }
+    if (filtros?.idcondado) {
+      params = params.set('idcondado', filtros.idcondado);
+    }
+    if (filtros?.idciudad) {
+      params = params.set('idciudad', filtros.idciudad);
+    }
+    if (filtros?.idcalle) {
+      params = params.set('idcalle', filtros.idcalle);
+    }
     return this.http
       .get<AccidenteMapa[]>(`${this.baseUrl}/accidentes/mapa/`, { params })
       .pipe(catchError(this.handleError));
@@ -102,6 +159,12 @@ export class AccidenteService {
   getAccidenteDetalle(id: string): Observable<AccidenteDetalle> {
     return this.http
       .get<AccidenteDetalle>(`${this.baseUrl}/accidentes/${id}/`)
+      .pipe(catchError(this.handleError));
+  }
+
+  getExpediente(id: string): Observable<ExpedienteAccidente> {
+    return this.http
+      .get<ExpedienteAccidente>(`${this.baseUrl}/accidentes/${id}/expediente/`)
       .pipe(catchError(this.handleError));
   }
 

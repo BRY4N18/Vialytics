@@ -6,6 +6,12 @@ export interface MapaFiltros {
   solo_activos?: boolean;
   fecha_inicio?: string;
   fecha_fin?: string;
+  // Filtros de ubicaciÃ³n geogrÃ¡fica
+  idpais?: string;
+  idestado?: string;
+  idcondado?: string;
+  idciudad?: string;
+  idcalle?: string;
 }
 
 @Injectable({ providedIn: 'root' })

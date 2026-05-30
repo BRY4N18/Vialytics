@@ -16,8 +16,7 @@ class AccidenteEstadoView(APIView):
         if not serializer.is_valid():
             return Response({'errores': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            # Ejecutar asíncrono sincrónicamente usando async_to_sync
-            resultado = async_to_sync(AccidenteService.actualizar_estado)(
+            resultado = AccidenteService.actualizar_estado(
                 accidente_id=accidente_id,
                 nuevo_estado_id=serializer.validated_data['idtipoestadoincidente_id'],
                 nota=serializer.validated_data.get('nota'),

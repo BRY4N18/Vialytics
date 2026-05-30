@@ -1,5 +1,5 @@
 from django.urls import path
-from .views.accidente_views import AccidenteRegistroView, AccidenteMapaView, AccidenteDetalleView, AccidenteDashboardView
+from .views.accidente_views import AccidenteRegistroView, AccidenteMapaView, AccidenteDetalleView, AccidenteDashboardView, AccidenteExpedienteView
 from .views.estado_views import AccidenteEstadoView
 from .views.despacho_views import DespachoView
 from .views.unidad_views import UnidadesEmergenciaView, UnidadEstadoView
@@ -8,14 +8,19 @@ from .views.catalogo_views import (
     PaisListView, EstadoListView, CondadoListView, CiudadListView,
     CalleListView, ClimaListView, ElementoFisicoListView, PeriodoDiaListView
 )
+from .views.auth_views import LoginView, VerifyTokenView, RefreshTokenView
 
 urlpatterns = [
+    path('auth/login/', LoginView.as_view(), name='auth-login'),
+    path('auth/refresh/', RefreshTokenView.as_view(), name='auth-refresh'),
+    path('auth/verify/', VerifyTokenView.as_view(), name='auth-verify'),
     path('accidentes/dashboard/', AccidenteDashboardView.as_view(), name='accidente-dashboard'),
     path('accidentes/', AccidenteRegistroView.as_view(), name='accidente-registro'),
     path('accidentes/mapa/', AccidenteMapaView.as_view(), name='accidente-mapa'),
     path('accidentes/<str:accidente_id>/', AccidenteDetalleView.as_view(), name='accidente-detalle'),
     path('accidentes/<str:accidente_id>/estado/', AccidenteEstadoView.as_view(), name='accidente-estado'),
     path('accidentes/<str:accidente_id>/despachos/', DespachoView.as_view(), name='accidente-despacho'),
+    path('accidentes/<str:accidente_id>/expediente/', AccidenteExpedienteView.as_view(), name='accidente-expediente'),
     path('unidades/', UnidadesEmergenciaView.as_view(), name='unidades-lista'),
     path('unidades/<int:unidad_id>/estado/', UnidadEstadoView.as_view(), name='unidad-estado'),
     path('tipos-reportado/', TipoReportadoListView.as_view(), name='tipos-reportado'),

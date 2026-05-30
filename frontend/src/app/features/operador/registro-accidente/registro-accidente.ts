@@ -12,6 +12,7 @@ import {
   ReactiveFormsModule,
   FormBuilder,
   FormGroup,
+  FormArray,
   Validators,
 } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -58,7 +59,8 @@ export class RegistroAccidenteComponent implements OnInit {
   // Edit mode
   readonly modoEdicion = signal(false);
   private editId: string | null = null;
-  
+  readonly registrarDetallesVehiculos = signal(false);
+
   // Catalogs signals
   readonly tiposReportado = signal<TipoReportado[]>([]);
   readonly paises = signal<Pais[]>([]);
@@ -87,16 +89,21 @@ export class RegistroAccidenteComponent implements OnInit {
   private modalMap: any = null;
   private modalMarker: any = null;
 
+  // Step wizard
+  readonly pasoActual = signal(1);
+  readonly totalPasos = 5;
+  readonly pasos = signal(['Ubicación', 'Impacto', 'Vehículos', 'Entorno', 'Revisión']);
+  readonly esUltimoPaso = computed(() => this.pasoActual() === this.totalPasos);
+
   readonly severidadCalculada = computed(() => {
     const h = Number(this.formValues().numheridos) || 0;
     const f = Number(this.formValues().numfallecidos) || 0;
     const v = Number(this.formValues().numvehiculos) || 1;
-    
-    // Custom premium calculation matching backend severidad_service
-    if (f > 0) return 4; // Crítica
-    if (h >= 3 || v >= 4) return 3; // Grave
-    if (h >= 1 || v >= 2) return 2; // Moderada
-    return 1; // Leve
+
+    if (f > 0) return 4;
+    if (h >= 3 || v >= 4) return 3;
+    if (h >= 1 || v >= 2) return 2;
+    return 1;
   });
 
   readonly severidadFinal = computed(() => {
@@ -107,8 +114,7 @@ export class RegistroAccidenteComponent implements OnInit {
 
   ngOnInit(): void {
     this.buildForm();
-    
-    // Dynamic live synchronization for severity computation
+
     this.formValues.set({
       numheridos: this.form.get('numheridos')?.value || 0,
       numfallecidos: this.form.get('numfallecidos')?.value || 0,
@@ -120,12 +126,12 @@ export class RegistroAccidenteComponent implements OnInit {
         numfallecidos: Number(val.numfallecidos) || 0,
         numvehiculos: Number(val.numvehiculos) || 1,
       });
+      this.ajustarFormArrayVehiculos();
     });
 
     this.loadInitialCatalogs();
     this.setupCascades();
 
-    // Detect edit mode from query param
     this.route.queryParams.subscribe((params) => {
       const editId = params['edit'];
       if (editId) {
@@ -136,64 +142,98 @@ export class RegistroAccidenteComponent implements OnInit {
     });
   }
 
+  get vehiculosDetalles(): FormArray {
+    return this.form.get('vehiculos_detalles') as FormArray;
+  }
+
+  toggleRegistrarDetallesVehiculos(): void {
+    this.registrarDetallesVehiculos.set(!this.registrarDetallesVehiculos());
+    this.ajustarFormArrayVehiculos();
+  }
+
+  crearVehiculoFormGroup(detalle?: any): FormGroup {
+    return this.fb.group({
+      tipovehiculo: [detalle?.tipovehiculo ?? 'Automóvil', Validators.required],
+      modelovehiculo: [detalle?.modelovehiculo ?? '', Validators.required],
+      categoriausovehiculo: [detalle?.categoriausovehiculo ?? 'Particular', Validators.required],
+      mercanciapeligrosa: [detalle?.mercanciapeligrosa ?? false],
+      ejes: [detalle?.ejes ?? 2, [Validators.required, Validators.min(1), Validators.max(20)]],
+      nombres: [detalle?.nombres ?? '', Validators.required],
+      apellidos: [detalle?.apellidos ?? '', Validators.required],
+      identificacion: [detalle?.identificacion ?? ''],
+      genero: [detalle?.genero ?? 'M', Validators.required],
+      tipolicencia: [detalle?.tipolicencia ?? 'B', Validators.required],
+      estadolicencia: [detalle?.estadolicencia ?? 'Vigente', Validators.required],
+      ciudadresidencia: [detalle?.ciudadresidencia ?? 'Quito', Validators.required],
+      aniosexperiencia: [detalle?.aniosexperiencia ?? 0, [Validators.required, Validators.min(0), Validators.max(80)]],
+      estadosobriedad: [detalle?.estadosobriedad ?? true],
+      nivelatencion: [detalle?.nivelatencion ?? true],
+      condicionfisica: [detalle?.condicionfisica ?? true],
+      usoseguridad: [detalle?.usoseguridad ?? true]
+    });
+  }
+
+  ajustarFormArrayVehiculos(): void {
+    const count = Number(this.form.get('numvehiculos')?.value) || 1;
+    const currentCount = this.vehiculosDetalles.length;
+
+    if (this.registrarDetallesVehiculos()) {
+      if (currentCount < count) {
+        for (let i = currentCount; i < count; i++) {
+          this.vehiculosDetalles.push(this.crearVehiculoFormGroup());
+        }
+      } else if (currentCount > count) {
+        for (let i = currentCount - 1; i >= count; i--) {
+          this.vehiculosDetalles.removeAt(i);
+        }
+      }
+    } else {
+      this.vehiculosDetalles.clear();
+    }
+  }
+
   private buildForm(): void {
     const loc = this.ubicacion();
     this.form = this.fb.group({
       latitudinicio: [loc?.lat ?? '', [Validators.required, Validators.pattern(/^-?[0-9]+(\.[0-9]+)?$/)]],
       longitudinicio: [loc?.lng ?? '', [Validators.required, Validators.pattern(/^-?[0-9]+(\.[0-9]+)?$/)]],
-      
       numvehiculos: [1, [Validators.required, Validators.min(1), Validators.max(50)]],
       numheridos: [0, [Validators.required, Validators.min(0), Validators.max(200)]],
       numfallecidos: [0, [Validators.required, Validators.min(0), Validators.max(100)]],
       descripcion: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(500)]],
-      
-      // Cascading Location Dropdowns
       idpais_id: ['', Validators.required],
       idestado_id: [{ value: '', disabled: true }, Validators.required],
       idcondado_id: [{ value: '', disabled: true }, Validators.required],
       idciudad_id: [{ value: '', disabled: true }, Validators.required],
       idcalle_id: [{ value: '', disabled: true }, Validators.required],
-      
-      // Environmental catalogs (now driven dynamically via custom inputs)
       idperiododia_id: ['1'],
       idestadoclima_id: ['1'],
       idelementofisico_id: ['1'],
       idtiporeportado_id: ['', Validators.required],
-      
       codigopostal: [''],
       nota_inicial: [''],
-
-      // Detailed Custom Fields:
-      // Climate
       condicion_clima: ['Despejado', Validators.required],
       temperatura_f: [72, [Validators.required, Validators.min(-100), Validators.max(150)]],
       humedad_porcentaje: [50, [Validators.required, Validators.min(0), Validators.max(100)]],
       visibilidad_millas: [10, [Validators.required, Validators.min(0), Validators.max(100)]],
       velocidad_viento_mph: [0, [Validators.required, Validators.min(0), Validators.max(200)]],
-      
-      // Driver State
       estadosobriedad: [true],
       nivelatencion: [true],
       condicionfisica: [true],
       usoseguridad: [true],
-      
-      // Physical Elements
       cerca_cruce: [false],
       cerca_semaforo: [false],
       cerca_parada: [false],
       cerca_estacion: [false],
       cerca_bache: [false],
       cerca_viatren: [false],
-      
-      // Day Period
       amaneceranochecer: ['Day', Validators.required],
       crepusculocivil: ['Day', Validators.required],
       crepusculonautico: ['Day', Validators.required],
       crepusculoastronomico: ['Day', Validators.required],
-      
-      // Station
       codigoaeropuerto: ['KJFK'],
       zonahoraria: ['US/Eastern'],
+      vehiculos_detalles: this.fb.array([])
     });
 
     if (loc) {
@@ -203,6 +243,119 @@ export class RegistroAccidenteComponent implements OnInit {
       });
     }
   }
+
+  // --- STEP WIZARD NAVIGATION ---
+
+  private validateCurrentStep(): boolean {
+    switch (this.pasoActual()) {
+      case 1:
+        return !!(
+          this.form.get('latitudinicio')?.valid &&
+          this.form.get('longitudinicio')?.valid &&
+          this.form.get('idpais_id')?.valid &&
+          this.form.get('idestado_id')?.valid &&
+          this.form.get('idcondado_id')?.valid &&
+          this.form.get('idciudad_id')?.valid &&
+          this.form.get('idcalle_id')?.valid
+        );
+      case 2:
+        return !!(
+          this.form.get('numvehiculos')?.valid &&
+          this.form.get('numheridos')?.valid &&
+          this.form.get('numfallecidos')?.valid
+        );
+      case 3:
+        if (this.registrarDetallesVehiculos()) {
+          return this.vehiculosDetalles.controls.every(ctrl =>
+            Object.values((ctrl as FormGroup).controls).every(c => c.valid)
+          );
+        }
+        return true;
+      case 4:
+        return !!(
+          this.form.get('condicion_clima')?.valid &&
+          this.form.get('temperatura_f')?.valid &&
+          this.form.get('humedad_porcentaje')?.valid &&
+          this.form.get('visibilidad_millas')?.valid &&
+          this.form.get('velocidad_viento_mph')?.valid &&
+          this.form.get('idtiporeportado_id')?.valid &&
+          this.form.get('amaneceranochecer')?.valid &&
+          this.form.get('crepusculocivil')?.valid &&
+          this.form.get('crepusculonautico')?.valid &&
+          this.form.get('crepusculoastronomico')?.valid
+        );
+      case 5:
+        return !!this.form.get('descripcion')?.valid;
+      default:
+        return true;
+    }
+  }
+
+  private marcarStepTocado(): void {
+    switch (this.pasoActual()) {
+      case 1:
+        ['latitudinicio', 'longitudinicio', 'idpais_id', 'idestado_id', 'idcondado_id', 'idciudad_id', 'idcalle_id'].forEach(f => this.form.get(f)?.markAsTouched());
+        break;
+      case 2:
+        ['numvehiculos', 'numheridos', 'numfallecidos'].forEach(f => this.form.get(f)?.markAsTouched());
+        break;
+      case 3:
+        if (this.registrarDetallesVehiculos()) {
+          this.vehiculosDetalles.controls.forEach(g => {
+            Object.keys((g as FormGroup).controls).forEach(k => (g as FormGroup).get(k)?.markAsTouched());
+          });
+        }
+        break;
+      case 4:
+        ['condicion_clima', 'temperatura_f', 'humedad_porcentaje', 'visibilidad_millas', 'velocidad_viento_mph', 'idtiporeportado_id', 'amaneceranochecer', 'crepusculocivil', 'crepusculonautico', 'crepusculoastronomico'].forEach(f => this.form.get(f)?.markAsTouched());
+        break;
+      case 5:
+        this.form.get('descripcion')?.markAsTouched();
+        break;
+    }
+  }
+
+  avanzarPaso(): void {
+    if (!this.validateCurrentStep()) {
+      this.marcarStepTocado();
+      return;
+    }
+    if (this.esUltimoPaso()) {
+      this.submit();
+    } else {
+      this.pasoActual.update(p => p + 1);
+    }
+  }
+
+  retrocederPaso(): void {
+    if (this.pasoActual() > 1) {
+      this.pasoActual.update(p => p - 1);
+    }
+  }
+
+  irAPaso(n: number): void {
+    if (n < this.pasoActual()) {
+      this.pasoActual.set(n);
+      return;
+    }
+    if (n === this.pasoActual()) return;
+    if (this.validateCurrentStep()) {
+      this.pasoActual.set(n);
+    } else {
+      this.marcarStepTocado();
+    }
+  }
+
+  onCancelar(): void {
+    if (this.form.dirty) {
+      const confirmed = confirm('¿Está seguro de cancelar el registro? Se perderán los datos ingresados.');
+      if (!confirmed) return;
+    }
+    this.cancelar.emit();
+    this.router.navigate(['/']);
+  }
+
+  // --- END STEP WIZARD ---
 
   private loadInitialCatalogs(): void {
     this.accidenteService.getTiposReportado().subscribe({
@@ -232,19 +385,15 @@ export class RegistroAccidenteComponent implements OnInit {
   }
 
   private setupCascades(): void {
-    // 1. Country Change -> Fetch States
     this.form.get('idpais_id')?.valueChanges.subscribe((paisId) => {
       const selectedPais = this.paises().find((p) => p.idpais === Number(paisId));
       const estadoCtrl = this.form.get('idestado_id');
-      
       this.estados.set([]);
       this.condados.set([]);
       this.ciudades.set([]);
       this.calles.set([]);
-      
       estadoCtrl?.setValue('');
       estadoCtrl?.disable();
-      
       if (selectedPais) {
         this.accidenteService.getEstados(selectedPais.pais).subscribe({
           next: (est) => {
@@ -256,18 +405,14 @@ export class RegistroAccidenteComponent implements OnInit {
       this.resetLocationCascades(1);
     });
 
-    // 2. State Change -> Fetch Counties
     this.form.get('idestado_id')?.valueChanges.subscribe((estadoId) => {
       const selectedEst = this.estados().find((e) => e.idestado === Number(estadoId));
       const condadoCtrl = this.form.get('idcondado_id');
-      
       this.condados.set([]);
       this.ciudades.set([]);
       this.calles.set([]);
-      
       condadoCtrl?.setValue('');
       condadoCtrl?.disable();
-      
       if (selectedEst) {
         this.accidenteService.getCondados(selectedEst.estado).subscribe({
           next: (cond) => {
@@ -279,17 +424,13 @@ export class RegistroAccidenteComponent implements OnInit {
       this.resetLocationCascades(2);
     });
 
-    // 3. County Change -> Fetch Cities
     this.form.get('idcondado_id')?.valueChanges.subscribe((condadoId) => {
       const selectedCond = this.condados().find((c) => c.idcondado === Number(condadoId));
       const ciudadCtrl = this.form.get('idciudad_id');
-      
       this.ciudades.set([]);
       this.calles.set([]);
-      
       ciudadCtrl?.setValue('');
       ciudadCtrl?.disable();
-      
       if (selectedCond) {
         this.accidenteService.getCiudades(selectedCond.condado).subscribe({
           next: (ciu) => {
@@ -301,15 +442,12 @@ export class RegistroAccidenteComponent implements OnInit {
       this.resetLocationCascades(3);
     });
 
-    // 4. City Change -> Fetch Streets
     this.form.get('idciudad_id')?.valueChanges.subscribe((ciudadId) => {
       const selectedCiu = this.ciudades().find((c) => c.idciudad === Number(ciudadId));
       const calleCtrl = this.form.get('idcalle_id');
-      
       this.calles.set([]);
       calleCtrl?.setValue('');
       calleCtrl?.disable();
-      
       if (selectedCiu) {
         this.accidenteService.getCalles(selectedCiu.ciudad).subscribe({
           next: (cal) => {
@@ -336,7 +474,6 @@ export class RegistroAccidenteComponent implements OnInit {
     }
   }
 
-  // --- PREMIUM INCREMENT/DECREMENT SELECTORS ---
   increment(field: string, max: number): void {
     const ctrl = this.form.get(field);
     if (ctrl) {
@@ -382,6 +519,26 @@ export class RegistroAccidenteComponent implements OnInit {
     }
   }
 
+  private matchElementoFisicoId(raw: any): number {
+    const booleans = {
+      cercacruce: !!raw.cerca_cruce,
+      cercasemaforo: !!raw.cerca_semaforo,
+      cercaparada: !!raw.cerca_parada,
+      cercaestacion: !!raw.cerca_estacion,
+      cercabache: !!raw.cerca_bache,
+      cercaviatren: !!raw.cerca_viatren,
+    };
+    const match = this.elementosFisicos().find(ef =>
+      ef.cercacruce === booleans.cercacruce &&
+      ef.cercasemaforo === booleans.cercasemaforo &&
+      ef.cercaparada === booleans.cercaparada &&
+      ef.cercaestacion === booleans.cercaestacion &&
+      ef.cercabache === booleans.cercabache &&
+      ef.cercaviatren === booleans.cercaviatren
+    );
+    return match?.idelementofisico ?? 1;
+  }
+
   private buildPayload(): RegistroAccidentePayload {
     const raw = this.form.getRawValue();
     return {
@@ -397,8 +554,8 @@ export class RegistroAccidenteComponent implements OnInit {
       idciudad_id: Number(raw.idciudad_id),
       idcalle_id: Number(raw.idcalle_id),
       idperiododia_id: Number(raw.idperiododia_id) || 1,
-      idestadoclima_id: 1,
-      idelementofisico_id: 1,
+      idestadoclima_id: Number(raw.idestadoclima_id) || 1,
+      idelementofisico_id: this.matchElementoFisicoId(raw),
       idtiporeportado_id: Number(raw.idtiporeportado_id),
       idseveridad_id: this.severidadFinal(),
       nota_inicial: raw.nota_inicial || undefined,
@@ -424,10 +581,14 @@ export class RegistroAccidenteComponent implements OnInit {
       crepusculoastronomico: raw.crepusculoastronomico,
       codigoaeropuerto: raw.codigoaeropuerto || undefined,
       zonahoraria: raw.zonahoraria || undefined,
+      vehiculos_detalles: this.registrarDetallesVehiculos() ? raw.vehiculos_detalles : undefined,
     };
   }
 
   submit(): void {
+    this.marcarStepTocado();
+    if (!this.validateCurrentStep()) return;
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -439,7 +600,6 @@ export class RegistroAccidenteComponent implements OnInit {
     const payload = this.buildPayload();
 
     if (this.modoEdicion() && this.editId) {
-      // UPDATE existing accident
       this.accidenteService.actualizarAccidente(this.editId, payload).subscribe({
         next: () => {
           this.cargando.set(false);
@@ -454,7 +614,6 @@ export class RegistroAccidenteComponent implements OnInit {
         },
       });
     } else {
-      // CREATE new accident
       this.accidenteService.registrarAccidente(payload).subscribe({
         next: (accidente) => {
           this.cargando.set(false);
@@ -477,8 +636,6 @@ export class RegistroAccidenteComponent implements OnInit {
     this.accidenteService.getAccidenteDetalle(id).subscribe({
       next: async (detalle) => {
         this.cargando.set(false);
-
-        // ── 1. Campos básicos ──────────────────────────────────────────────────
         this.form.patchValue({
           latitudinicio: detalle.latitudinicio,
           longitudinicio: detalle.longitudinicio,
@@ -489,14 +646,12 @@ export class RegistroAccidenteComponent implements OnInit {
           codigopostal: detalle.codigopostal ?? '',
         });
 
-        // ── 2. Severidad ───────────────────────────────────────────────────────
         const sevNivel = detalle.idseveridad_id ?? detalle.severidad_nivel;
         if (sevNivel) {
           this.modoManualSeveridad.set(true);
           this.severidadManual.set(sevNivel);
         }
 
-        // ── 3. Clima ───────────────────────────────────────────────────────────
         this.form.patchValue({
           condicion_clima: detalle.condicion_clima ?? 'Despejado',
           temperatura_f: detalle.temperatura_f ?? 72,
@@ -505,7 +660,6 @@ export class RegistroAccidenteComponent implements OnInit {
           velocidad_viento_mph: detalle.velocidad_viento_mph ?? 0,
         });
 
-        // ── 4. Período del día ─────────────────────────────────────────────────
         this.form.patchValue({
           amaneceranochecer: detalle.amaneceranochecer ?? 'Day',
           crepusculocivil: detalle.crepusculocivil ?? 'Day',
@@ -516,7 +670,6 @@ export class RegistroAccidenteComponent implements OnInit {
           this.form.patchValue({ idperiododia_id: detalle.idperiododia_id.toString() });
         }
 
-        // ── 5. Elementos físicos ───────────────────────────────────────────────
         this.form.patchValue({
           cerca_cruce: detalle.cerca_cruce ?? false,
           cerca_semaforo: detalle.cerca_semaforo ?? false,
@@ -526,7 +679,14 @@ export class RegistroAccidenteComponent implements OnInit {
           cerca_viatren: detalle.cerca_viatren ?? false,
         });
 
-        // ── 6. Estado del conductor ────────────────────────────────────────────
+        if (detalle.idelementofisico_id) {
+          this.form.patchValue({ idelementofisico_id: detalle.idelementofisico_id.toString() });
+        }
+
+        if (detalle.idestadoclima_id) {
+          this.form.patchValue({ idestadoclima_id: detalle.idestadoclima_id.toString() });
+        }
+
         this.form.patchValue({
           estadosobriedad: detalle.estadosobriedad ?? true,
           nivelatencion: detalle.nivelatencion ?? true,
@@ -534,26 +694,29 @@ export class RegistroAccidenteComponent implements OnInit {
           usoseguridad: detalle.usoseguridad ?? true,
         });
 
-        // ── 7. Estación de referencia ──────────────────────────────────────────
         this.form.patchValue({
           codigoaeropuerto: detalle.codigoaeropuerto ?? 'KJFK',
           zonahoraria: detalle.zonahoraria ?? 'US/Eastern',
         });
 
-        // ── 8. Tipo reportado ──────────────────────────────────────────────────
         if (detalle.idtiporeportado_id) {
           this.form.patchValue({ idtiporeportado_id: detalle.idtiporeportado_id.toString() });
         }
 
-        // ── 9. Cascada de ubicación ────────────────────────────────────────────
-        // Si el backend devolvió los IDs directamente, los usamos sin reverse geocoding
         const hasDirIds = detalle.idpais_id && detalle.idestado_id &&
                           detalle.idcondado_id && detalle.idciudad_id && detalle.idcalle_id;
         if (hasDirIds) {
           this.poblarCascadaConIds(detalle);
         } else if (detalle.latitudinicio && detalle.longitudinicio) {
-          // Fallback: resolver desde coordenadas
           this.resolverUbicacionCascada(detalle.latitudinicio, detalle.longitudinicio);
+        }
+
+        if (detalle.vehiculos_detalles && detalle.vehiculos_detalles.length > 0) {
+          this.registrarDetallesVehiculos.set(true);
+          this.vehiculosDetalles.clear();
+          detalle.vehiculos_detalles.forEach((v: any) => {
+            this.vehiculosDetalles.push(this.crearVehiculoFormGroup(v));
+          });
         }
       },
       error: (err) => {
@@ -565,13 +728,14 @@ export class RegistroAccidenteComponent implements OnInit {
     });
   }
 
-  /**
-   * Pre-llena la cascada de ubicación usando los IDs de clave foránea del backend
-   * sin necesidad de hacer reverse geocoding externo.
-   */
   private poblarCascadaConIds(detalle: any): void {
     this.resolviendoDireccion.set(true);
     this.estadoResolucion.set('Cargando datos de ubicación guardados...');
+
+    const pid = (v: any): number | null => {
+      const n = Number(v);
+      return !isNaN(n) && v !== null && v !== '' && v !== undefined ? n : null;
+    };
 
     Promise.all([
       firstValueFrom(this.accidenteService.getPaises()),
@@ -580,56 +744,95 @@ export class RegistroAccidenteComponent implements OnInit {
       firstValueFrom(this.accidenteService.getCiudades()),
       firstValueFrom(this.accidenteService.getCalles()),
     ]).then(([allPaises, allEstados, allCondados, allCiudades, allCalles]) => {
-      const matchPais    = allPaises.find(p => p.idpais === Number(detalle.idpais_id));
-      const matchEstado  = allEstados.find(e => e.idestado === Number(detalle.idestado_id));
-      const matchCondado = allCondados.find(c => c.idcondado === Number(detalle.idcondado_id));
-      const matchCiudad  = allCiudades.find(c => c.idciudad === Number(detalle.idciudad_id));
-      const matchCalle   = allCalles.find(c => c.idcalle === Number(detalle.idcalle_id));
-
       this.paises.set(allPaises);
+
+      const paisId = pid(detalle.idpais_id);
+      const calleNombre = (detalle.calle_nombre ?? '').trim().toLowerCase();
+      const ciudadNombre = (detalle.ciudad_nombre ?? '').trim().toLowerCase();
+
+      let matchPais = paisId !== null ? allPaises.find(p => p.idpais === paisId) : undefined;
+      if (!matchPais && paisId !== null && allPaises.length > 0) {
+        matchPais = allPaises[0];
+      }
 
       if (matchPais) {
         const filtEstados = allEstados.filter(e => e.pais === matchPais.pais);
         this.estados.set(filtEstados);
         this.form.get('idpais_id')?.setValue(matchPais.idpais.toString(), { emitEvent: false });
         this.form.get('idestado_id')?.enable({ emitEvent: false });
-      }
-      if (matchEstado) {
-        const filtCondados = allCondados.filter(c => c.estado === matchEstado.estado);
-        this.condados.set(filtCondados);
-        this.form.get('idestado_id')?.setValue(matchEstado.idestado.toString(), { emitEvent: false });
-        this.form.get('idcondado_id')?.enable({ emitEvent: false });
-      }
-      if (matchCondado) {
-        const filtCiudades = allCiudades.filter(c => c.condado === matchCondado.condado);
-        this.ciudades.set(filtCiudades);
-        this.form.get('idcondado_id')?.setValue(matchCondado.idcondado.toString(), { emitEvent: false });
-        this.form.get('idciudad_id')?.enable({ emitEvent: false });
-      }
-      if (matchCiudad) {
-        const filtCalles = allCalles.filter(c => c.ciudad === matchCiudad.ciudad);
-        this.calles.set(filtCalles);
-        this.form.get('idciudad_id')?.setValue(matchCiudad.idciudad.toString(), { emitEvent: false });
-        this.form.get('idcalle_id')?.enable({ emitEvent: false });
-      }
-      if (matchCalle) {
-        this.form.get('idcalle_id')?.setValue(matchCalle.idcalle.toString(), { emitEvent: false });
-        this.estadoResolucion.set('¡Ubicación cargada correctamente!');
+
+        const estadoId = pid(detalle.idestado_id);
+        let matchEstado = estadoId !== null ? filtEstados.find(e => e.idestado === estadoId) : undefined;
+        if (!matchEstado && calleNombre && allCalles.length > 0) {
+          const calleEst = allCalles.find(c => c.calle.toLowerCase() === calleNombre);
+          if (calleEst) {
+            matchEstado = filtEstados.find(e => e.estado === calleEst.ciudad);
+          }
+        }
+
+        if (matchEstado) {
+          const filtCondados = allCondados.filter(c => c.estado === matchEstado.estado);
+          this.condados.set(filtCondados);
+          this.form.get('idestado_id')?.setValue(matchEstado.idestado.toString(), { emitEvent: false });
+          this.form.get('idcondado_id')?.enable({ emitEvent: false });
+
+          const condadoId = pid(detalle.idcondado_id);
+          let matchCondado = condadoId !== null ? filtCondados.find(c => c.idcondado === condadoId) : undefined;
+          if (!matchCondado && ciudadNombre) {
+            matchCondado = filtCondados.find(c => c.condado.toLowerCase() === ciudadNombre);
+          }
+
+          if (matchCondado) {
+            const filtCiudades = allCiudades.filter(c => c.condado === matchCondado.condado);
+            this.ciudades.set(filtCiudades);
+            this.form.get('idcondado_id')?.setValue(matchCondado.idcondado.toString(), { emitEvent: false });
+            this.form.get('idciudad_id')?.enable({ emitEvent: false });
+
+            const ciudadId = pid(detalle.idciudad_id);
+            let matchCiudad = ciudadId !== null ? filtCiudades.find(c => c.idciudad === ciudadId) : undefined;
+            if (!matchCiudad && ciudadNombre) {
+              matchCiudad = filtCiudades.find(c => c.ciudad.toLowerCase() === ciudadNombre);
+            }
+
+            if (matchCiudad) {
+              const filtCalles = allCalles.filter(c => c.ciudad === matchCiudad.ciudad);
+              this.calles.set(filtCalles);
+              this.form.get('idciudad_id')?.setValue(matchCiudad.idciudad.toString(), { emitEvent: false });
+              this.form.get('idcalle_id')?.enable({ emitEvent: false });
+
+              const calleId = pid(detalle.idcalle_id);
+              let matchCalle = calleId !== null ? filtCalles.find(c => c.idcalle === calleId) : undefined;
+              if (!matchCalle && calleNombre) {
+                matchCalle = filtCalles.find(c => c.calle.toLowerCase() === calleNombre);
+              }
+
+              if (matchCalle) {
+                this.form.get('idcalle_id')?.setValue(matchCalle.idcalle.toString(), { emitEvent: false });
+              }
+            }
+          }
+        }
       }
 
+      this.estadoResolucion.set('¡Ubicación cargada correctamente!');
       setTimeout(() => this.resolviendoDireccion.set(false), 1200);
     }).catch(() => {
       this.resolviendoDireccion.set(false);
-      // Fallback a geocodificación inversa
       if (detalle.latitudinicio && detalle.longitudinicio) {
         this.resolverUbicacionCascada(detalle.latitudinicio, detalle.longitudinicio);
       }
     });
   }
 
-  onCancelar(): void {
-    this.cancelar.emit();
-    this.router.navigate(['/']);
+  numVal(field: string): number {
+    return Number(this.form.get(field)?.value) || 0;
+  }
+
+  getPeriodLabel(): string {
+    const v = this.form.get('amaneceranochecer')?.value;
+    if (v === 'Day') return 'Día';
+    if (v === 'Night') return 'Noche';
+    return '—';
   }
 
   isInvalid(field: string): boolean {
@@ -647,7 +850,6 @@ export class RegistroAccidenteComponent implements OnInit {
     return 'Valor inválido';
   }
 
-  // --- MAP MODAL & REVERSE GEOCODING METHODS ---
   abrirMapaModal(): void {
     this.mostrarMapaModal.set(true);
     this.seleccionadoModalCoords.set(null);
@@ -668,8 +870,8 @@ export class RegistroAccidenteComponent implements OnInit {
   initModalMap(): void {
     const currentLat = Number(this.form.get('latitudinicio')?.value);
     const currentLng = Number(this.form.get('longitudinicio')?.value);
-    const center: [number, number] = (currentLat && currentLng) 
-      ? [currentLat, currentLng] 
+    const center: [number, number] = (currentLat && currentLng)
+      ? [currentLat, currentLng]
       : [-1.8312, -78.1834];
     const initialZoom = (currentLat && currentLng) ? 14 : 7;
 
@@ -734,7 +936,7 @@ export class RegistroAccidenteComponent implements OnInit {
     this.estadoResolucion.set('Identificando coordenadas...');
 
     const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`;
-    
+
     fetch(url, {
       headers: {
         'Accept-Language': 'es'
@@ -768,8 +970,7 @@ export class RegistroAccidenteComponent implements OnInit {
       }
 
       this.estadoResolucion.set('Cargando base de datos cartográfica local...');
-      
-      // Load all references concurrently to execute bottom-up matching in-memory
+
       const [allPaises, allEstados, allCondados, allCiudades, allCalles] = await Promise.all([
         firstValueFrom(this.accidenteService.getPaises()),
         firstValueFrom(this.accidenteService.getEstados()),
@@ -784,9 +985,6 @@ export class RegistroAccidenteComponent implements OnInit {
       let matchedCiudad: any = null;
       let matchedCalle: any = null;
 
-      // --- BOTTOM-UP RESOLUTION CHAINS ---
-
-      // 1. Try starting from Calle (Street)
       if (calleName) {
         matchedCalle = allCalles.find(c => this.stringsMatch(c.calle, calleName)) ||
                        allCalles.find(c => this.stringsPartialMatch(c.calle, calleName));
@@ -806,7 +1004,6 @@ export class RegistroAccidenteComponent implements OnInit {
         }
       }
 
-      // 2. Fallback to City (Ciudad) if Street not matched
       if (!matchedCiudad && ciudadName) {
         matchedCiudad = allCiudades.find(c => this.stringsMatch(c.ciudad, ciudadName)) ||
                         allCiudades.find(c => this.stringsPartialMatch(c.ciudad, ciudadName));
@@ -823,7 +1020,6 @@ export class RegistroAccidenteComponent implements OnInit {
         }
       }
 
-      // 3. Fallback to County (Condado) if City not matched
       if (!matchedCondado && condadoName) {
         matchedCondado = allCondados.find(c => this.stringsMatch(c.condado, condadoName)) ||
                          allCondados.find(c => this.stringsPartialMatch(c.condado, condadoName));
@@ -837,7 +1033,6 @@ export class RegistroAccidenteComponent implements OnInit {
         }
       }
 
-      // 4. Fallback to State (Estado) if County not matched
       if (!matchedEstado && estadoName) {
         matchedEstado = allEstados.find(e => this.stringsMatch(e.estado, estadoName)) ||
                         allEstados.find(e => this.stringsPartialMatch(e.estado, estadoName));
@@ -848,13 +1043,11 @@ export class RegistroAccidenteComponent implements OnInit {
         }
       }
 
-      // 5. Fallback to Country (País) if State not matched
       if (!matchedPais && paisName) {
         matchedPais = allPaises.find(p => this.stringsMatch(p.pais, paisName)) ||
                       allPaises.find(p => this.stringsPartialMatch(p.pais, paisName));
       }
 
-      // --- POPULATE RESOLVED DATA AND SIGNALS ---
       this.paises.set(allPaises);
 
       if (matchedPais) {
