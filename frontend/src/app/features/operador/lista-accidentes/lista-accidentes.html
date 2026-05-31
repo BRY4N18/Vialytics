@@ -1,13 +1,13 @@
-<div class="lista-container fade-in">
+<div class="max-w-[1300px] mx-auto p-7 flex flex-col gap-5 h-full overflow-y-auto animate-fade-in-up">
   <!-- Section Header -->
-  <div class="section-header">
-    <div class="header-info">
-      <h1 class="main-title">Registro General de Accidentes</h1>
-      <p class="subtitle">Consola de control, auditoría y análisis de incidentes reportados en el sistema.</p>
+  <div class="flex items-center justify-between gap-5 p-5 bg-card rounded-card shadow-card max-992:flex-col max-992:items-start">
+    <div class="flex flex-col gap-1">
+      <h1 class="text-2xl font-extrabold text-text-primary tracking-tight">Registro General de Accidentes</h1>
+      <p class="text-sm text-text-secondary">Consola de control, auditoría y análisis de incidentes reportados en el sistema.</p>
     </div>
-    <div class="header-actions">
-      <button class="btn-action btn-freshen" (click)="cargarAccidentes()" [disabled]="isLoading()" title="Refrescar datos">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon" [class.spin]="isLoading()">
+    <div class="flex gap-2.5">
+      <button class="flex items-center gap-2 px-4 py-2.5 bg-sidebar text-white rounded-sm text-sm font-semibold shadow-sm hover:bg-sidebar-hover hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-50" (click)="cargarAccidentes()" [disabled]="isLoading()" title="Refrescar datos">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4" [class.animate-spin]="isLoading()">
           <path d="M1 4v6h6M23 20v-6h-6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
         </svg>
         <span>Refrescar</span>
@@ -17,99 +17,99 @@
 
   <!-- Error Alert -->
   @if (errorMessage(); as error) {
-    <div class="error-alert">
-      <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <div class="flex items-center gap-3 p-3 bg-danger/10 border border-danger/20 rounded-sm text-danger text-sm">
+      <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="10"/>
         <line x1="12" y1="8" x2="12" y2="12"/>
         <line x1="8" y1="16" x2="16" y2="16"/>
       </svg>
-      <div class="alert-body">
+      <div class="flex-1 text-sm">
         <strong>Error de Conexión:</strong> {{ error }}
       </div>
-      <button class="btn-alert-close" (click)="errorMessage.set(null)">&times;</button>
+      <button class="bg-transparent border-none text-danger cursor-pointer p-0 text-xl leading-none" (click)="errorMessage.set(null)">&times;</button>
     </div>
   }
 
-  <!-- Stats Grid (Bento-like row) -->
-  <div class="stats-grid">
-    <div class="stat-card glass-card">
-      <div class="stat-icon-wrapper blue">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="stat-icon">
+  <!-- Stats Grid -->
+  <div class="grid grid-cols-4 gap-4 max-992:grid-cols-2 max-576:grid-cols-1">
+    <div class="flex items-center gap-4 p-4.5 bg-card rounded-card shadow-card transition-all hover:-translate-y-1 hover:shadow-elevated active:scale-[0.97]">
+      <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-info/10 text-info">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
           <circle cx="12" cy="12" r="10"/>
           <line x1="12" y1="8" x2="12" y2="16"/>
           <line x1="8" y1="12" x2="16" y2="12"/>
         </svg>
       </div>
-      <div class="stat-details">
-        <span class="stat-label">Total Accidentes</span>
-        <span class="stat-value">{{ totalRecords() }}</span>
+      <div class="flex flex-col gap-1">
+        <span class="text-xs text-text-secondary uppercase tracking-wider">Total Accidentes</span>
+        <span class="text-2xl font-extrabold text-text-primary leading-none">{{ totalRecords() }}</span>
       </div>
     </div>
 
-    <div class="stat-card glass-card">
-      <div class="stat-icon-wrapper amber">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="stat-icon">
+    <div class="flex items-center gap-4 p-4.5 bg-card rounded-card shadow-card transition-all hover:-translate-y-1 hover:shadow-elevated active:scale-[0.97]">
+      <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-warning/10 text-warning">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
           <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
           <line x1="12" y1="9" x2="12" y2="13"/>
           <line x1="12" y1="17" x2="12.01" y2="17"/>
         </svg>
       </div>
-      <div class="stat-details">
-        <span class="stat-label">Heridos Registrados</span>
-        <span class="stat-value text-amber">{{ totalHeridos() }}</span>
+      <div class="flex flex-col gap-1">
+        <span class="text-xs text-text-secondary uppercase tracking-wider">Heridos Registrados</span>
+        <span class="text-2xl font-extrabold text-warning leading-none">{{ totalHeridos() }}</span>
       </div>
     </div>
 
-    <div class="stat-card glass-card">
-      <div class="stat-icon-wrapper red">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="stat-icon">
+    <div class="flex items-center gap-4 p-4.5 bg-card rounded-card shadow-card transition-all hover:-translate-y-1 hover:shadow-elevated active:scale-[0.97]">
+      <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-danger/10 text-danger">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
           <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
           <line x1="9" y1="9" x2="15" y2="15"/>
           <line x1="15" y1="9" x2="9" y2="15"/>
         </svg>
       </div>
-      <div class="stat-details">
-        <span class="stat-label">Fallecidos Registrados</span>
-        <span class="stat-value text-red">{{ totalFallecidos() }}</span>
+      <div class="flex flex-col gap-1">
+        <span class="text-xs text-text-secondary uppercase tracking-wider">Fallecidos Registrados</span>
+        <span class="text-2xl font-extrabold text-danger leading-none">{{ totalFallecidos() }}</span>
       </div>
     </div>
 
-    <div class="stat-card glass-card">
-      <div class="stat-icon-wrapper purple">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="stat-icon">
+    <div class="flex items-center gap-4 p-4.5 bg-card rounded-card shadow-card transition-all hover:-translate-y-1 hover:shadow-elevated active:scale-[0.97]">
+      <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-sev-fatal/10 text-sev-fatal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
           <circle cx="9" cy="7" r="4"/>
           <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
           <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
         </svg>
       </div>
-      <div class="stat-details">
-        <span class="stat-label">Total Víctimas</span>
-        <span class="stat-value text-purple">{{ totalVictimas() }}</span>
+      <div class="flex flex-col gap-1">
+        <span class="text-xs text-text-secondary uppercase tracking-wider">Total Víctimas</span>
+        <span class="text-2xl font-extrabold text-sev-fatal leading-none">{{ totalVictimas() }}</span>
       </div>
     </div>
   </div>
 
   <!-- Filters Dashboard -->
-  <div class="filters-panel glass-card">
-    <div class="search-box">
-      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <div class="flex flex-col gap-4 p-5 bg-card rounded-card shadow-card">
+    <div class="relative w-full">
+      <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="11" cy="11" r="8"/>
         <line x1="21" y1="21" x2="16.65" y2="16.65"/>
       </svg>
       <input
         type="text"
-        class="search-input glass-input"
+        class="w-full py-3 pr-4 pl-10 bg-white border border-border text-text-primary rounded-sm text-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted"
         placeholder="Buscar por ID, calle, ciudad o descripción..."
         [ngModel]="searchTerm()"
         (ngModelChange)="searchTerm.set($event); currentPage.set(1)"
       />
     </div>
 
-    <div class="filter-controls">
-      <div class="select-group">
+    <div class="flex flex-wrap items-center gap-4">
+      <div class="min-w-[200px] flex-shrink-0">
         <select
-          class="control-select glass-select"
+          class="w-full px-3.5 py-2.5 bg-white border border-border text-text-primary rounded-sm text-sm outline-none cursor-pointer transition-all hover:border-accent-gray/30 focus:border-accent-gray/30 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10"
           [ngModel]="filterSeveridad() === null ? 'null' : filterSeveridad()"
           (ngModelChange)="onSeveridadSelect($event)"
         >
@@ -120,9 +120,9 @@
         </select>
       </div>
 
-      <div class="select-group">
+      <div class="min-w-[200px] flex-shrink-0">
         <select
-          class="control-select glass-select"
+          class="w-full px-3.5 py-2.5 bg-white border border-border text-text-primary rounded-sm text-sm outline-none cursor-pointer transition-all hover:border-accent-gray/30 focus:border-accent-gray/30 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10"
           [ngModel]="filterEstado()"
           (ngModelChange)="filterEstado.set($event); currentPage.set(1)"
         >
@@ -133,9 +133,9 @@
         </select>
       </div>
 
-      <div class="select-group">
+      <div class="min-w-[200px] flex-shrink-0">
         <select
-          class="control-select glass-select"
+          class="w-full px-3.5 py-2.5 bg-white border border-border text-text-primary rounded-sm text-sm outline-none cursor-pointer transition-all hover:border-accent-gray/30 focus:border-accent-gray/30 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10"
           [ngModel]="filterCiudadId() === null ? 'null' : filterCiudadId()"
           (ngModelChange)="onCiudadSelect($event)"
         >
@@ -146,71 +146,72 @@
         </select>
       </div>
 
-      <div class="select-group range-group">
+      <div class="min-w-[240px] flex items-center gap-1.5">
         <input
           type="number" min="0"
-          class="control-select glass-select range-input"
+          class="w-full px-3.5 py-2.5 bg-white border border-border text-text-primary rounded-sm text-sm outline-none cursor-pointer transition-all hover:border-accent-gray/30 focus:border-accent-gray/30 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 w-[100px] min-w-0"
           placeholder="Heridos min"
           [ngModel]="filterMinHeridos()"
           (ngModelChange)="filterMinHeridos.set($event !== '' ? +$event : null); currentPage.set(1)"
         />
-        <span class="range-sep">–</span>
+        <span class="text-text-muted text-sm flex-shrink-0">–</span>
         <input
           type="number" min="0"
-          class="control-select glass-select range-input"
+          class="w-full px-3.5 py-2.5 bg-white border border-border text-text-primary rounded-sm text-sm outline-none cursor-pointer transition-all hover:border-accent-gray/30 focus:border-accent-gray/30 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 w-[100px] min-w-0"
           placeholder="Heridos max"
           [ngModel]="filterMaxHeridos()"
           (ngModelChange)="filterMaxHeridos.set($event !== '' ? +$event : null); currentPage.set(1)"
         />
       </div>
 
-      <div class="select-group range-group">
+      <div class="min-w-[240px] flex items-center gap-1.5">
         <input
           type="number" min="0"
-          class="control-select glass-select range-input"
+          class="w-full px-3.5 py-2.5 bg-white border border-border text-text-primary rounded-sm text-sm outline-none cursor-pointer transition-all hover:border-accent-gray/30 focus:border-accent-gray/30 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 w-[100px] min-w-0"
           placeholder="Fallecidos min"
           [ngModel]="filterMinFallecidos()"
           (ngModelChange)="filterMinFallecidos.set($event !== '' ? +$event : null); currentPage.set(1)"
         />
-        <span class="range-sep">–</span>
+        <span class="text-text-muted text-sm flex-shrink-0">–</span>
         <input
           type="number" min="0"
-          class="control-select glass-select range-input"
+          class="w-full px-3.5 py-2.5 bg-white border border-border text-text-primary rounded-sm text-sm outline-none cursor-pointer transition-all hover:border-accent-gray/30 focus:border-accent-gray/30 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 w-[100px] min-w-0"
           placeholder="Fallecidos max"
           [ngModel]="filterMaxFallecidos()"
           (ngModelChange)="filterMaxFallecidos.set($event !== '' ? +$event : null); currentPage.set(1)"
         />
       </div>
 
-      <div class="select-group range-group">
+      <div class="min-w-[240px] flex items-center gap-1.5">
         <input
           type="date"
-          class="control-select glass-select range-input"
+          class="w-full px-3.5 py-2.5 bg-white border border-border text-text-primary rounded-sm text-sm outline-none cursor-pointer transition-all hover:border-accent-gray/30 focus:border-accent-gray/30 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 w-[100px] min-w-0"
           placeholder="Fecha desde"
           [ngModel]="filterFechaDesde()"
           (ngModelChange)="filterFechaDesde.set($event); currentPage.set(1)"
         />
-        <span class="range-sep">–</span>
+        <span class="text-text-muted text-sm flex-shrink-0">–</span>
         <input
           type="date"
-          class="control-select glass-select range-input"
+          class="w-full px-3.5 py-2.5 bg-white border border-border text-text-primary rounded-sm text-sm outline-none cursor-pointer transition-all hover:border-accent-gray/30 focus:border-accent-gray/30 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 w-[100px] min-w-0"
           placeholder="Fecha hasta"
           [ngModel]="filterFechaHasta()"
           (ngModelChange)="filterFechaHasta.set($event); currentPage.set(1)"
         />
       </div>
 
-      <label class="toggle-control">
+      <label class="flex items-center gap-2 cursor-pointer select-none text-sm text-text-secondary">
         <input
           type="checkbox"
+          class="w-4 h-4 cursor-pointer accent-accent-gray"
           [ngModel]="filterSoloActivos()"
           (ngModelChange)="filterSoloActivos.set($event); currentPage.set(1)"
         />
-        <span class="toggle-label">Solo Activos</span>
+        <span>Solo Activos</span>
       </label>
 
-      <button class="btn-clear" (click)="limpiarFiltros()" title="Limpiar todos los filtros">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-btn">
+      <button class="ml-auto flex items-center gap-1.5 bg-transparent border border-danger/30 text-danger px-3.5 py-2 text-xs font-semibold rounded-sm cursor-pointer transition-all hover:bg-danger/10 hover:border-danger active:scale-[0.97]" (click)="limpiarFiltros()" title="Limpiar todos los filtros">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5">
           <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
         </svg>
         Limpiar
@@ -220,30 +221,30 @@
 
   <!-- Loading State -->
   @if (isLoading()) {
-    <div class="double-bezel-outer">
-      <div class="double-bezel-inner">
-        <table class="premium-table">
+    <div class="bg-card rounded-card shadow-card overflow-hidden">
+      <div>
+        <table class="w-full border-collapse text-sm">
           <thead>
             <tr>
-              <th>Fecha y Hora</th>
-              <th>Ubicación</th>
-              <th>Severidad</th>
-              <th>Estado</th>
-              <th class="text-center">Heridos</th>
-              <th class="text-center">Fallecidos</th>
-              <th class="text-right">Acciones</th>
+              <th class="px-5 py-3.5 bg-gray-50 text-text-secondary font-semibold text-xs uppercase tracking-wider border-b-2 border-border">Fecha y Hora</th>
+              <th class="px-5 py-3.5 bg-gray-50 text-text-secondary font-semibold text-xs uppercase tracking-wider border-b-2 border-border">Ubicación</th>
+              <th class="px-5 py-3.5 bg-gray-50 text-text-secondary font-semibold text-xs uppercase tracking-wider border-b-2 border-border">Severidad</th>
+              <th class="px-5 py-3.5 bg-gray-50 text-text-secondary font-semibold text-xs uppercase tracking-wider border-b-2 border-border">Estado</th>
+              <th class="px-5 py-3.5 bg-gray-50 text-text-secondary font-semibold text-xs uppercase tracking-wider border-b-2 border-border text-center">Heridos</th>
+              <th class="px-5 py-3.5 bg-gray-50 text-text-secondary font-semibold text-xs uppercase tracking-wider border-b-2 border-border text-center">Fallecidos</th>
+              <th class="px-5 py-3.5 bg-gray-50 text-text-secondary font-semibold text-xs uppercase tracking-wider border-b-2 border-border text-right">Acciones</th>
             </tr>
           </thead>
           <tbody>
             @for (item of [1,2,3,4,5]; track $index) {
-              <tr class="table-row">
-                <td><div class="skeleton skeleton-date"></div></td>
-                <td><div class="skeleton skeleton-location"></div></td>
-                <td><div class="skeleton skeleton-badge"></div></td>
-                <td><div class="skeleton skeleton-badge"></div></td>
-                <td class="text-center"><div class="skeleton skeleton-num"></div></td>
-                <td class="text-center"><div class="skeleton skeleton-num"></div></td>
-                <td class="text-right"><div class="skeleton skeleton-actions"></div></td>
+              <tr class="transition-colors border-l-3 border-l-transparent hover:bg-gray-50/50 hover:border-l-accent-gray/30">
+                <td class="px-5 py-3.5 border-b border-border align-middle"><div class="bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-shimmer rounded w-[120px] h-4"></div></td>
+                <td class="px-5 py-3.5 border-b border-border align-middle"><div class="bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-shimmer rounded w-[160px] h-4"></div></td>
+                <td class="px-5 py-3.5 border-b border-border align-middle"><div class="bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-shimmer rounded-full w-[80px] h-6"></div></td>
+                <td class="px-5 py-3.5 border-b border-border align-middle"><div class="bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-shimmer rounded-full w-[80px] h-6"></div></td>
+                <td class="px-5 py-3.5 border-b border-border align-middle text-center"><div class="bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-shimmer rounded w-7 h-6 mx-auto"></div></td>
+                <td class="px-5 py-3.5 border-b border-border align-middle text-center"><div class="bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-shimmer rounded w-7 h-6 mx-auto"></div></td>
+                <td class="px-5 py-3.5 border-b border-border align-middle text-right"><div class="bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-shimmer rounded w-[140px] h-8 ml-auto"></div></td>
               </tr>
             }
           </tbody>
@@ -251,89 +252,89 @@
       </div>
     </div>
   } @else {
-    <!-- Table Container (Double-Bezel) -->
-    <div class="double-bezel-outer">
-      <div class="double-bezel-inner">
-        <table class="premium-table">
+    <!-- Table Container -->
+    <div class="bg-card rounded-card shadow-card overflow-hidden">
+      <div>
+        <table class="w-full border-collapse text-sm">
           <thead>
             <tr>
-              <th>Fecha y Hora</th>
-              <th>Ubicación</th>
-              <th>Severidad</th>
-              <th>Estado</th>
-              <th class="text-center">Heridos</th>
-              <th class="text-center">Fallecidos</th>
-              <th class="text-right">Acciones</th>
+              <th class="px-5 py-3.5 bg-gray-50 text-text-secondary font-semibold text-xs uppercase tracking-wider border-b-2 border-border">Fecha y Hora</th>
+              <th class="px-5 py-3.5 bg-gray-50 text-text-secondary font-semibold text-xs uppercase tracking-wider border-b-2 border-border">Ubicación</th>
+              <th class="px-5 py-3.5 bg-gray-50 text-text-secondary font-semibold text-xs uppercase tracking-wider border-b-2 border-border">Severidad</th>
+              <th class="px-5 py-3.5 bg-gray-50 text-text-secondary font-semibold text-xs uppercase tracking-wider border-b-2 border-border">Estado</th>
+              <th class="px-5 py-3.5 bg-gray-50 text-text-secondary font-semibold text-xs uppercase tracking-wider border-b-2 border-border text-center">Heridos</th>
+              <th class="px-5 py-3.5 bg-gray-50 text-text-secondary font-semibold text-xs uppercase tracking-wider border-b-2 border-border text-center">Fallecidos</th>
+              <th class="px-5 py-3.5 bg-gray-50 text-text-secondary font-semibold text-xs uppercase tracking-wider border-b-2 border-border text-right">Acciones</th>
             </tr>
           </thead>
           <tbody>
             @for (acc of paginatedAccidentes(); track acc.idaccidente) {
-              <tr class="table-row">
-                <td class="td-date">
-                  <span class="date-text">{{ acc.fecha_actualizacion | date:'dd/MM/yyyy HH:mm' }}</span>
+              <tr class="transition-colors border-l-3 border-l-transparent hover:bg-gray-50/50 hover:border-l-accent-gray/30">
+                <td class="px-5 py-3.5 border-b border-border align-middle">
+                  <span class="text-text-primary font-medium">{{ acc.fecha_actualizacion | date:'dd/MM/yyyy HH:mm' }}</span>
                 </td>
-                <td class="td-location">
-                  <div class="location-details">
-                    <span class="street-name">
+                <td class="px-5 py-3.5 border-b border-border align-middle">
+                  <div class="flex flex-col gap-0.5">
+                    <span class="text-text-primary font-semibold">
                       {{ (acc.calle_nombre && acc.calle_nombre !== 'Ubicación Registrada') ? acc.calle_nombre : 'Sin registrar' }}
                     </span>
                     @if (acc.ciudad_nombre && acc.ciudad_nombre !== 'Ubicación Registrada') {
-                      <span class="city-name">{{ acc.ciudad_nombre }}</span>
+                      <span class="text-text-muted text-xs">{{ acc.ciudad_nombre }}</span>
                     }
                   </div>
                 </td>
-                <td class="td-badge">
-                  <span class="badge-pill" [ngStyle]="getSeveridadStyles(acc.severidad_nivel)">
+                <td class="px-5 py-3.5 border-b border-border align-middle">
+                  <span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap" [ngStyle]="getSeveridadStyles(acc.severidad_nivel)">
                     {{ getSeveridadLabel(acc.severidad_nivel) }}
                   </span>
                 </td>
-                <td class="td-badge">
-                  <span class="badge-pill" [ngStyle]="getEstadoStyles(acc.estado_actual)">
+                <td class="px-5 py-3.5 border-b border-border align-middle">
+                  <span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap" [ngStyle]="getEstadoStyles(acc.estado_actual)">
                     {{ getEstadoLabel(acc.estado_actual) }}
                   </span>
                 </td>
-                <td class="td-num text-center">
-                  <span class="num-indicator" [class.danger]="acc.numheridos > 0">{{ acc.numheridos }}</span>
+                <td class="px-5 py-3.5 border-b border-border align-middle text-center">
+                  <span class="inline-flex items-center justify-center min-w-[24px] h-6 rounded font-bold text-xs bg-gray-50 text-text-secondary" [class.bg-danger/10]="acc.numheridos > 0" [class.text-danger]="acc.numheridos > 0" [class.border]="acc.numheridos > 0" [class.border-danger/20]="acc.numheridos > 0">{{ acc.numheridos }}</span>
                 </td>
-                <td class="td-num text-center">
-                  <span class="num-indicator fatal" [class.danger]="acc.numfallecidos > 0">{{ acc.numfallecidos }}</span>
+                <td class="px-5 py-3.5 border-b border-border align-middle text-center">
+                  <span class="inline-flex items-center justify-center min-w-[24px] h-6 rounded font-bold text-xs bg-gray-50 text-text-secondary" [class.bg-sev-fatal/10]="acc.numfallecidos > 0" [class.text-sev-fatal]="acc.numfallecidos > 0" [class.border]="acc.numfallecidos > 0" [class.border-sev-fatal/20]="acc.numfallecidos > 0">{{ acc.numfallecidos }}</span>
                 </td>
-                <td class="td-actions text-right">
-                  <div class="actions-wrapper">
-                    <a class="btn-action-circle btn-circle-map" [routerLink]="['/mapa']" [queryParams]="{ selected: acc.idaccidente }" title="Ver en mapa">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="action-icon">
+                <td class="px-5 py-3.5 border-b border-border align-middle text-right">
+                  <div class="inline-flex items-center justify-end gap-2">
+                    <a class="relative inline-flex items-center justify-center w-9 h-9 rounded-full border border-border cursor-pointer transition-all hover:-translate-y-0.5 active:scale-90 group bg-info/10 text-info border-info/20 hover:bg-info hover:text-white hover:shadow-[0_4px_12px_rgba(2,132,199,0.3)]" [routerLink]="['/mapa']" [queryParams]="{ selected: acc.idaccidente }" title="Ver en mapa">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-4 h-4">
                         <polygon points="5 3 19 12 5 21 5 3"/>
                       </svg>
-                      <span class="tooltip-label">Ver Mapa</span>
+                      <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1 bg-sidebar text-white text-[0.68rem] font-semibold whitespace-nowrap rounded opacity-0 pointer-events-none transition-all group-hover:opacity-100">Ver Mapa</span>
                     </a>
-                    <button class="btn-action-circle btn-circle-status" (click)="onAbrirActualizarEstado(acc)" title="Actualizar Estado">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="action-icon-status">
+                    <button class="relative inline-flex items-center justify-center w-9 h-9 rounded-full border border-border cursor-pointer transition-all hover:-translate-y-0.5 active:scale-90 group bg-success/10 text-success border-success/20 hover:bg-success hover:text-white hover:shadow-[0_4px_12px_rgba(22,163,74,0.3)]" (click)="onAbrirActualizarEstado(acc)" title="Actualizar Estado">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
                         <path d="M9 5H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9l2 2 4-4"/>
                       </svg>
-                      <span class="tooltip-label">Estado</span>
+                      <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1 bg-sidebar text-white text-[0.68rem] font-semibold whitespace-nowrap rounded opacity-0 pointer-events-none transition-all group-hover:opacity-100">Estado</span>
                     </button>
-                    <a class="btn-action-circle btn-circle-edit" [routerLink]="['/registro-accidente']" [queryParams]="{ edit: acc.idaccidente }" title="Editar incidente">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="action-icon-pencil">
+                    <a class="relative inline-flex items-center justify-center w-9 h-9 rounded-full border border-border cursor-pointer transition-all hover:-translate-y-0.5 active:scale-90 group bg-warning/10 text-warning border-warning/20 hover:bg-warning hover:text-white hover:shadow-[0_4px_12px_rgba(217,119,6,0.3)]" [routerLink]="['/registro-accidente']" [queryParams]="{ edit: acc.idaccidente }" title="Editar incidente">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                         <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                       </svg>
-                      <span class="tooltip-label">Editar</span>
+                      <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1 bg-sidebar text-white text-[0.68rem] font-semibold whitespace-nowrap rounded opacity-0 pointer-events-none transition-all group-hover:opacity-100">Editar</span>
                     </a>
                   </div>
                 </td>
               </tr>
             } @empty {
               <tr>
-                <td colspan="7" class="empty-state">
-                  <div class="empty-message-wrapper">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
+                <td colspan="7" class="px-5 py-3.5 border-b border-border align-middle py-15 text-center">
+                  <div class="flex flex-col items-center gap-3">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-12 h-12 text-text-muted">
                       <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
                       <line x1="8" y1="2" x2="8" y2="18"/>
                       <line x1="16" y1="6" x2="16" y2="22"/>
                     </svg>
-                    <h3>No se encontraron accidentes con los filtros actuales</h3>
-                    <p>Intente ajustar los criterios de búsqueda o recargar la base de datos.</p>
-                    <button class="btn-action" (click)="limpiarFiltros()">Restaurar Filtros</button>
+                    <h3 class="text-lg font-bold text-text-primary">No se encontraron accidentes con los filtros actuales</h3>
+                    <p class="text-sm text-text-secondary max-w-[400px]">Intente ajustar los criterios de búsqueda o recargar la base de datos.</p>
+                    <button class="flex items-center gap-2 px-4 py-2.5 bg-card border border-border text-text-primary rounded-sm text-sm font-semibold cursor-pointer transition-all hover:bg-card-hover hover:border-border-light hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-50" (click)="limpiarFiltros()">Restaurar Filtros</button>
                   </div>
                 </td>
               </tr>
@@ -345,30 +346,33 @@
 
     <!-- Pagination Footer -->
     @if (totalRecords() > itemsPerPage) {
-      <div class="pagination-footer glass-card">
-        <div class="pagination-info">
+      <div class="flex items-center justify-between gap-5 p-4 bg-card rounded-card shadow-card flex-wrap max-992:flex-col max-992:items-start">
+        <div class="text-xs text-text-secondary">
           Mostrando incidentes del <strong>{{ (currentPage() - 1) * itemsPerPage + 1 }}</strong> al 
           <strong>{{ Math.min(currentPage() * itemsPerPage, totalRecords()) }}</strong> de un total de 
           <strong>{{ totalRecords() }}</strong>
         </div>
 
-        <div class="pagination-controls">
+        <div class="flex items-center gap-2">
           <button 
-            class="btn-page btn-nav" 
+            class="px-3 py-1.5 bg-transparent border border-border text-text-secondary rounded text-xs font-semibold cursor-pointer transition-all hover:bg-gray-50 hover:text-text-primary hover:border-border-light active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed" 
             [disabled]="currentPage() === 1" 
             (click)="cambiarPagina(currentPage() - 1)"
           >
             &larr; Anterior
           </button>
           
-          <div class="page-numbers">
+          <div>
             @for (p of visiblePages(); track $index) {
               @if (p === '...') {
-                <span class="pagination-ellipsis">...</span>
+                <span class="inline-flex items-center justify-center min-w-[32px] h-8 text-text-muted font-semibold select-none">...</span>
               } @else {
                 <button 
-                  class="btn-page number" 
-                  [class.active]="currentPage() === p"
+                  class="min-w-[32px] h-8 p-0 inline-flex items-center justify-center px-3 py-1.5 bg-transparent border border-border text-text-secondary rounded text-xs font-semibold cursor-pointer transition-all hover:bg-gray-50 hover:text-text-primary hover:border-border-light active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed" 
+                  [class.bg-accent-gray]="currentPage() === p" 
+                  [class.text-white]="currentPage() === p" 
+                  [class.border-accent-gray]="currentPage() === p" 
+                  [class.shadow-[0_0_8px_rgba(80,87,107,0.3)]]="currentPage() === p"
                   (click)="cambiarPagina($any(p))"
                 >
                   {{ p }}
@@ -378,7 +382,7 @@
           </div>
 
           <button 
-            class="btn-page btn-nav" 
+            class="px-3 py-1.5 bg-transparent border border-border text-text-secondary rounded text-xs font-semibold cursor-pointer transition-all hover:bg-gray-50 hover:text-text-primary hover:border-border-light active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed" 
             [disabled]="currentPage() === totalPages()" 
             (click)="cambiarPagina(currentPage() + 1)"
           >
@@ -391,8 +395,8 @@
 
   <!-- Modal Actualizar Estado -->
   @if (mostrarActualizarEstado() && selectedAccidenteId()) {
-    <div class="sga-modal-backdrop" (click)="onCerrarActualizarEstado()">
-      <div class="sga-modal-content glass-card animate-zoom-in" (click)="$event.stopPropagation()">
+    <div class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center" (click)="onCerrarActualizarEstado()">
+      <div class="bg-card shadow-modal rounded-card w-full max-w-lg max-h-[80vh] overflow-y-auto animate-modal-enter" (click)="$event.stopPropagation()">
         <app-actualizar-estado
           [accidenteId]="selectedAccidenteId()!"
           [estadoActual]="selectedAccidenteEstado() || 'ACTIVO'"

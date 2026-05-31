@@ -8,7 +8,6 @@ import { AuthService } from '../../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './login-modal.html',
-  styleUrl: './login-modal.css'
 })
 export class LoginModalComponent {
   readonly authService = inject(AuthService);
@@ -22,9 +21,9 @@ export class LoginModalComponent {
 
   readonly demoUsers = [
     { label: 'Operador', name: 'Laura Mendoza', user: 'operador_sga', role: 'Operador', color: 'emerald' },
-    { label: 'Administrador', name: 'Carlos Gomez', user: 'admin_sga', role: 'Administrador', color: 'blue' },
-    { label: 'Consumidor Analítico', name: 'Patricia Vega', user: 'analista_sga', role: 'Consumidor Analítico', color: 'teal' },
-    { label: 'Despachador', name: 'David Torres', user: 'despachador_sga', role: 'Despachador', color: 'violet' }
+    { label: 'Administrador', name: 'Carlos Gomez', user: 'admin_sga', role: 'Administrador', color: 'cyan' },
+    { label: 'Consumidor Analítico', name: 'Patricia Vega', user: 'analista_sga', role: 'Consumidor Analítico', color: 'violet' },
+    { label: 'Despachador', name: 'David Torres', user: 'despachador_sga', role: 'Despachador', color: 'amber' }
   ];
 
   readonly selectedDemo = signal<any | null>(null);

@@ -1,62 +1,62 @@
-<div class="expediente-container fade-in">
-  <div class="breadcrumb">
-    <a class="breadcrumb-link" routerLink="/analitico/accidentes">Portal Analítico</a>
-    <svg class="breadcrumb-sep" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<div class="max-w-5xl mx-auto flex flex-col gap-6 animate-fade-in">
+  <div class="flex items-center gap-2 text-[0.78rem]">
+    <a class="text-text-secondary no-underline font-semibold transition-colors hover:text-info" routerLink="/analitico/accidentes">Portal Analítico</a>
+    <svg class="w-3.5 h-3.5 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <polyline points="9 18 15 12 9 6"/>
     </svg>
-    <a class="breadcrumb-link" routerLink="/analitico/accidentes">Buscar Accidentes</a>
-    <svg class="breadcrumb-sep" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <a class="text-text-secondary no-underline font-semibold transition-colors hover:text-info" routerLink="/analitico/accidentes">Buscar Accidentes</a>
+    <svg class="w-3.5 h-3.5 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <polyline points="9 18 15 12 9 6"/>
     </svg>
-    <span class="breadcrumb-current">Expediente</span>
+    <span class="text-text-primary font-bold">Expediente</span>
   </div>
 
   @if (loading()) {
-    <div class="loading-skeleton">
-      <div class="skeleton-section">
-        <div class="skeleton skeleton-header-lg"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
+    <div class="flex flex-col gap-5">
+      <div class="flex flex-col gap-4">
+        <div class="bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-shimmer rounded w-[240px] h-6"></div>
+        <div class="bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-shimmer rounded-card w-full h-[120px]"></div>
+        <div class="bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-shimmer rounded-card w-full h-[120px]"></div>
       </div>
     </div>
   } @else if (error(); as err) {
-    <div class="error-state">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="error-icon">
+    <div class="flex flex-col items-center justify-center gap-3 py-20 text-center">
+      <svg class="w-12 h-12 text-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="10"/>
         <line x1="12" y1="8" x2="12" y2="12"/>
         <line x1="12" y1="16" x2="12.01" y2="16"/>
       </svg>
-      <h3>Error al cargar el expediente</h3>
-      <p>{{ err }}</p>
-      <a class="btn-back" routerLink="/analitico/accidentes">Volver a la lista</a>
+      <h3 class="text-lg font-bold text-text-primary m-0">Error al cargar el expediente</h3>
+      <p class="text-sm text-text-secondary m-0 mb-2">{{ err }}</p>
+      <a class="inline-flex items-center gap-2 bg-info/10 border border-info/20 text-info px-5 py-2.5 rounded-sm text-sm font-bold no-underline transition-all hover:bg-info hover:text-white hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(6,182,212,0.3)]" routerLink="/analitico/accidentes">Volver a la lista</a>
     </div>
   } @else if (expediente(); as exp) {
-    <div class="expediente-content">
+    <div class="flex flex-col gap-5">
       <!-- Datos del Accidente -->
-      <section class="exp-section glass-card">
-        <div class="section-header-exp">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="section-icon">
+      <section class="bg-card border border-border rounded-card overflow-hidden transition-all hover:border-info/15 hover:shadow-elevated">
+        <div class="flex items-center gap-2.5 px-6 py-[18px] border-b border-border bg-black/15">
+          <svg class="w-[18px] h-[18px] text-info flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
             <polyline points="14 2 14 8 20 8"/>
             <line x1="16" y1="13" x2="8" y2="13"/>
             <line x1="16" y1="17" x2="8" y2="17"/>
           </svg>
-          <h2>Datos del Accidente</h2>
+          <h2 class="text-[0.95rem] font-bold text-text-primary m-0">Datos del Accidente</h2>
         </div>
-        <div class="section-body">
-          <div class="data-grid">
-            <div class="data-item">
-              <span class="data-label">ID Accidente</span>
-              <span class="data-value mono">{{ exp.accidente.idaccidente }}</span>
+        <div class="px-6 py-5">
+          <div class="grid grid-cols-2 gap-4 max-768:grid-cols-1">
+            <div class="flex flex-col gap-1">
+              <span class="text-[0.68rem] font-bold text-text-muted uppercase tracking-wider">ID Accidente</span>
+              <span class="text-sm font-semibold text-text-primary break-words font-mono text-[0.8rem]">{{ exp.accidente.idaccidente }}</span>
             </div>
-            <div class="data-item">
-              <span class="data-label">Fecha y Hora</span>
-              <span class="data-value">{{ exp.accidente.fecha_actualizacion | date:'dd/MM/yyyy HH:mm' }}</span>
+            <div class="flex flex-col gap-1">
+              <span class="text-[0.68rem] font-bold text-text-muted uppercase tracking-wider">Fecha y Hora</span>
+              <span class="text-sm font-semibold text-text-primary break-words">{{ exp.accidente.fecha_actualizacion | date:'dd/MM/yyyy HH:mm' }}</span>
             </div>
-            <div class="data-item">
-              <span class="data-label">Severidad</span>
-              <span class="data-value">
-                <span class="severity-badge" [ngStyle]="{
+            <div class="flex flex-col gap-1">
+              <span class="text-[0.68rem] font-bold text-text-muted uppercase tracking-wider">Severidad</span>
+              <span class="text-sm font-semibold text-text-primary break-words">
+                <span class="inline-block px-2.5 py-1 rounded-full text-[0.72rem] font-bold uppercase tracking-wider" [ngStyle]="{
                   background: exp.accidente.severidad_nivel >= 3 ? 'rgba(219, 87, 87, 0.15)' : exp.accidente.severidad_nivel === 2 ? 'rgba(217, 151, 38, 0.15)' : 'rgba(34, 160, 118, 0.15)',
                   color: exp.accidente.severidad_nivel >= 3 ? 'var(--accent-red)' : exp.accidente.severidad_nivel === 2 ? 'var(--accent-amber)' : 'var(--accent-emerald)',
                   border: '1px solid ' + (exp.accidente.severidad_nivel >= 3 ? 'rgba(219, 87, 87, 0.3)' : exp.accidente.severidad_nivel === 2 ? 'rgba(217, 151, 38, 0.3)' : 'rgba(34, 160, 118, 0.3)')
@@ -65,178 +65,178 @@
                 </span>
               </span>
             </div>
-            <div class="data-item">
-              <span class="data-label">Estado Actual</span>
-              <span class="data-value">{{ exp.accidente.estado_actual }}</span>
+            <div class="flex flex-col gap-1">
+              <span class="text-[0.68rem] font-bold text-text-muted uppercase tracking-wider">Estado Actual</span>
+              <span class="text-sm font-semibold text-text-primary break-words">{{ exp.accidente.estado_actual }}</span>
             </div>
-            <div class="data-item">
-              <span class="data-label">Ubicación</span>
-              <span class="data-value">
+            <div class="flex flex-col gap-1">
+              <span class="text-[0.68rem] font-bold text-text-muted uppercase tracking-wider">Ubicación</span>
+              <span class="text-sm font-semibold text-text-primary break-words">
                 {{ exp.accidente.calle_nombre && exp.accidente.calle_nombre !== 'Ubicación Registrada' ? exp.accidente.calle_nombre + ', ' : '' }}
                 {{ exp.accidente.ciudad_nombre && exp.accidente.ciudad_nombre !== 'Ubicación Registrada' ? exp.accidente.ciudad_nombre : 'Sin registrar' }}
               </span>
             </div>
-            <div class="data-item">
-              <span class="data-label">Coordenadas</span>
-              <span class="data-value mono">{{ exp.accidente.latitudinicio | number:'1.4f' }}, {{ exp.accidente.longitudinicio | number:'1.4f' }}</span>
+            <div class="flex flex-col gap-1">
+              <span class="text-[0.68rem] font-bold text-text-muted uppercase tracking-wider">Coordenadas</span>
+              <span class="text-sm font-semibold text-text-primary break-words font-mono text-[0.8rem]">{{ exp.accidente.latitudinicio | number:'1.4f' }}, {{ exp.accidente.longitudinicio | number:'1.4f' }}</span>
             </div>
-            <div class="data-item">
-              <span class="data-label">Heridos</span>
-              <span class="data-value" [class.text-danger]="exp.accidente.numheridos > 0">{{ exp.accidente.numheridos }}</span>
+            <div class="flex flex-col gap-1">
+              <span class="text-[0.68rem] font-bold text-text-muted uppercase tracking-wider">Heridos</span>
+              <span class="text-sm font-semibold break-words" [class.text-danger]="exp.accidente.numheridos > 0">{{ exp.accidente.numheridos }}</span>
             </div>
-            <div class="data-item">
-              <span class="data-label">Fallecidos</span>
-              <span class="data-value" [class.text-danger]="exp.accidente.numfallecidos > 0">{{ exp.accidente.numfallecidos }}</span>
+            <div class="flex flex-col gap-1">
+              <span class="text-[0.68rem] font-bold text-text-muted uppercase tracking-wider">Fallecidos</span>
+              <span class="text-sm font-semibold break-words" [class.text-danger]="exp.accidente.numfallecidos > 0">{{ exp.accidente.numfallecidos }}</span>
             </div>
-            <div class="data-item full-width">
-              <span class="data-label">Descripción</span>
-              <span class="data-value">{{ exp.accidente.descripcion || 'Sin descripción' }}</span>
+            <div class="flex flex-col gap-1 col-span-full">
+              <span class="text-[0.68rem] font-bold text-text-muted uppercase tracking-wider">Descripción</span>
+              <span class="text-sm font-semibold text-text-primary break-words">{{ exp.accidente.descripcion || 'Sin descripción' }}</span>
             </div>
           </div>
         </div>
       </section>
 
       <!-- Condiciones Climáticas -->
-      <section class="exp-section glass-card">
-        <div class="section-header-exp">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="section-icon">
+      <section class="bg-card border border-border rounded-card overflow-hidden transition-all hover:border-info/15 hover:shadow-elevated">
+        <div class="flex items-center gap-2.5 px-6 py-[18px] border-b border-border bg-black/15">
+          <svg class="w-[18px] h-[18px] text-info flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
           </svg>
-          <h2>Condiciones Climáticas</h2>
+          <h2 class="text-[0.95rem] font-bold text-text-primary m-0">Condiciones Climáticas</h2>
         </div>
-        <div class="section-body">
+        <div class="px-6 py-5">
           @if (exp.clima) {
-            <div class="data-grid">
-              <div class="data-item">
-                <span class="data-label">Condición</span>
-                <span class="data-value">{{ exp.clima.condicion || 'No registrada' }}</span>
+            <div class="grid grid-cols-2 gap-4 max-768:grid-cols-1">
+              <div class="flex flex-col gap-1">
+                <span class="text-[0.68rem] font-bold text-text-muted uppercase tracking-wider">Condición</span>
+                <span class="text-sm font-semibold text-text-primary break-words">{{ exp.clima.condicion || 'No registrada' }}</span>
               </div>
               @if (exp.clima.temperatura_f !== undefined && exp.clima.temperatura_f !== null) {
-                <div class="data-item">
-                  <span class="data-label">Temperatura</span>
-                  <span class="data-value">{{ exp.clima.temperatura_f }}°F</span>
+                <div class="flex flex-col gap-1">
+                  <span class="text-[0.68rem] font-bold text-text-muted uppercase tracking-wider">Temperatura</span>
+                  <span class="text-sm font-semibold text-text-primary break-words">{{ exp.clima.temperatura_f }}°F</span>
                 </div>
               }
               @if (exp.clima.humedad !== undefined && exp.clima.humedad !== null) {
-                <div class="data-item">
-                  <span class="data-label">Humedad</span>
-                  <span class="data-value">{{ exp.clima.humedad }}%</span>
+                <div class="flex flex-col gap-1">
+                  <span class="text-[0.68rem] font-bold text-text-muted uppercase tracking-wider">Humedad</span>
+                  <span class="text-sm font-semibold text-text-primary break-words">{{ exp.clima.humedad }}%</span>
                 </div>
               }
               @if (exp.clima.visibilidad_millas !== undefined && exp.clima.visibilidad_millas !== null) {
-                <div class="data-item">
-                  <span class="data-label">Visibilidad</span>
-                  <span class="data-value">{{ exp.clima.visibilidad_millas }} millas</span>
+                <div class="flex flex-col gap-1">
+                  <span class="text-[0.68rem] font-bold text-text-muted uppercase tracking-wider">Visibilidad</span>
+                  <span class="text-sm font-semibold text-text-primary break-words">{{ exp.clima.visibilidad_millas }} millas</span>
                 </div>
               }
               @if (exp.clima.velocidad_viento_mph !== undefined && exp.clima.velocidad_viento_mph !== null) {
-                <div class="data-item">
-                  <span class="data-label">Viento</span>
-                  <span class="data-value">{{ exp.clima.velocidad_viento_mph }} mph</span>
+                <div class="flex flex-col gap-1">
+                  <span class="text-[0.68rem] font-bold text-text-muted uppercase tracking-wider">Viento</span>
+                  <span class="text-sm font-semibold text-text-primary break-words">{{ exp.clima.velocidad_viento_mph }} mph</span>
                 </div>
               }
               @if (exp.clima.precipitacion_pulgadas !== undefined && exp.clima.precipitacion_pulgadas !== null) {
-                <div class="data-item">
-                  <span class="data-label">Precipitación</span>
-                  <span class="data-value">{{ exp.clima.precipitacion_pulgadas }} pulg</span>
+                <div class="flex flex-col gap-1">
+                  <span class="text-[0.68rem] font-bold text-text-muted uppercase tracking-wider">Precipitación</span>
+                  <span class="text-sm font-semibold text-text-primary break-words">{{ exp.clima.precipitacion_pulgadas }} pulg</span>
                 </div>
               }
               @if (exp.clima.presion_pulgadas !== undefined && exp.clima.presion_pulgadas !== null) {
-                <div class="data-item">
-                  <span class="data-label">Presión</span>
-                  <span class="data-value">{{ exp.clima.presion_pulgadas }} pulg</span>
+                <div class="flex flex-col gap-1">
+                  <span class="text-[0.68rem] font-bold text-text-muted uppercase tracking-wider">Presión</span>
+                  <span class="text-sm font-semibold text-text-primary break-words">{{ exp.clima.presion_pulgadas }} pulg</span>
                 </div>
               }
             </div>
           } @else {
-            <p class="no-data">No hay datos climáticos registrados para este accidente.</p>
+            <p class="text-text-muted text-sm italic text-center py-3">No hay datos climáticos registrados para este accidente.</p>
           }
         </div>
       </section>
 
       <!-- Vehículos Involucrados -->
-      <section class="exp-section glass-card">
-        <div class="section-header-exp">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="section-icon">
+      <section class="bg-card border border-border rounded-card overflow-hidden transition-all hover:border-info/15 hover:shadow-elevated">
+        <div class="flex items-center gap-2.5 px-6 py-[18px] border-b border-border bg-black/15">
+          <svg class="w-[18px] h-[18px] text-info flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="1" y="3" width="15" height="13" rx="2"/>
             <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
             <circle cx="5.5" cy="18" r="2.5"/>
             <circle cx="18.5" cy="18" r="2.5"/>
           </svg>
-          <h2>Vehículos Involucrados</h2>
+          <h2 class="text-[0.95rem] font-bold text-text-primary m-0">Vehículos Involucrados</h2>
         </div>
-        <div class="section-body">
+        <div class="px-6 py-5">
           @if (exp.vehiculos && exp.vehiculos.length > 0) {
-            <div class="vehiculos-list">
+            <div class="flex flex-col gap-3">
               @for (veh of exp.vehiculos; track $index) {
-                <div class="vehiculo-card">
-                  <div class="vehiculo-header">
-                    <span class="vehiculo-index">Vehículo {{ $index + 1 }}</span>
+                <div class="bg-black/20 border border-border rounded-sm p-4 transition-colors hover:border-info/20">
+                  <div class="mb-3">
+                    <span class="text-[0.75rem] font-bold text-info uppercase tracking-wider">Vehículo {{ $index + 1 }}</span>
                   </div>
-                  <div class="vehiculo-grid">
-                    <div class="vehiculo-item">
-                      <span class="vehiculo-label">Tipo</span>
-                      <span class="vehiculo-value">{{ veh.tipo || 'No registrado' }}</span>
+                  <div class="grid grid-cols-2 gap-3 max-768:grid-cols-1">
+                    <div class="flex flex-col gap-0.5">
+                      <span class="text-[0.62rem] font-bold text-text-muted uppercase tracking-wider">Tipo</span>
+                      <span class="text-[0.82rem] font-semibold text-text-primary">{{ veh.tipo || 'No registrado' }}</span>
                     </div>
-                    <div class="vehiculo-item">
-                      <span class="vehiculo-label">Modelo</span>
-                      <span class="vehiculo-value">{{ veh.modelo || 'No registrado' }}</span>
+                    <div class="flex flex-col gap-0.5">
+                      <span class="text-[0.62rem] font-bold text-text-muted uppercase tracking-wider">Modelo</span>
+                      <span class="text-[0.82rem] font-semibold text-text-primary">{{ veh.modelo || 'No registrado' }}</span>
                     </div>
-                    <div class="vehiculo-item">
-                      <span class="vehiculo-label">Categoría de Uso</span>
-                      <span class="vehiculo-value">{{ veh.categoria_uso || 'No registrado' }}</span>
+                    <div class="flex flex-col gap-0.5">
+                      <span class="text-[0.62rem] font-bold text-text-muted uppercase tracking-wider">Categoría de Uso</span>
+                      <span class="text-[0.82rem] font-semibold text-text-primary">{{ veh.categoria_uso || 'No registrado' }}</span>
                     </div>
-                    <div class="vehiculo-item">
-                      <span class="vehiculo-label">Ejes</span>
-                      <span class="vehiculo-value">{{ veh.ejes || 'No registrado' }}</span>
+                    <div class="flex flex-col gap-0.5">
+                      <span class="text-[0.62rem] font-bold text-text-muted uppercase tracking-wider">Ejes</span>
+                      <span class="text-[0.82rem] font-semibold text-text-primary">{{ veh.ejes || 'No registrado' }}</span>
                     </div>
                   </div>
                 </div>
               }
             </div>
           } @else {
-            <p class="no-data">No hay vehículos registrados para este accidente.</p>
+            <p class="text-text-muted text-sm italic text-center py-3">No hay vehículos registrados para este accidente.</p>
           }
         </div>
       </section>
 
       <!-- Evidencias / Fotos -->
-      <section class="exp-section glass-card">
-        <div class="section-header-exp">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="section-icon">
+      <section class="bg-card border border-border rounded-card overflow-hidden transition-all hover:border-info/15 hover:shadow-elevated">
+        <div class="flex items-center gap-2.5 px-6 py-[18px] border-b border-border bg-black/15">
+          <svg class="w-[18px] h-[18px] text-info flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
             <circle cx="8.5" cy="8.5" r="1.5"/>
             <polyline points="21 15 16 10 5 21"/>
           </svg>
-          <h2>Evidencias / Fotos</h2>
+          <h2 class="text-[0.95rem] font-bold text-text-primary m-0">Evidencias / Fotos</h2>
         </div>
-        <div class="section-body">
-          @if (exp.evidencias?.fotos && exp.evidencias.fotos.length > 0) {
-            <div class="fotos-grid">
+        <div class="px-6 py-5">
+          @if (exp.evidencias.fotos && exp.evidencias.fotos.length > 0) {
+            <div class="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4 max-768:grid-cols-2 max-480:grid-cols-1">
               @for (foto of exp.evidencias.fotos; track $index) {
-                <div class="foto-card">
-                  <div class="foto-placeholder">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="foto-icon">
+                <div class="flex flex-col gap-1.5 items-center">
+                  <div class="w-full aspect-[4/3] bg-black/30 border border-border rounded-sm flex flex-col items-center justify-center gap-2 transition-all hover:border-info/30">
+                    <svg class="w-8 h-8 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                       <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                       <circle cx="8.5" cy="8.5" r="1.5"/>
                       <polyline points="21 15 16 10 5 21"/>
                     </svg>
-                    <span class="foto-label">Evidencia {{ $index + 1 }}</span>
+                    <span class="text-[0.68rem] font-semibold text-text-secondary">Evidencia {{ $index + 1 }}</span>
                   </div>
                   @if (foto.fecha) {
-                    <span class="foto-date">{{ foto.fecha | date:'dd/MM/yyyy' }}</span>
+                    <span class="text-[0.62rem] text-text-muted">{{ foto.fecha | date:'dd/MM/yyyy' }}</span>
                   }
                 </div>
               }
             </div>
           } @else {
-            <div class="no-fotos">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="no-foto-icon">
+            <div class="flex flex-col items-center gap-2.5 py-6 text-center">
+              <svg class="w-10 h-10 text-text-muted opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                 <circle cx="8.5" cy="8.5" r="1.5"/>
                 <polyline points="21 15 16 10 5 21"/>
               </svg>
-              <p>No hay evidencias fotográficas registradas para este accidente.</p>
+              <p class="text-text-muted text-sm italic m-0">No hay evidencias fotográficas registradas para este accidente.</p>
             </div>
           }
         </div>

@@ -15,8 +15,7 @@ interface Expediente {
   selector: 'app-expediente',
   standalone: true,
   imports: [CommonModule, RouterModule],
-  templateUrl: './expediente.html',
-  styleUrl: './expediente.css'
+  templateUrl: './expediente.html'
 })
 export class ExpedienteComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);

@@ -1,51 +1,64 @@
-<div class="registration-wrapper">
-  <!-- Header (CU-01 / SGA03) -->
-  <div class="panel-header">
-    <div class="header-info">
-      <div class="pulse-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="8" x2="12" y2="12"/>
-          <line x1="12" y1="16" x2="12.01" y2="16"/>
+<div class="flex h-full">
+  <!-- Content area -->
+  <div class="flex-1 flex flex-col overflow-y-auto bg-surface">
+    <!-- Header -->
+    <div class="sticky top-0 z-20 flex items-center justify-between p-5 bg-card/95 backdrop-blur-sm border-b border-border">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-danger/10 text-danger flex items-center justify-center flex-shrink-0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-sm font-extrabold tracking-wider m-0 text-text-primary">{{ modoEdicion() ? 'EDITAR ACCIDENTE' : 'REGISTRO RÁPIDO DE ACCIDENTES' }}</h2>
+          <p class="text-xs text-text-secondary mt-0.5 font-medium">{{ modoEdicion() ? 'Modo edición — modifique y guarde los cambios' : 'Operador ID: #9942 • Sector Alfa' }}</p>
+        </div>
+      </div>
+      <button class="w-8 h-8 flex items-center justify-center rounded-full border border-border text-text-muted cursor-pointer transition-all hover:bg-gray-100 hover:text-text-primary" (click)="onCancelar()" title="Cancelar Registro">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
         </svg>
-      </div>
-      <div>
-        <h2>{{ modoEdicion() ? 'EDITAR ACCIDENTE' : 'REGISTRO RÁPIDO DE ACCIDENTES' }}</h2>
-        <p class="operator-id">{{ modoEdicion() ? 'Modo edición — modifique y guarde los cambios' : 'Operador ID: #9942 • Sector Alfa' }}</p>
-      </div>
+      </button>
     </div>
-    <button class="btn-close" (click)="onCancelar()" title="Cancelar Registro">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-        <line x1="18" y1="6" x2="6" y2="18"/>
-        <line x1="6" y1="6" x2="18" y2="18"/>
-      </svg>
-    </button>
-  </div>
 
-  <!-- Step Progress Indicator -->
-  <div class="step-indicator">
-    @for (label of pasos(); track $index; let i = $index) {
-      <div class="step-item" (click)="irAPaso(i + 1)">
-        <div class="step-circle" [class.active]="pasoActual() === i + 1" [class.completed]="(i + 1) < pasoActual()">
-          @if ((i + 1) < pasoActual()) {
-            <span class="step-check">✓</span>
-          } @else {
-            <span class="step-num">{{ i + 1 }}</span>
+    <!-- Horizontal Step Progress -->
+    <div class="flex items-center justify-center gap-0 px-6 pt-5 pb-2 bg-surface">
+      @for (label of pasos(); track $index; let i = $index) {
+        <div class="flex items-center">
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded-sm transition-all cursor-pointer"
+               [class.bg-sidebar]="pasoActual() === i + 1"
+               [class.text-white]="pasoActual() === i + 1"
+               [class.text-text-muted]="pasoActual() !== i + 1"
+               (click)="irAPaso(i + 1)">
+            <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all flex-shrink-0"
+                 [class.bg-white/20]="pasoActual() === i + 1"
+                 [class.bg-white/10]="pasoActual() !== i + 1 && (i + 1) < pasoActual()"
+                 [class.bg-white/5]="pasoActual() !== i + 1 && (i + 1) >= pasoActual()">
+              @if ((i + 1) < pasoActual()) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="10" height="10">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              } @else {
+                <span>{{ i + 1 }}</span>
+              }
+            </div>
+            <span class="text-xs font-semibold uppercase tracking-wider truncate whitespace-nowrap">{{ label }}</span>
+          </div>
+          @if (i < pasos().length - 1) {
+            <div class="w-6 h-px bg-border mx-1"></div>
           }
         </div>
-        <span class="step-label">{{ label }}</span>
-      </div>
-      @if (i < pasos().length - 1) {
-        <div class="step-line" [class.completed]="(i + 1) < pasoActual()"></div>
       }
-    }
-  </div>
+    </div>
 
-  <!-- Form content -->
-  <div class="panel-content">
+    <!-- Form content -->
+    <div class="max-w-4xl mx-auto p-6 flex flex-col gap-6">
     @if (error()) {
-      <div class="form-error">
-        <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div class="flex items-center gap-2.5 p-3 bg-danger/10 border border-danger/20 rounded-sm text-sm text-danger">
+        <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/>
           <line x1="12" y1="8" x2="12" y2="12"/>
           <line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -55,7 +68,7 @@
     }
 
     @if (form.dirty && form.invalid) {
-      <div class="validation-summary">
+      <div class="flex items-center gap-2 p-3 bg-warning/10 border border-warning/20 rounded-sm text-xs text-warning font-medium">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
           <circle cx="12" cy="12" r="10"/>
           <line x1="12" y1="8" x2="12" y2="12"/>
@@ -65,751 +78,806 @@
       </div>
     }
 
-    <form [formGroup]="form" (ngSubmit)="submit()" class="form-body" novalidate>
+    <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-6" novalidate>
 
-      <!-- STEP 1: UBICACIÓN -->
+      <!-- STEP 1: UBICACIÓN DEL ACCIDENTE -->
       @if (pasoActual() === 1) {
-        <div class="form-section">
-          <h3 class="section-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
-              <circle cx="12" cy="10" r="3"/>
-            </svg>
-            UBICACIÓN DEL ACCIDENTE
-          </h3>
+      <div class="bg-card rounded-card shadow-card p-5 border border-border-light">
+        <h3 class="flex items-center gap-2 text-sm font-bold text-text-primary uppercase tracking-wider mb-4 pb-3 border-b border-border-light">
+          <svg class="w-3.5 h-3.5 text-info flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+          </svg>
+          UBICACIÓN DEL ACCIDENTE
+        </h3>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label class="required">Latitud</label>
-              <div class="input-with-icon">
-                <input type="text" class="form-control font-mono" formControlName="latitudinicio" [class.invalid]="isInvalid('latitudinicio')" placeholder="Ej. -1.8312" />
-              </div>
-              @if (isInvalid('latitudinicio')) {
-                <span class="error-text">{{ getError('latitudinicio') }}</span>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Latitud<span class="text-danger ml-0.5">*</span></label>
+            <input type="text" class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] font-mono" formControlName="latitudinicio" placeholder="-1.8312" [class.border-danger/40]="isInvalid('latitudinicio')" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Longitud<span class="text-danger ml-0.5">*</span></label>
+            <input type="text" class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] font-mono" formControlName="longitudinicio" placeholder="-78.1834" [class.border-danger/40]="isInvalid('longitudinicio')" />
+          </div>
+        </div>
+
+        <button type="button" class="flex items-center gap-2 px-4 py-2.5 mb-5 bg-info/10 text-info rounded-sm text-xs font-bold uppercase tracking-wider cursor-pointer transition-all hover:bg-info/20 border border-info/20 active:scale-[0.97]" (click)="abrirMapaModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+          </svg>
+          Seleccionar en Mapa Interactivo
+        </button>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">País<span class="text-danger ml-0.5">*</span></label>
+            <select class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 cursor-pointer" formControlName="idpais_id" [class.border-danger/40]="isInvalid('idpais_id')">
+              <option value="">Seleccionar País...</option>
+              @for (p of paises(); track p.idpais) {
+                <option [value]="p.idpais">{{ p.pais }}</option>
               }
-            </div>
-            <div class="form-group">
-              <label class="required">Longitud</label>
-              <div class="input-with-icon">
-                <input type="text" class="form-control font-mono" formControlName="longitudinicio" [class.invalid]="isInvalid('longitudinicio')" placeholder="Ej. -78.1834" />
-              </div>
-              @if (isInvalid('longitudinicio')) {
-                <span class="error-text">{{ getError('longitudinicio') }}</span>
-              }
-            </div>
+            </select>
           </div>
-
-          <div class="map-action-wrapper">
-            <button type="button" class="btn-open-map-modal" (click)="abrirMapaModal()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
-                <circle cx="12" cy="10" r="3"/>
-                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
-              </svg>
-              UBICAR EN EL MAPA INTERACTIVO
-            </button>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="required">País</label>
-              <select class="form-control select-premium" formControlName="idpais_id" [class.invalid]="isInvalid('idpais_id')">
-                <option value="">Seleccionar País...</option>
-                @for (p of paises(); track p.idpais) {
-                  <option [value]="p.idpais">{{ p.pais }}</option>
-                }
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="required">Estado</label>
-              <select class="form-control select-premium" formControlName="idestado_id" [class.invalid]="isInvalid('idestado_id')">
-                <option value="">Seleccionar Estado...</option>
-                @for (e of estados(); track e.idestado) {
-                  <option [value]="e.idestado">{{ e.estado }}</option>
-                }
-              </select>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="required">Condado</label>
-              <select class="form-control select-premium" formControlName="idcondado_id" [class.invalid]="isInvalid('idcondado_id')">
-                <option value="">Seleccionar Condado...</option>
-                @for (c of condados(); track c.idcondado) {
-                  <option [value]="c.idcondado">{{ c.condado }}</option>
-                }
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="required">Ciudad</label>
-              <select class="form-control select-premium" formControlName="idciudad_id" [class.invalid]="isInvalid('idciudad_id')">
-                <option value="">Seleccionar Ciudad...</option>
-                @for (c of ciudades(); track c.idciudad) {
-                  <option [value]="c.idciudad">{{ c.ciudad }}</option>
-                }
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="required">Calle / Intersección</label>
-            <select class="form-control select-premium" formControlName="idcalle_id" [class.invalid]="isInvalid('idcalle_id')">
-              <option value="">Seleccionar Calle...</option>
-              @for (cal of calles(); track cal.idcalle) {
-                <option [value]="cal.idcalle">{{ cal.calle }}</option>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Estado<span class="text-danger ml-0.5">*</span></label>
+            <select class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 cursor-pointer" formControlName="idestado_id" [class.border-danger/40]="isInvalid('idestado_id')">
+              <option value="">Seleccionar Estado...</option>
+              @for (e of estados(); track e.idestado) {
+                <option [value]="e.idestado">{{ e.estado }}</option>
               }
             </select>
           </div>
         </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Condado<span class="text-danger ml-0.5">*</span></label>
+            <select class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 cursor-pointer" formControlName="idcondado_id" [class.border-danger/40]="isInvalid('idcondado_id')">
+              <option value="">Seleccionar Condado...</option>
+              @for (c of condados(); track c.idcondado) {
+                <option [value]="c.idcondado">{{ c.condado }}</option>
+              }
+            </select>
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Ciudad<span class="text-danger ml-0.5">*</span></label>
+            <select class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 cursor-pointer" formControlName="idciudad_id" [class.border-danger/40]="isInvalid('idciudad_id')">
+              <option value="">Seleccionar Ciudad...</option>
+              @for (c of ciudades(); track c.idciudad) {
+                <option [value]="c.idciudad">{{ c.ciudad }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Calle / Vía<span class="text-danger ml-0.5">*</span></label>
+            <select class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 cursor-pointer" formControlName="idcalle_id" [class.border-danger/40]="isInvalid('idcalle_id')">
+              <option value="">Seleccionar Calle...</option>
+              @for (c of calles(); track c.idcalle) {
+                <option [value]="c.idcalle">{{ c.calle }}</option>
+              }
+            </select>
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Código Postal <span class="text-[0.6rem] font-normal text-text-muted italic ml-1">Opcional</span></label>
+            <input type="text" class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted" formControlName="codigopostal" placeholder="Ej. 090150" />
+          </div>
+        </div>
+      </div>
       }
 
       <!-- STEP 2: IMPACTO -->
       @if (pasoActual() === 2) {
-        <div class="form-section">
-          <h3 class="section-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-            </svg>
-            MÉTRICAS DE IMPACTO
-          </h3>
+      <div class="bg-card rounded-card shadow-card p-5 border border-border-light">
 
-          <div class="counters-grid">
-            <div class="counter-card">
-              <span class="counter-label">Vehículos Involucrados</span>
-              <div class="counter-control">
-                <button type="button" class="btn-counter" (click)="decrement('numvehiculos', 1)" [disabled]="form.get('numvehiculos')?.value <= 1">—</button>
-                <span class="counter-value">{{ form.get('numvehiculos')?.value || 1 }}</span>
-                <button type="button" class="btn-counter" (click)="increment('numvehiculos', 50)">+</button>
-              </div>
-            </div>
-
-            <div class="counter-card warning">
-              <span class="counter-label text-warning">Personas Heridas</span>
-              <div class="counter-control">
-                <button type="button" class="btn-counter" (click)="decrement('numheridos', 0)" [disabled]="form.get('numheridos')?.value <= 0">—</button>
-                <span class="counter-value text-warning">{{ form.get('numheridos')?.value || 0 }}</span>
-                <button type="button" class="btn-counter" (click)="increment('numheridos', 200)">+</button>
-              </div>
-            </div>
-
-            <div class="counter-card danger">
-              <span class="counter-label text-danger">Víctimas Mortales</span>
-              <div class="counter-control">
-                <button type="button" class="btn-counter" (click)="decrement('numfallecidos', 0)" [disabled]="form.get('numfallecidos')?.value <= 0">—</button>
-                <span class="counter-value text-danger">{{ form.get('numfallecidos')?.value || 0 }}</span>
-                <button type="button" class="btn-counter" (click)="increment('numfallecidos', 100)">+</button>
-              </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          <div class="flex flex-col items-center gap-2 p-4 bg-gray-50 rounded-panel border border-border-light transition-all hover:shadow-card hover:-translate-y-0.5">
+            <span class="text-xs font-semibold text-text-muted uppercase tracking-wider text-center">Vehículos Involucrados</span>
+            <div class="flex items-center gap-4">
+              <button type="button" class="w-8 h-8 rounded-full bg-sidebar text-white font-bold text-lg flex items-center justify-center cursor-pointer transition-all hover:bg-sidebar-hover active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed border-none" (click)="decrement('numvehiculos', 1)" [disabled]="form.get('numvehiculos')?.value <= 1">—</button>
+              <span class="text-xl font-extrabold text-text-primary min-w-[2ch] text-center tabular-nums">{{ form.get('numvehiculos')?.value || 1 }}</span>
+              <button type="button" class="w-8 h-8 rounded-full bg-sidebar text-white font-bold text-lg flex items-center justify-center cursor-pointer transition-all hover:bg-sidebar-hover active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed border-none" (click)="increment('numvehiculos', 50)">+</button>
             </div>
           </div>
 
-          <div class="section-header" style="margin-top: 16px;">
-            <h3 class="section-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
-              </svg>
-              EVALUACIÓN DE SEVERIDAD
-            </h3>
-            <button type="button" class="btn-toggle-manual" [class.manual]="modoManualSeveridad()" (click)="toggleModoManualSeveridad()">
-              <span class="indicator-dot"></span>
-              {{ modoManualSeveridad() ? 'Modo Manual' : 'Modo Automático' }}
-            </button>
-          </div>
-
-          <div class="severity-assessment-grid">
-            <div class="severity-box leve" [class.active]="severidadFinal() === 1" [class.clickable]="modoManualSeveridad()" (click)="seleccionarSeveridadManual(1)">
-              <span class="severity-num">1</span>
-              <span class="severity-name">LEVE</span>
-              <span class="severity-desc">Daños Materiales</span>
-            </div>
-            <div class="severity-box moderada" [class.active]="severidadFinal() === 2" [class.clickable]="modoManualSeveridad()" (click)="seleccionarSeveridadManual(2)">
-              <span class="severity-num">2</span>
-              <span class="severity-name">MODERADA</span>
-              <span class="severity-desc">Heridos Leves</span>
-            </div>
-            <div class="severity-box grave" [class.active]="severidadFinal() === 3" [class.clickable]="modoManualSeveridad()" (click)="seleccionarSeveridadManual(3)">
-              <span class="severity-num">3</span>
-              <span class="severity-name">GRAVE</span>
-              <span class="severity-desc">Obstrucción Vial</span>
-            </div>
-            <div class="severity-box critica" [class.active]="severidadFinal() === 4" [class.clickable]="modoManualSeveridad()" (click)="seleccionarSeveridadManual(4)">
-              <span class="severity-num">4</span>
-              <span class="severity-name">CRÍTICA</span>
-              <span class="severity-desc">Víctimas Fatales</span>
+          <div class="flex flex-col items-center gap-2 p-4 bg-gray-50 rounded-panel border border-warning/20 bg-warning/[0.03] transition-all hover:shadow-card hover:-translate-y-0.5">
+            <span class="text-xs font-semibold text-warning uppercase tracking-wider text-center">Personas Heridas</span>
+            <div class="flex items-center gap-4">
+              <button type="button" class="w-8 h-8 rounded-full bg-sidebar text-white font-bold text-lg flex items-center justify-center cursor-pointer transition-all hover:bg-sidebar-hover active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed border-none" (click)="decrement('numheridos', 0)" [disabled]="form.get('numheridos')?.value <= 0">—</button>
+              <span class="text-xl font-extrabold text-warning min-w-[2ch] text-center tabular-nums">{{ form.get('numheridos')?.value || 0 }}</span>
+              <button type="button" class="w-8 h-8 rounded-full bg-sidebar text-white font-bold text-lg flex items-center justify-center cursor-pointer transition-all hover:bg-sidebar-hover active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed border-none" (click)="increment('numheridos', 200)">+</button>
             </div>
           </div>
 
-          <div class="switch-premium-card">
-            <div class="switch-premium-info">
-              <div class="switch-premium-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                  <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/>
-                  <circle cx="7.5" cy="17.5" r="2.5"/>
-                  <circle cx="16.5" cy="17.5" r="2.5"/>
-                </svg>
-              </div>
-              <div class="switch-premium-text">
-                <h4>¿Desea registrar los detalles de los vehículos y conductores involucrados?</h4>
-                <p>Habilite esta opción para ingresar datos detallados de cada unidad, chofer y su estado de sobriedad/atención.</p>
-              </div>
+          <div class="flex flex-col items-center gap-2 p-4 bg-gray-50 rounded-panel border border-danger/20 bg-danger/[0.03] transition-all hover:shadow-card hover:-translate-y-0.5">
+            <span class="text-xs font-semibold text-danger uppercase tracking-wider text-center">Víctimas Mortales</span>
+            <div class="flex items-center gap-4">
+              <button type="button" class="w-8 h-8 rounded-full bg-sidebar text-white font-bold text-lg flex items-center justify-center cursor-pointer transition-all hover:bg-sidebar-hover active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed border-none" (click)="decrement('numfallecidos', 0)" [disabled]="form.get('numfallecidos')?.value <= 0">—</button>
+              <span class="text-xl font-extrabold text-danger min-w-[2ch] text-center tabular-nums">{{ form.get('numfallecidos')?.value || 0 }}</span>
+              <button type="button" class="w-8 h-8 rounded-full bg-sidebar text-white font-bold text-lg flex items-center justify-center cursor-pointer transition-all hover:bg-sidebar-hover active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed border-none" (click)="increment('numfallecidos', 100)">+</button>
             </div>
-            <label class="switch-premium">
-              <input type="checkbox" [checked]="registrarDetallesVehiculos()" (change)="toggleRegistrarDetallesVehiculos()" />
-              <span class="slider-premium"></span>
-            </label>
           </div>
         </div>
+
+        <div class="flex items-center justify-between gap-4 mt-4 pb-2 mb-1 border-b border-border-light">
+          <h3 class="flex items-center gap-2 text-sm font-bold text-text-primary uppercase tracking-wider mb-0 pb-0 border-b-0">
+            <svg class="w-3.5 h-3.5 text-text-muted flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            EVALUACIÓN DE SEVERIDAD
+          </h3>
+          <button type="button" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border border-border bg-card text-text-muted cursor-pointer transition-all hover:text-text-primary" [class.bg-success/10]="modoManualSeveridad()" [class.text-success]="modoManualSeveridad()" [class.border-success/30]="modoManualSeveridad()" (click)="toggleModoManualSeveridad()">
+            <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
+            {{ modoManualSeveridad() ? 'Modo Manual' : 'Modo Automático' }}
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
+          <div class="flex flex-col items-center gap-1.5 p-4 rounded-panel border border-border-light bg-card cursor-default transition-all hover:shadow-card hover:-translate-y-0.5"
+               [class.cursor-pointer]="modoManualSeveridad()"
+               [class.border-sev-leve/40]="severidadFinal() === 1"
+               [class.bg-sev-leve/5]="severidadFinal() === 1"
+               [class.shadow-[0_0_12px_rgba(16,185,129,0.15)]]="severidadFinal() === 1"
+               [class.text-sev-leve]="severidadFinal() === 1"
+               (click)="seleccionarSeveridadManual(1)">
+            <span class="text-2xl font-extrabold">1</span>
+            <span class="text-xs font-bold uppercase tracking-wider">LEVE</span>
+            <span class="text-[0.62rem] text-text-muted">Daños Materiales</span>
+          </div>
+          <div class="flex flex-col items-center gap-1.5 p-4 rounded-panel border border-border-light bg-card cursor-default transition-all hover:shadow-card hover:-translate-y-0.5"
+               [class.cursor-pointer]="modoManualSeveridad()"
+               [class.border-sev-moderada/40]="severidadFinal() === 2"
+               [class.bg-sev-moderada/5]="severidadFinal() === 2"
+               [class.shadow-[0_0_12px_rgba(245,158,11,0.15)]]="severidadFinal() === 2"
+               [class.text-sev-moderada]="severidadFinal() === 2"
+               (click)="seleccionarSeveridadManual(2)">
+            <span class="text-2xl font-extrabold">2</span>
+            <span class="text-xs font-bold uppercase tracking-wider">MODERADA</span>
+            <span class="text-[0.62rem] text-text-muted">Heridos Leves</span>
+          </div>
+          <div class="flex flex-col items-center gap-1.5 p-4 rounded-panel border border-border-light bg-card cursor-default transition-all hover:shadow-card hover:-translate-y-0.5"
+               [class.cursor-pointer]="modoManualSeveridad()"
+               [class.border-sev-grave/40]="severidadFinal() === 3"
+               [class.bg-sev-grave/5]="severidadFinal() === 3"
+               [class.shadow-[0_0_12px_rgba(251,146,60,0.15)]]="severidadFinal() === 3"
+               [class.text-sev-grave]="severidadFinal() === 3"
+               (click)="seleccionarSeveridadManual(3)">
+            <span class="text-2xl font-extrabold">3</span>
+            <span class="text-xs font-bold uppercase tracking-wider">GRAVE</span>
+            <span class="text-[0.62rem] text-text-muted">Obstrucción Vial</span>
+          </div>
+          <div class="flex flex-col items-center gap-1.5 p-4 rounded-panel border border-border-light bg-card cursor-default transition-all hover:shadow-card hover:-translate-y-0.5"
+               [class.cursor-pointer]="modoManualSeveridad()"
+               [class.border-sev-critica/40]="severidadFinal() === 4"
+               [class.bg-sev-critica/5]="severidadFinal() === 4"
+               [class.shadow-[0_0_12px_rgba(190,0,0,0.15)]]="severidadFinal() === 4"
+               [class.text-sev-critica]="severidadFinal() === 4"
+               (click)="seleccionarSeveridadManual(4)">
+            <span class="text-2xl font-extrabold">4</span>
+            <span class="text-xs font-bold uppercase tracking-wider">CRÍTICA</span>
+            <span class="text-[0.62rem] text-text-muted">Víctimas Fatales</span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-4 p-4 bg-gray-50 rounded-panel border border-border-light">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-info/10 text-info flex items-center justify-center flex-shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/>
+                <circle cx="7.5" cy="17.5" r="2.5"/>
+                <circle cx="16.5" cy="17.5" r="2.5"/>
+              </svg>
+            </div>
+            <div>
+              <h4 class="text-sm font-semibold text-text-primary m-0">¿Desea registrar los detalles de los vehículos y conductores involucrados?</h4>
+              <p class="text-xs text-text-muted mt-0.5 m-0">Habilite esta opción para ingresar datos detallados de cada unidad, chofer y su estado de sobriedad/atención.</p>
+            </div>
+          </div>
+          <label class="relative inline-block w-[46px] h-6 cursor-pointer">
+            <input type="checkbox" class="peer sr-only" [checked]="registrarDetallesVehiculos()" (change)="toggleRegistrarDetallesVehiculos()" />
+            <span class="absolute inset-0 bg-gray-200 border border-border rounded-full transition-all peer-checked:bg-info/15 peer-checked:border-info/40"></span>
+            <span class="absolute left-[3px] bottom-[3px] w-4 h-4 bg-gray-400 rounded-full transition-all peer-checked:translate-x-[22px] peer-checked:bg-info peer-checked:shadow-[0_0_8px_rgba(2,132,199,0.6)]"></span>
+          </label>
+        </div>
+      </div>
       }
 
-      <!-- STEP 3: VEHÍCULOS -->
+      <!-- STEP 3: VEHÍCULOS Y CONDUCTORES -->
       @if (pasoActual() === 3) {
-        @if (registrarDetallesVehiculos()) {
-          <div class="form-section">
-            <h3 class="section-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 8v8M8 12h8"/>
-              </svg>
-              DETALLES DE VEHÍCULOS Y CONDUCTORES
-            </h3>
+      <div class="flex flex-col gap-6">
+      @if (registrarDetallesVehiculos()) {
+        <div class="bg-card rounded-card shadow-card p-5 border border-border-light">
+          <h3 class="flex items-center gap-2 text-sm font-bold text-text-primary uppercase tracking-wider mb-4 pb-3 border-b border-border-light">
+            <svg class="w-3.5 h-3.5 text-text-muted flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 8v8M8 12h8"/>
+            </svg>
+            DETALLES DE VEHÍCULOS Y CONDUCTORES
+          </h3>
 
-            <div class="vehiculos-detalles-container" formArrayName="vehiculos_detalles">
-              @for (ctrl of vehiculosDetalles.controls; track $index) {
-                <div class="vehiculo-detalle-card" [formGroupName]="$index">
-                  <div class="card-header-premium">
-                    <div class="card-header-title">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="color: #3B82F6;">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="M12 8v8M8 12h8"/>
-                      </svg>
-                      <h4>VEHÍCULO #{{ $index + 1 }} - DETALLES & CONDUCTOR</h4>
+          <div class="flex flex-col gap-4" formArrayName="vehiculos_detalles">
+            @for (ctrl of vehiculosDetalles.controls; track $index) {
+              <div class="bg-card rounded-card shadow-card overflow-hidden border border-border-light" [formGroupName]="$index">
+                <div class="px-5 py-3.5 bg-gray-50 border-b border-border-light">
+                  <div class="flex items-center gap-2.5">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="color: #3B82F6;">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M12 8v8M8 12h8"/>
+                    </svg>
+                    <h4 class="text-xs font-bold text-text-primary uppercase tracking-wider m-0">VEHÍCULO #{{ $index + 1 }} - DETALLES & CONDUCTOR</h4>
+                  </div>
+                </div>
+
+                <div class="p-5 flex flex-col gap-5">
+                  <div class="flex flex-col gap-3">
+                    <h5 class="text-[0.68rem] font-bold text-text-secondary uppercase tracking-wider pb-2 border-b border-border-light m-0">DETALLES DEL VEHÍCULO</h5>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Tipo de Vehículo<span class="text-danger ml-0.5">*</span></label>
+                        <select class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 cursor-pointer" formControlName="tipovehiculo">
+                          <option value="Automóvil">Automóvil</option>
+                          <option value="Motocicleta">Motocicleta</option>
+                          <option value="Camión">Camión</option>
+                          <option value="Autobús">Autobús</option>
+                          <option value="Bicicleta">Bicicleta</option>
+                          <option value="Vehículo de Carga Pesada">Carga Pesada</option>
+                          <option value="Otro">Otro</option>
+                        </select>
+                      </div>
+                      <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Modelo / Marca<span class="text-danger ml-0.5">*</span></label>
+                        <input type="text" class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted" formControlName="modelovehiculo" placeholder="Ej. Chevrolet Sail 2020" />
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Categoría de Uso<span class="text-danger ml-0.5">*</span></label>
+                        <select class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 cursor-pointer" formControlName="categoriausovehiculo">
+                          <option value="Particular">Particular</option>
+                          <option value="Público">Público / Comercial</option>
+                          <option value="Oficial">Oficial / Estatal</option>
+                          <option value="Emergencia">Emergencia</option>
+                          <option value="Otros">Otros</option>
+                        </select>
+                      </div>
+                      <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Número de Ejes</label>
+                        <input type="number" class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted" formControlName="ejes" min="1" max="20" />
+                      </div>
+                    </div>
+
+                    <label class="flex items-center gap-2.5 p-3 bg-gray-50 rounded-sm border border-border-light cursor-pointer transition-all hover:bg-gray-100 hover:border-border">
+                      <input type="checkbox" class="w-4 h-4 accent-amber cursor-pointer" formControlName="mercanciapeligrosa" />
+                      <span class="text-xs font-medium text-warning">¿Transporta mercancía peligrosa (químicos, inflamables, etc.)?</span>
+                    </label>
+                  </div>
+
+                  <div class="flex flex-col gap-3">
+                    <h5 class="text-[0.68rem] font-bold text-text-secondary uppercase tracking-wider pb-2 border-b border-border-light m-0">DATOS DEL CONDUCTOR</h5>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Nombres<span class="text-danger ml-0.5">*</span></label>
+                        <input type="text" class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted" formControlName="nombres" placeholder="Nombres del conductor" />
+                      </div>
+                      <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Apellidos<span class="text-danger ml-0.5">*</span></label>
+                        <input type="text" class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted" formControlName="apellidos" placeholder="Apellidos del conductor" />
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Identificación (DNI / Cédula)</label>
+                        <input type="text" class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted" formControlName="identificacion" placeholder="Ej. 1712345678" />
+                      </div>
+                      <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Género<span class="text-danger ml-0.5">*</span></label>
+                        <select class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 cursor-pointer" formControlName="genero">
+                          <option value="M">Masculino</option>
+                          <option value="F">Femenino</option>
+                          <option value="O">Otro</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Tipo Licencia<span class="text-danger ml-0.5">*</span></label>
+                        <select class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 cursor-pointer" formControlName="tipolicencia">
+                          <option value="A">A (Motos)</option>
+                          <option value="B">B (Livianos / Automóviles)</option>
+                          <option value="C">C (Profesional / Taxis)</option>
+                          <option value="D">D (Autobuses)</option>
+                          <option value="E">E (Pesados / Tráileres)</option>
+                          <option value="F">F (Especiales / Discapacitados)</option>
+                        </select>
+                      </div>
+                      <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Estado de Licencia<span class="text-danger ml-0.5">*</span></label>
+                        <select class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 cursor-pointer" formControlName="estadolicencia">
+                          <option value="Vigente">Vigente</option>
+                          <option value="Caducada">Caducada</option>
+                          <option value="Suspendida">Suspendida</option>
+                          <option value="Sin Licencia">Sin Licencia</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Ciudad de Residencia<span class="text-danger ml-0.5">*</span></label>
+                        <input type="text" class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted" formControlName="ciudadresidencia" placeholder="Ej. Quito" />
+                      </div>
+                      <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Años de Experiencia<span class="text-danger ml-0.5">*</span></label>
+                        <input type="number" class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted" formControlName="aniosexperiencia" min="0" max="80" />
+                      </div>
                     </div>
                   </div>
 
-                  <div class="card-body-premium">
-                    <div class="sub-section">
-                      <h5 class="sub-section-title">DETALLES DEL VEHÍCULO</h5>
-                      <div class="form-row">
-                        <div class="form-group">
-                          <label class="required">Tipo de Vehículo</label>
-                          <select class="form-control select-premium" formControlName="tipovehiculo">
-                            <option value="Automóvil">Automóvil</option>
-                            <option value="Motocicleta">Motocicleta</option>
-                            <option value="Camión">Camión</option>
-                            <option value="Autobús">Autobús</option>
-                            <option value="Bicicleta">Bicicleta</option>
-                            <option value="Vehículo de Carga Pesada">Carga Pesada</option>
-                            <option value="Otro">Otro</option>
-                          </select>
-                        </div>
-                        <div class="form-group">
-                          <label class="required">Modelo / Marca</label>
-                          <input type="text" class="form-control" formControlName="modelovehiculo" placeholder="Ej. Chevrolet Sail 2020" />
-                        </div>
-                      </div>
-
-                      <div class="form-row">
-                        <div class="form-group">
-                          <label class="required">Categoría de Uso</label>
-                          <select class="form-control select-premium" formControlName="categoriausovehiculo">
-                            <option value="Particular">Particular</option>
-                            <option value="Público">Público / Comercial</option>
-                            <option value="Oficial">Oficial / Estatal</option>
-                            <option value="Emergencia">Emergencia</option>
-                            <option value="Otros">Otros</option>
-                          </select>
-                        </div>
-                        <div class="form-group">
-                          <label class="required">Número de Ejes</label>
-                          <input type="number" class="form-control" formControlName="ejes" min="1" max="20" />
-                        </div>
-                      </div>
-
-                      <div class="form-group">
-                        <label class="checkbox-premium-card">
-                          <input type="checkbox" formControlName="mercanciapeligrosa" />
-                          <span class="custom-checkbox-orange"></span>
-                          <span class="checkbox-label text-warning">¿Transporta mercancía peligrosa (químicos, inflamables, etc.)?</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div class="sub-section">
-                      <h5 class="sub-section-title">DATOS DEL CONDUCTOR</h5>
-                      <div class="form-row">
-                        <div class="form-group">
-                          <label class="required">Nombres</label>
-                          <input type="text" class="form-control" formControlName="nombres" placeholder="Nombres del conductor" />
-                        </div>
-                        <div class="form-group">
-                          <label class="required">Apellidos</label>
-                          <input type="text" class="form-control" formControlName="apellidos" placeholder="Apellidos del conductor" />
-                        </div>
-                      </div>
-
-                      <div class="form-row">
-                        <div class="form-group">
-                          <label>Identificación (DNI / Cédula)</label>
-                          <input type="text" class="form-control" formControlName="identificacion" placeholder="Ej. 1712345678" />
-                        </div>
-                        <div class="form-group">
-                          <label class="required">Género</label>
-                          <select class="form-control select-premium" formControlName="genero">
-                            <option value="M">Masculino</option>
-                            <option value="F">Femenino</option>
-                            <option value="O">Otro</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div class="form-row">
-                        <div class="form-group">
-                          <label class="required">Tipo Licencia</label>
-                          <select class="form-control select-premium" formControlName="tipolicencia">
-                            <option value="A">A (Motos)</option>
-                            <option value="B">B (Livianos / Automóviles)</option>
-                            <option value="C">C (Profesional / Taxis)</option>
-                            <option value="D">D (Autobuses)</option>
-                            <option value="E">E (Pesados / Tráileres)</option>
-                            <option value="F">F (Especiales / Discapacitados)</option>
-                          </select>
-                        </div>
-                        <div class="form-group">
-                          <label class="required">Estado de Licencia</label>
-                          <select class="form-control select-premium" formControlName="estadolicencia">
-                            <option value="Vigente">Vigente</option>
-                            <option value="Caducada">Caducada</option>
-                            <option value="Suspendida">Suspendida</option>
-                            <option value="Sin Licencia">Sin Licencia</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div class="form-row">
-                        <div class="form-group">
-                          <label class="required">Ciudad de Residencia</label>
-                          <input type="text" class="form-control" formControlName="ciudadresidencia" placeholder="Ej. Quito" />
-                        </div>
-                        <div class="form-group">
-                          <label class="required">Años de Experiencia</label>
-                          <input type="number" class="form-control" formControlName="aniosexperiencia" min="0" max="80" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="sub-section">
-                      <h5 class="sub-section-title">ESTADO DE SOBRIEDAD Y ATENCIÓN DEL CONDUCTOR</h5>
-                      <div class="checkbox-premium-grid">
-                        <label class="checkbox-premium-card">
-                          <input type="checkbox" formControlName="estadosobriedad" />
-                          <span class="custom-checkbox"></span>
-                          <span class="checkbox-label">¿Sobrio? (Sin influencia de alcohol)</span>
-                        </label>
-                        <label class="checkbox-premium-card">
-                          <input type="checkbox" formControlName="nivelatencion" />
-                          <span class="custom-checkbox"></span>
-                          <span class="checkbox-label">¿Atento? (Sin distracción/celular)</span>
-                        </label>
-                        <label class="checkbox-premium-card">
-                          <input type="checkbox" formControlName="condicionfisica" />
-                          <span class="custom-checkbox"></span>
-                          <span class="checkbox-label">¿Físicamente apto? (Sin sueño/cansancio)</span>
-                        </label>
-                        <label class="checkbox-premium-card">
-                          <input type="checkbox" formControlName="usoseguridad" />
-                          <span class="custom-checkbox"></span>
-                          <span class="checkbox-label">¿Usaba cinturón/casco de seguridad?</span>
-                        </label>
-                      </div>
+                  <div class="flex flex-col gap-3">
+                    <h5 class="text-[0.68rem] font-bold text-text-secondary uppercase tracking-wider pb-2 border-b border-border-light m-0">ESTADO DE SOBRIEDAD Y ATENCIÓN DEL CONDUCTOR</h5>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <label class="flex items-center gap-2.5 p-3 bg-gray-50 rounded-sm border border-border-light cursor-pointer transition-all hover:bg-gray-100 hover:border-border">
+                        <input type="checkbox" class="w-4 h-4 accent-accent-gray cursor-pointer" formControlName="estadosobriedad" />
+                        <span class="text-xs font-medium text-text-primary">¿Sobrio? (Sin influencia de alcohol)</span>
+                      </label>
+                      <label class="flex items-center gap-2.5 p-3 bg-gray-50 rounded-sm border border-border-light cursor-pointer transition-all hover:bg-gray-100 hover:border-border">
+                        <input type="checkbox" class="w-4 h-4 accent-accent-gray cursor-pointer" formControlName="nivelatencion" />
+                        <span class="text-xs font-medium text-text-primary">¿Atento? (Sin distracción/celular)</span>
+                      </label>
+                      <label class="flex items-center gap-2.5 p-3 bg-gray-50 rounded-sm border border-border-light cursor-pointer transition-all hover:bg-gray-100 hover:border-border">
+                        <input type="checkbox" class="w-4 h-4 accent-accent-gray cursor-pointer" formControlName="condicionfisica" />
+                        <span class="text-xs font-medium text-text-primary">¿Físicamente apto? (Sin sueño/cansancio)</span>
+                      </label>
+                      <label class="flex items-center gap-2.5 p-3 bg-gray-50 rounded-sm border border-border-light cursor-pointer transition-all hover:bg-gray-100 hover:border-border">
+                        <input type="checkbox" class="w-4 h-4 accent-accent-gray cursor-pointer" formControlName="usoseguridad" />
+                        <span class="text-xs font-medium text-text-primary">¿Usaba cinturón/casco de seguridad?</span>
+                      </label>
                     </div>
                   </div>
                 </div>
-              }
-            </div>
+              </div>
+            }
           </div>
-        } @else {
-          <div class="form-section">
-            <div class="empty-state">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32" style="color: #64748B;">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 8v8M8 12h8"/>
-              </svg>
-              <p>No se solicitaron detalles de vehículos.</p>
-              <p class="empty-hint">Puede habilitar esta opción en el paso de Impacto si es necesario.</p>
-            </div>
+        </div>
+      } @else {
+        <div class="bg-card rounded-card shadow-card p-5 border border-border-light">
+          <div class="flex flex-col items-center justify-center gap-4 py-16 text-center">
+            <svg class="w-8 h-8 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #64748B;">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 8v8M8 12h8"/>
+            </svg>
+            <p class="text-sm text-text-secondary m-0">No se solicitaron detalles de vehículos.</p>
+            <p class="text-xs text-text-muted m-0">Puede habilitar esta opción en la sección de Impacto si es necesario.</p>
           </div>
-        }
+        </div>
+      }
+      </div>
       }
 
       <!-- STEP 4: ENTORNO -->
       @if (pasoActual() === 4) {
-        <div class="form-section">
-          <h3 class="section-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
-            </svg>
-            CONDICIÓN CLIMÁTICA DETALLADA
-          </h3>
+      <div class="flex flex-col gap-6">
+      <!-- SECTION 4: CONDICIÓN CLIMÁTICA DETALLADA -->
+      <div class="bg-card rounded-card shadow-card p-5 border border-border-light">
+        <h3 class="flex items-center gap-2 text-sm font-bold text-text-primary uppercase tracking-wider mb-4 pb-3 border-b border-border-light">
+          <svg class="w-3.5 h-3.5 text-text-muted flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+          </svg>
+          CONDICIÓN CLIMÁTICA DETALLADA
+        </h3>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label class="required">Condición Climática</label>
-              <select class="form-control select-premium" formControlName="condicion_clima" (change)="onClimaChange($event)">
-                <option value="Despejado">Despejado</option>
-                <option value="Nublado">Nublado</option>
-                <option value="Lluvia Ligera">Lluvia Ligera</option>
-                <option value="Tormenta">Tormenta</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="required">Temperatura (°F)</label>
-              <input type="number" class="form-control" formControlName="temperatura_f" />
-            </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Condición Climática<span class="text-danger ml-0.5">*</span></label>
+            <select class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 cursor-pointer" formControlName="condicion_clima" (change)="onClimaChange($event)">
+              <option value="Despejado">Despejado</option>
+              <option value="Nublado">Nublado</option>
+              <option value="Lluvia Ligera">Lluvia Ligera</option>
+              <option value="Tormenta">Tormenta</option>
+            </select>
           </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="required">Humedad (%)</label>
-              <input type="number" class="form-control" formControlName="humedad_porcentaje" />
-            </div>
-            <div class="form-group">
-              <label class="required">Visibilidad (millas)</label>
-              <input type="number" class="form-control" formControlName="visibilidad_millas" />
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="required">Velocidad Viento (mph)</label>
-              <input type="number" class="form-control" formControlName="velocidad_viento_mph" />
-            </div>
-            <div class="form-group">
-              <label class="required">Fuente / Canal de Reporte</label>
-              <select class="form-control select-premium" formControlName="idtiporeportado_id" [class.invalid]="isInvalid('idtiporeportado_id')">
-                <option value="">Seleccionar Fuente...</option>
-                @for (tr of tiposReportado(); track tr.idtiporeportado) {
-                  <option [value]="tr.idtiporeportado">{{ tr.tiporeportado }}</option>
-                }
-              </select>
-            </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Temperatura (°F)<span class="text-danger ml-0.5">*</span></label>
+            <input type="number" class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted" formControlName="temperatura_f" />
           </div>
         </div>
 
-        <div class="form-section">
-          <h3 class="section-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="color: #F59E0B;">
-              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-              <line x1="12" y1="9" x2="12" y2="13"/>
-              <line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-            ELEMENTOS FÍSICOS CERCANOS
-          </h3>
-
-          <div class="checkbox-premium-grid cols-3">
-            <label class="checkbox-premium-card">
-              <input type="checkbox" formControlName="cerca_cruce" />
-              <span class="custom-checkbox-orange"></span>
-              <span class="checkbox-label">Cerca Cruce</span>
-            </label>
-            <label class="checkbox-premium-card">
-              <input type="checkbox" formControlName="cerca_semaforo" />
-              <span class="custom-checkbox-orange"></span>
-              <span class="checkbox-label">Cerca Semáforo</span>
-            </label>
-            <label class="checkbox-premium-card">
-              <input type="checkbox" formControlName="cerca_parada" />
-              <span class="custom-checkbox-orange"></span>
-              <span class="checkbox-label">Cerca Parada</span>
-            </label>
-            <label class="checkbox-premium-card">
-              <input type="checkbox" formControlName="cerca_estacion" />
-              <span class="custom-checkbox-orange"></span>
-              <span class="checkbox-label">Cerca Estación</span>
-            </label>
-            <label class="checkbox-premium-card">
-              <input type="checkbox" formControlName="cerca_bache" />
-              <span class="custom-checkbox-orange"></span>
-              <span class="checkbox-label">Cerca Bache</span>
-            </label>
-            <label class="checkbox-premium-card">
-              <input type="checkbox" formControlName="cerca_viatren" />
-              <span class="custom-checkbox-orange"></span>
-              <span class="checkbox-label">Cerca Vía Tren</span>
-            </label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Humedad (%)<span class="text-danger ml-0.5">*</span></label>
+            <input type="number" class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted" formControlName="humedad_porcentaje" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Visibilidad (millas)<span class="text-danger ml-0.5">*</span></label>
+            <input type="number" class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted" formControlName="visibilidad_millas" />
           </div>
         </div>
 
-        <div class="form-section">
-          <h3 class="section-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="color: #38BDF8;">
-              <circle cx="12" cy="12" r="5"/>
-              <line x1="12" y1="1" x2="12" y2="3"/>
-              <line x1="12" y1="21" x2="12" y2="23"/>
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-              <line x1="1" y1="12" x2="3" y2="12"/>
-              <line x1="21" y1="12" x2="23" y2="12"/>
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-            </svg>
-            PERIODO DEL DÍA Y ESTACIÓN
-          </h3>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="required">Amanecer / Anochecer</label>
-              <select class="form-control select-premium" formControlName="amaneceranochecer">
-                <option value="Day">Día</option>
-                <option value="Night">Noche</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="required">Crepúsculo Civil</label>
-              <select class="form-control select-premium" formControlName="crepusculocivil">
-                <option value="Day">Día</option>
-                <option value="Night">Noche</option>
-              </select>
-            </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Velocidad Viento (mph)<span class="text-danger ml-0.5">*</span></label>
+            <input type="number" class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted" formControlName="velocidad_viento_mph" />
           </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="required">Crepúsculo Náutico</label>
-              <select class="form-control select-premium" formControlName="crepusculonautico">
-                <option value="Day">Día</option>
-                <option value="Night">Noche</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="required">Crepúsculo Astronómico</label>
-              <select class="form-control select-premium" formControlName="crepusculoastronomico">
-                <option value="Day">Día</option>
-                <option value="Night">Noche</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Código Aeropuerto (Estación)</label>
-              <input type="text" class="form-control select-premium" formControlName="codigoaeropuerto" placeholder="Ej: KJFK" />
-            </div>
-            <div class="form-group">
-              <label>Zona Horaria</label>
-              <input type="text" class="form-control select-premium" formControlName="zonahoraria" placeholder="Ej: US/Eastern" />
-            </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Fuente / Canal de Reporte<span class="text-danger ml-0.5">*</span></label>
+            <select class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 cursor-pointer" formControlName="idtiporeportado_id" [class.border-danger/40]="isInvalid('idtiporeportado_id')">
+              <option value="">Seleccionar Fuente...</option>
+              @for (tr of tiposReportado(); track tr.idtiporeportado) {
+                <option [value]="tr.idtiporeportado">{{ tr.tiporeportado }}</option>
+              }
+            </select>
           </div>
         </div>
+      </div>
+
+      <!-- SECTION 5: ELEMENTOS FÍSICOS CERCANOS -->
+      <div class="bg-card rounded-card shadow-card p-5 border border-border-light">
+        <h3 class="flex items-center gap-2 text-sm font-bold text-text-primary uppercase tracking-wider mb-4 pb-3 border-b border-border-light">
+          <svg class="w-3.5 h-3.5 text-text-muted flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #F59E0B;">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          ELEMENTOS FÍSICOS CERCANOS
+        </h3>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <label class="flex items-center gap-2.5 p-3 bg-gray-50 rounded-sm border border-border-light cursor-pointer transition-all hover:bg-gray-100 hover:border-border">
+            <input type="checkbox" class="w-4 h-4 accent-amber cursor-pointer" formControlName="cerca_cruce" />
+            <span class="text-xs font-medium text-text-primary">Cerca Cruce</span>
+          </label>
+          <label class="flex items-center gap-2.5 p-3 bg-gray-50 rounded-sm border border-border-light cursor-pointer transition-all hover:bg-gray-100 hover:border-border">
+            <input type="checkbox" class="w-4 h-4 accent-amber cursor-pointer" formControlName="cerca_semaforo" />
+            <span class="text-xs font-medium text-text-primary">Cerca Semáforo</span>
+          </label>
+          <label class="flex items-center gap-2.5 p-3 bg-gray-50 rounded-sm border border-border-light cursor-pointer transition-all hover:bg-gray-100 hover:border-border">
+            <input type="checkbox" class="w-4 h-4 accent-amber cursor-pointer" formControlName="cerca_parada" />
+            <span class="text-xs font-medium text-text-primary">Cerca Parada</span>
+          </label>
+          <label class="flex items-center gap-2.5 p-3 bg-gray-50 rounded-sm border border-border-light cursor-pointer transition-all hover:bg-gray-100 hover:border-border">
+            <input type="checkbox" class="w-4 h-4 accent-amber cursor-pointer" formControlName="cerca_estacion" />
+            <span class="text-xs font-medium text-text-primary">Cerca Estación</span>
+          </label>
+          <label class="flex items-center gap-2.5 p-3 bg-gray-50 rounded-sm border border-border-light cursor-pointer transition-all hover:bg-gray-100 hover:border-border">
+            <input type="checkbox" class="w-4 h-4 accent-amber cursor-pointer" formControlName="cerca_bache" />
+            <span class="text-xs font-medium text-text-primary">Cerca Bache</span>
+          </label>
+          <label class="flex items-center gap-2.5 p-3 bg-gray-50 rounded-sm border border-border-light cursor-pointer transition-all hover:bg-gray-100 hover:border-border">
+            <input type="checkbox" class="w-4 h-4 accent-amber cursor-pointer" formControlName="cerca_viatren" />
+            <span class="text-xs font-medium text-text-primary">Cerca Vía Tren</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- SECTION 6: PERÍODO DEL DÍA Y ESTACIÓN -->
+      <div class="bg-card rounded-card shadow-card p-5 border border-border-light">
+        <h3 class="flex items-center gap-2 text-sm font-bold text-text-primary uppercase tracking-wider mb-4 pb-3 border-b border-border-light">
+          <svg class="w-3.5 h-3.5 text-text-muted flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #38BDF8;">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          PERÍODO DEL DÍA Y ESTACIÓN
+        </h3>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Amanecer / Anochecer<span class="text-danger ml-0.5">*</span></label>
+            <select class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 cursor-pointer" formControlName="amaneceranochecer">
+              <option value="Day">Día</option>
+              <option value="Night">Noche</option>
+            </select>
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Crepúsculo Civil<span class="text-danger ml-0.5">*</span></label>
+            <select class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 cursor-pointer" formControlName="crepusculocivil">
+              <option value="Day">Día</option>
+              <option value="Night">Noche</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Crepúsculo Náutico<span class="text-danger ml-0.5">*</span></label>
+            <select class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 cursor-pointer" formControlName="crepusculonautico">
+              <option value="Day">Día</option>
+              <option value="Night">Noche</option>
+            </select>
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Crepúsculo Astronómico<span class="text-danger ml-0.5">*</span></label>
+            <select class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 cursor-pointer" formControlName="crepusculoastronomico">
+              <option value="Day">Día</option>
+              <option value="Night">Noche</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Código Aeropuerto (Estación)</label>
+            <input type="text" class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10" formControlName="codigoaeropuerto" placeholder="Ej: KJFK" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Zona Horaria</label>
+            <input type="text" class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10" formControlName="zonahoraria" placeholder="Ej: US/Eastern" />
+          </div>
+        </div>
+      </div>
+      </div>
       }
 
       <!-- STEP 5: REVISIÓN -->
       @if (pasoActual() === 5) {
-        <div class="form-section">
-          <h3 class="section-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/>
-              <line x1="16" y1="17" x2="8" y2="17"/>
-            </svg>
-            RESUMEN DEL REGISTRO
-          </h3>
+      <div class="flex flex-col gap-6">
+      <!-- SECTION 7: DESCRIPCIÓN Y BITÁCORA -->
+      <div class="bg-card rounded-card shadow-card p-5 border border-border-light">
+        <h3 class="flex items-center gap-2 text-sm font-bold text-text-primary uppercase tracking-wider mb-4 pb-3 border-b border-border-light">
+          <svg class="w-3.5 h-3.5 text-text-muted flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          DESCRIPCIÓN Y BITÁCORA
+        </h3>
 
-          <div class="summary-grid">
-            <div class="summary-column">
-              <div class="summary-block">
-                <h4 class="summary-block-title">UBICACIÓN</h4>
-                <div class="summary-row">
-                  <span class="summary-label">Latitud:</span>
-                  <span class="summary-value">{{ form.get('latitudinicio')?.value || '—' }}</span>
-                </div>
-                <div class="summary-row">
-                  <span class="summary-label">Longitud:</span>
-                  <span class="summary-value">{{ form.get('longitudinicio')?.value || '—' }}</span>
-                </div>
-                <div class="summary-row">
-                  <span class="summary-label">País:</span>
-                  <span class="summary-value">{{ paises().find(p => p.idpais === numVal('idpais_id'))?.pais || '—' }}</span>
-                </div>
-                <div class="summary-row">
-                  <span class="summary-label">Estado:</span>
-                  <span class="summary-value">{{ estados().find(e => e.idestado === numVal('idestado_id'))?.estado || '—' }}</span>
-                </div>
-                <div class="summary-row">
-                  <span class="summary-label">Condado:</span>
-                  <span class="summary-value">{{ condados().find(c => c.idcondado === numVal('idcondado_id'))?.condado || '—' }}</span>
-                </div>
-                <div class="summary-row">
-                  <span class="summary-label">Ciudad:</span>
-                  <span class="summary-value">{{ ciudades().find(c => c.idciudad === numVal('idciudad_id'))?.ciudad || '—' }}</span>
-                </div>
-                <div class="summary-row">
-                  <span class="summary-label">Calle:</span>
-                  <span class="summary-value">{{ calles().find(c => c.idcalle === numVal('idcalle_id'))?.calle || '—' }}</span>
-                </div>
-              </div>
-
-              <div class="summary-block">
-                <h4 class="summary-block-title">IMPACTO</h4>
-                <div class="summary-row">
-                  <span class="summary-label">Vehículos:</span>
-                  <span class="summary-value">{{ form.get('numvehiculos')?.value || 1 }}</span>
-                </div>
-                <div class="summary-row">
-                  <span class="summary-label">Heridos:</span>
-                  <span class="summary-value">{{ form.get('numheridos')?.value || 0 }}</span>
-                </div>
-                <div class="summary-row">
-                  <span class="summary-label">Fallecidos:</span>
-                  <span class="summary-value">{{ form.get('numfallecidos')?.value || 0 }}</span>
-                </div>
-                <div class="summary-row">
-                  <span class="summary-label">Severidad:</span>
-                  <span class="summary-value severity-badge" [class.sev-1]="severidadFinal() === 1" [class.sev-2]="severidadFinal() === 2" [class.sev-3]="severidadFinal() === 3" [class.sev-4]="severidadFinal() === 4">
-                    {{ severidadFinal() === 1 ? 'LEVE' : severidadFinal() === 2 ? 'MODERADA' : severidadFinal() === 3 ? 'GRAVE' : 'CRÍTICA' }}
-                  </span>
-                </div>
-                <div class="summary-row">
-                  <span class="summary-label">Detalles Vehículos:</span>
-                  <span class="summary-value">{{ registrarDetallesVehiculos() ? 'Sí' : 'No' }}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="summary-column">
-              <div class="summary-block">
-                <h4 class="summary-block-title">ENTORNO</h4>
-                <div class="summary-row">
-                  <span class="summary-label">Clima:</span>
-                  <span class="summary-value">{{ form.get('condicion_clima')?.value || '—' }}</span>
-                </div>
-                <div class="summary-row">
-                  <span class="summary-label">Temperatura:</span>
-                  <span class="summary-value">{{ form.get('temperatura_f')?.value || '—' }} °F</span>
-                </div>
-                <div class="summary-row">
-                  <span class="summary-label">Humedad:</span>
-                  <span class="summary-value">{{ form.get('humedad_porcentaje')?.value || '—' }}%</span>
-                </div>
-                <div class="summary-row">
-                  <span class="summary-label">Visibilidad:</span>
-                  <span class="summary-value">{{ form.get('visibilidad_millas')?.value || '—' }} millas</span>
-                </div>
-                <div class="summary-row">
-                  <span class="summary-label">Viento:</span>
-                  <span class="summary-value">{{ form.get('velocidad_viento_mph')?.value || '—' }} mph</span>
-                </div>
-                <div class="summary-row">
-                  <span class="summary-label">Fuente Reporte:</span>
-                  <span class="summary-value">{{ tiposReportado().find(t => t.idtiporeportado === numVal('idtiporeportado_id'))?.tiporeportado || '—' }}</span>
-                </div>
-                <div class="summary-row">
-                  <span class="summary-label">Período:</span>
-                  <span class="summary-value">{{ getPeriodLabel() }}</span>
-                </div>
-                <div class="summary-row">
-                  <span class="summary-label">Estación:</span>
-                  <span class="summary-value">{{ form.get('codigoaeropuerto')?.value || '—' }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-semibold text-text-muted uppercase tracking-wider">Descripción del Suceso<span class="text-danger ml-0.5">*</span></label>
+          <textarea class="w-full px-4 py-2.5 bg-white border border-border text-text-primary text-sm rounded-sm outline-none transition-all focus:border-accent-gray/30 focus:shadow-[0_0_0_3px_rgba(80,87,107,0.08)] placeholder:text-text-muted appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:14px] pr-10 resize-none" formControlName="descripcion" rows="3" [class.border-danger/40]="isInvalid('descripcion')" placeholder="Describa el accidente (choque por alcance, colisión múltiple, etc.)..."></textarea>
+          @if (isInvalid('descripcion')) {
+            <span class="text-xs text-danger font-medium mt-0.5">{{ getError('descripcion') }}</span>
+          }
         </div>
+      </div>
 
-        <div class="form-section">
-          <h3 class="section-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/>
-              <line x1="16" y1="17" x2="8" y2="17"/>
-              <polyline points="10 9 9 9 8 9"/>
+      <!-- Navigation / Action Buttons -->
+      @if (pasoActual() < totalPasos) {
+      <div class="flex items-center justify-between gap-4 mt-2 pt-5 border-t border-border-light">
+        <button type="button" class="px-5 py-2.5 bg-transparent border border-border text-text-secondary rounded-sm font-semibold cursor-pointer transition-all hover:bg-gray-50 hover:text-text-primary active:scale-[0.97] disabled:opacity-40" (click)="onCancelar()">
+          Cancelar
+        </button>
+        <div class="flex items-center gap-3">
+          @if (pasoActual() > 1) {
+          <button type="button" class="px-5 py-2.5 bg-transparent border border-border text-text-secondary rounded-sm font-semibold cursor-pointer transition-all hover:bg-gray-100 hover:text-text-primary active:scale-[0.97]" (click)="retrocederPaso()">
+            <svg class="w-4 h-4 inline-block -mt-0.5 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="15 18 9 12 15 6"/>
             </svg>
-            DESCRIPCIÓN Y BITÁCORA
-          </h3>
-
-          <div class="form-group">
-            <label>Código Postal <span class="optional-tag">Opcional</span></label>
-            <input type="text" class="form-control select-premium" formControlName="codigopostal" placeholder="Ej. 090150" />
-          </div>
-
-          <div class="form-group">
-            <label class="required">Descripción del Suceso</label>
-            <textarea class="form-control select-premium text-area" formControlName="descripcion" rows="3" [class.invalid]="isInvalid('descripcion')" placeholder="Describa el accidente (choque por alcance, colisión múltiple, etc.)..."></textarea>
-            @if (isInvalid('descripcion')) {
-              <span class="error-text">{{ getError('descripcion') }}</span>
-            }
-          </div>
+            Anterior
+          </button>
+          }
+          <button type="button" class="px-6 py-2.5 bg-sidebar text-white rounded-sm font-semibold cursor-pointer transition-all hover:bg-sidebar-hover active:scale-[0.97]" (click)="avanzarPaso()">
+            Siguiente
+            <svg class="w-4 h-4 inline-block -mt-0.5 ml-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
         </div>
+      </div>
       }
 
-      <!-- Navigation Buttons -->
-      <div class="nav-buttons">
-        @if (pasoActual() > 1) {
-          <button type="button" class="btn-nav btn-prev" (click)="retrocederPaso()">
-            ← Anterior
-          </button>
-        } @else {
-          <button type="button" class="btn-nav btn-prev" (click)="onCancelar()" style="visibility: hidden">
-            ← Anterior
-          </button>
-        }
-        @if (!esUltimoPaso()) {
-          <button type="button" class="btn-nav btn-next" (click)="avanzarPaso()">
-            Siguiente →
-          </button>
-        } @else {
-          <button type="button" class="btn-nav btn-submit" (click)="submit()" [disabled]="cargando() || form.invalid">
-            @if (cargando()) {
-              <span class="spinner-sm"></span>
-              {{ modoEdicion() ? 'GUARDANDO...' : 'REGISTRANDO...' }}
-            } @else {
-              {{ modoEdicion() ? 'Guardar Cambios' : 'Registrar Accidente' }}
-            }
-          </button>
-        }
+      @if (pasoActual() === totalPasos) {
+      <div class="flex items-center justify-between gap-4 mt-2 pt-5 border-t border-border-light">
+        <button type="button" class="px-5 py-2.5 bg-transparent border border-border text-text-secondary rounded-sm font-semibold cursor-pointer transition-all hover:bg-gray-50 hover:text-text-primary active:scale-[0.97]" (click)="retrocederPaso()">
+          <svg class="w-4 h-4 inline-block -mt-0.5 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+          Anterior
+        </button>
+        <button type="button" class="px-6 py-2.5 bg-sidebar text-white rounded-sm font-semibold cursor-pointer transition-all hover:bg-sidebar-hover active:scale-[0.97]" (click)="abrirModalRevision()">
+          <svg class="w-4 h-4 inline-block -mt-0.5 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="9 11 12 14 22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+          Revisar y {{ modoEdicion() ? 'Guardar' : 'Registrar' }}
+        </button>
       </div>
+      }
+      </div>
+      }
 
     </form>
   </div>
 
+  <!-- Modal Revisión y Confirmación -->
+  @if (mostrarModalRevision()) {
+    <div class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center animate-fade-in" (click)="cerrarModalRevision()">
+      <div class="bg-card shadow-modal rounded-card overflow-hidden w-[90%] max-w-[800px] max-h-[90vh] flex flex-col animate-scale-in" (click)="$event.stopPropagation()">
+        <div class="flex items-center justify-between p-5 border-b border-border">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-success/10 text-success flex items-center justify-center flex-shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
+                <polyline points="9 11 12 14 22 4"/>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider m-0">REVISIÓN DEL REGISTRO</h3>
+              <p class="text-xs text-text-secondary mt-0.5 m-0">Verifique la información antes de {{ modoEdicion() ? 'guardar los cambios' : 'registrar el accidente' }}</p>
+            </div>
+          </div>
+          <button class="w-8 h-8 flex items-center justify-center rounded-full border border-border text-text-muted cursor-pointer transition-all hover:bg-gray-100 hover:text-text-primary" (click)="cerrarModalRevision()">✕</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-5">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <div class="flex flex-col gap-4">
+              <div class="bg-gray-50 rounded-panel p-4 border border-border-light">
+                <h4 class="text-[0.68rem] font-bold text-text-secondary uppercase tracking-wider mb-3 pb-2 border-b border-border-light m-0">UBICACIÓN</h4>
+                <div class="flex justify-between items-center py-1.5 text-sm">
+                  <span class="text-text-muted">Latitud:</span>
+                  <span class="text-text-primary font-semibold text-right">{{ form.get('latitudinicio')?.value || '—' }}</span>
+                </div>
+                <div class="flex justify-between items-center py-1.5 text-sm border-t border-border-light">
+                  <span class="text-text-muted">Longitud:</span>
+                  <span class="text-text-primary font-semibold text-right">{{ form.get('longitudinicio')?.value || '—' }}</span>
+                </div>
+                <div class="flex justify-between items-center py-1.5 text-sm border-t border-border-light">
+                  <span class="text-text-muted">País:</span>
+                  <span class="text-text-primary font-semibold text-right">{{ paises().find(p => p.idpais === numVal('idpais_id'))?.pais || '—' }}</span>
+                </div>
+                <div class="flex justify-between items-center py-1.5 text-sm border-t border-border-light">
+                  <span class="text-text-muted">Estado:</span>
+                  <span class="text-text-primary font-semibold text-right">{{ estados().find(e => e.idestado === numVal('idestado_id'))?.estado || '—' }}</span>
+                </div>
+                <div class="flex justify-between items-center py-1.5 text-sm border-t border-border-light">
+                  <span class="text-text-muted">Condado:</span>
+                  <span class="text-text-primary font-semibold text-right">{{ condados().find(c => c.idcondado === numVal('idcondado_id'))?.condado || '—' }}</span>
+                </div>
+                <div class="flex justify-between items-center py-1.5 text-sm border-t border-border-light">
+                  <span class="text-text-muted">Ciudad:</span>
+                  <span class="text-text-primary font-semibold text-right">{{ ciudades().find(c => c.idciudad === numVal('idciudad_id'))?.ciudad || '—' }}</span>
+                </div>
+                <div class="flex justify-between items-center py-1.5 text-sm border-t border-border-light">
+                  <span class="text-text-muted">Calle:</span>
+                  <span class="text-text-primary font-semibold text-right">{{ calles().find(c => c.idcalle === numVal('idcalle_id'))?.calle || '—' }}</span>
+                </div>
+              </div>
+
+              <div class="bg-gray-50 rounded-panel p-4 border border-border-light">
+                <h4 class="text-[0.68rem] font-bold text-text-secondary uppercase tracking-wider mb-3 pb-2 border-b border-border-light m-0">IMPACTO</h4>
+                <div class="flex justify-between items-center py-1.5 text-sm">
+                  <span class="text-text-muted">Vehículos:</span>
+                  <span class="text-text-primary font-semibold text-right">{{ form.get('numvehiculos')?.value || 1 }}</span>
+                </div>
+                <div class="flex justify-between items-center py-1.5 text-sm border-t border-border-light">
+                  <span class="text-text-muted">Heridos:</span>
+                  <span class="text-text-primary font-semibold text-right">{{ form.get('numheridos')?.value || 0 }}</span>
+                </div>
+                <div class="flex justify-between items-center py-1.5 text-sm border-t border-border-light">
+                  <span class="text-text-muted">Fallecidos:</span>
+                  <span class="text-text-primary font-semibold text-right">{{ form.get('numfallecidos')?.value || 0 }}</span>
+                </div>
+                <div class="flex justify-between items-center py-1.5 text-sm border-t border-border-light">
+                  <span class="text-text-muted">Severidad:</span>
+                  <span class="text-text-primary font-semibold text-right px-3 py-1 rounded-full text-xs font-bold uppercase" [class.bg-sev-leve/10]="severidadFinal() === 1" [class.text-sev-leve]="severidadFinal() === 1" [class.bg-sev-moderada/10]="severidadFinal() === 2" [class.text-sev-moderada]="severidadFinal() === 2" [class.bg-sev-grave/10]="severidadFinal() === 3" [class.text-sev-grave]="severidadFinal() === 3" [class.bg-sev-critica/10]="severidadFinal() === 4" [class.text-sev-critica]="severidadFinal() === 4">
+                    {{ severidadFinal() === 1 ? 'LEVE' : severidadFinal() === 2 ? 'MODERADA' : severidadFinal() === 3 ? 'GRAVE' : 'CRÍTICA' }}
+                  </span>
+                </div>
+                <div class="flex justify-between items-center py-1.5 text-sm border-t border-border-light">
+                  <span class="text-text-muted">Detalles Vehículos:</span>
+                  <span class="text-text-primary font-semibold text-right">{{ registrarDetallesVehiculos() ? 'Sí' : 'No' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-4">
+              <div class="bg-gray-50 rounded-panel p-4 border border-border-light">
+                <h4 class="text-[0.68rem] font-bold text-text-secondary uppercase tracking-wider mb-3 pb-2 border-b border-border-light m-0">ENTORNO</h4>
+                <div class="flex justify-between items-center py-1.5 text-sm">
+                  <span class="text-text-muted">Clima:</span>
+                  <span class="text-text-primary font-semibold text-right">{{ form.get('condicion_clima')?.value || '—' }}</span>
+                </div>
+                <div class="flex justify-between items-center py-1.5 text-sm border-t border-border-light">
+                  <span class="text-text-muted">Temperatura:</span>
+                  <span class="text-text-primary font-semibold text-right">{{ form.get('temperatura_f')?.value || '—' }} °F</span>
+                </div>
+                <div class="flex justify-between items-center py-1.5 text-sm border-t border-border-light">
+                  <span class="text-text-muted">Humedad:</span>
+                  <span class="text-text-primary font-semibold text-right">{{ form.get('humedad_porcentaje')?.value || '—' }}%</span>
+                </div>
+                <div class="flex justify-between items-center py-1.5 text-sm border-t border-border-light">
+                  <span class="text-text-muted">Visibilidad:</span>
+                  <span class="text-text-primary font-semibold text-right">{{ form.get('visibilidad_millas')?.value || '—' }} millas</span>
+                </div>
+                <div class="flex justify-between items-center py-1.5 text-sm border-t border-border-light">
+                  <span class="text-text-muted">Viento:</span>
+                  <span class="text-text-primary font-semibold text-right">{{ form.get('velocidad_viento_mph')?.value || '—' }} mph</span>
+                </div>
+                <div class="flex justify-between items-center py-1.5 text-sm border-t border-border-light">
+                  <span class="text-text-muted">Fuente Reporte:</span>
+                  <span class="text-text-primary font-semibold text-right">{{ tiposReportado().find(t => t.idtiporeportado === numVal('idtiporeportado_id'))?.tiporeportado || '—' }}</span>
+                </div>
+                <div class="flex justify-between items-center py-1.5 text-sm border-t border-border-light">
+                  <span class="text-text-muted">Período:</span>
+                  <span class="text-text-primary font-semibold text-right">{{ getPeriodLabel() }}</span>
+                </div>
+                <div class="flex justify-between items-center py-1.5 text-sm border-t border-border-light">
+                  <span class="text-text-muted">Estación:</span>
+                  <span class="text-text-primary font-semibold text-right">{{ form.get('codigoaeropuerto')?.value || '—' }}</span>
+                </div>
+              </div>
+
+              <div class="bg-gray-50 rounded-panel p-4 border border-border-light">
+                <h4 class="text-[0.68rem] font-bold text-text-secondary uppercase tracking-wider mb-3 pb-2 border-b border-border-light m-0">DESCRIPCIÓN</h4>
+                <p class="text-sm text-text-primary m-0 leading-relaxed">{{ form.get('descripcion')?.value || 'Sin descripción' }}</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-4 p-5 bg-gray-50 border-t border-border">
+          <button type="button" class="px-5 py-2.5 bg-transparent border border-border text-text-secondary rounded-sm text-sm font-semibold cursor-pointer transition-all hover:bg-gray-100 hover:text-text-primary" (click)="cerrarModalRevision()">
+            ← Volver
+          </button>
+          <button type="button" class="px-6 py-2.5 bg-gradient-to-r from-success to-emerald-700 text-white rounded-sm text-sm font-semibold cursor-pointer transition-all hover:shadow-[0_0_20px_rgba(22,163,74,0.4)] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none" (click)="confirmarYEnviar()" [disabled]="cargando() || form.invalid">
+            @if (cargando()) {
+              <span class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block mr-2"></span>
+              {{ modoEdicion() ? 'GUARDANDO...' : 'REGISTRANDO...' }}
+            } @else {
+              <svg class="w-4 h-4 inline-block -mt-0.5 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="9 11 12 14 22 4"/>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
+              {{ modoEdicion() ? 'Confirmar Cambios' : 'Confirmar y Registrar' }}
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
   <!-- Modal Mapa Interactivo -->
   @if (mostrarMapaModal()) {
-    <div class="sga-modal-backdrop" (click)="cerrarMapaModal()">
-      <div class="map-modal-content glass-card animate-zoom-in" (click)="$event.stopPropagation()">
-        <div class="modal-map-header">
-          <div class="modal-map-title">
+    <div class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center animate-fade-in" (click)="cerrarMapaModal()">
+      <div class="bg-card shadow-modal rounded-card overflow-hidden w-[90%] max-w-[750px] max-h-[85vh] flex flex-col animate-scale-in" (click)="$event.stopPropagation()">
+        <div class="flex items-center justify-between p-4 border-b border-border">
+          <div class="flex items-center gap-2.5">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18" style="color: #3B82F6;">
               <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
             </svg>
-            <h3>SELECCIONAR UBICACIÓN EN EL MAPA</h3>
+            <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider m-0">SELECCIONAR UBICACIÓN EN EL MAPA</h3>
           </div>
-          <button class="btn-close-modal" (click)="cerrarMapaModal()">✕</button>
+          <button class="w-8 h-8 flex items-center justify-center rounded-full border border-border text-text-muted cursor-pointer transition-all hover:bg-gray-100 hover:text-text-primary" (click)="cerrarMapaModal()">✕</button>
         </div>
 
-        <div class="modal-map-body">
-          <div id="modal-map-container" class="modal-map-element"></div>
-          <p class="map-hint">
+        <div class="flex-1 p-4 flex flex-col gap-3">
+          <div id="modal-map-container" class="w-full h-[350px] rounded-sm border border-border-light"></div>
+          <p class="text-xs text-text-muted text-center m-0">
             Haga clic en cualquier parte del mapa para marcar el punto exacto del accidente.
           </p>
         </div>
 
-        <div class="modal-map-footer">
+        <div class="flex items-center justify-between gap-4 p-4 bg-gray-50 border-t border-border">
           @if (seleccionadoModalCoords()) {
-            <div class="selected-coords-badge font-mono">
+            <div class="px-3 py-1.5 bg-sidebar text-white text-xs font-mono rounded-sm">
               Lat: {{ seleccionadoModalCoords()?.lat?.toFixed(6) }} • Lng: {{ seleccionadoModalCoords()?.lng?.toFixed(6) }}
             </div>
           } @else {
-            <div class="selected-coords-badge empty">
+            <div class="px-3 py-1.5 bg-gray-100 text-text-muted text-xs rounded-sm">
               Ningún punto seleccionado
             </div>
           }
-          <div class="modal-actions">
-            <button type="button" class="btn-modal-cancel" (click)="cerrarMapaModal()">CANCELAR</button>
-            <button type="button" class="btn-modal-confirm" [disabled]="!seleccionadoModalCoords()" (click)="confirmarUbicacionModal()">
+          <div class="flex items-center gap-3">
+            <button type="button" class="px-4 py-2 bg-transparent border border-border text-text-secondary rounded-sm text-xs font-semibold cursor-pointer transition-all hover:bg-gray-100 hover:text-text-primary" (click)="cerrarMapaModal()">CANCELAR</button>
+            <button type="button" class="px-4 py-2 bg-sidebar text-white rounded-sm text-xs font-semibold cursor-pointer transition-all hover:bg-sidebar-hover disabled:opacity-50 disabled:cursor-not-allowed" [disabled]="!seleccionadoModalCoords()" (click)="confirmarUbicacionModal()">
               CONFIRMAR UBICACIÓN
             </button>
           </div>
@@ -820,18 +888,19 @@
 
   <!-- Overlay Resolviendo Ubicación Inteligente -->
   @if (resolviendoDireccion()) {
-    <div class="resolving-backdrop">
-      <div class="resolving-card glass-card">
-        <div class="resolving-spinner">
-          <div class="spinner-ring"></div>
-          <div class="spinner-core"></div>
+    <div class="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center">
+      <div class="bg-card shadow-modal rounded-card p-8 flex flex-col items-center gap-4 text-center min-w-[320px]">
+        <div class="relative w-12 h-12">
+          <div class="absolute inset-0 rounded-full border-[3px] border-info/10 border-t-info animate-spin"></div>
+          <div class="absolute inset-3 rounded-full bg-info/20 animate-ping"></div>
         </div>
-        <h3>GEOLOCALIZACIÓN INTELIGENTE</h3>
-        <p class="resolving-status">{{ estadoResolucion() }}</p>
-        <div class="resolving-progress-bar">
-          <div class="progress-bar-fill"></div>
+        <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider m-0">GEOLOCALIZACIÓN INTELIGENTE</h3>
+        <p class="text-xs text-text-secondary m-0">{{ estadoResolucion() }}</p>
+        <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-info to-sev-fatal rounded-full w-3/4 animate-pulse"></div>
         </div>
       </div>
     </div>
   }
+  </div>
 </div>

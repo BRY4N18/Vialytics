@@ -9,8 +9,7 @@ import { AuthService } from '../../../core/services/auth.service';
   selector: 'app-panel-detalle',
   standalone: true,
   imports: [CommonModule, BadgeSeveridadComponent],
-  templateUrl: './panel-detalle.html',
-  styleUrl: './panel-detalle.css'
+  templateUrl: './panel-detalle.html'
 })
 export class PanelDetalleComponent {
   accidenteId = input.required<string>();

@@ -10,8 +10,7 @@ import { AccidenteMapa, Ciudad } from '../../../core/models/accidente.model';
   selector: 'app-lista-accidentes-analitico',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
-  templateUrl: './lista-accidentes-analitico.html',
-  styleUrl: './lista-accidentes-analitico.css'
+  templateUrl: './lista-accidentes-analitico.html'
 })
 export class ListaAccidentesAnaliticoComponent implements OnInit {
   private readonly accidenteService = inject(AccidenteService);

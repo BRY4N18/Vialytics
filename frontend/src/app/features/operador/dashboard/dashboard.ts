@@ -9,8 +9,7 @@ Chart.register(...registerables);
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './dashboard.html',
-  styleUrl: './dashboard.css'
+  templateUrl: './dashboard.html'
 })
 export class DashboardComponent implements OnInit {
   private readonly accidenteService = inject(AccidenteService);

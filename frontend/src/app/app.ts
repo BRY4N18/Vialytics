@@ -8,8 +8,7 @@ import { ToastService } from './core/services/toast.service';
 @Component({
   selector: 'app-root',
   imports: [RouterOutlet, HeaderComponent, LoginModalComponent],
-  templateUrl: './app.html',
-  styleUrl: './app.css'
+  templateUrl: './app.html'
 })
 export class App {
   protected readonly title = signal('frontend');

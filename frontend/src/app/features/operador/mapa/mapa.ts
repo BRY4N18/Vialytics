@@ -21,7 +21,6 @@ declare const L: any;
   standalone: true,
   imports: [CommonModule],
   templateUrl: './mapa.html',
-  styleUrl: './mapa.css',
 })
 export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   refrescarTrigger = input<number>(0);
@@ -157,7 +156,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     L.control.zoom({ position: 'bottomright' }).addTo(this.map);
 
     // Attribution
-    L.control.attribution({ position: 'bottomleft', prefix: 'SGA © 2025' }).addTo(this.map);
+    L.control.attribution({ position: 'bottomleft', prefix: 'AnalyticsVial © 2026' }).addTo(this.map);
 
     // Markers layer group
     this.markersLayer = L.layerGroup().addTo(this.map);

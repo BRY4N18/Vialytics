@@ -21,8 +21,7 @@ import { AccidenteMapa, Pais, Estado, Condado, Ciudad, Calle } from '../../../co
     DespachoComponent,
     ActualizarEstadoComponent
   ],
-  templateUrl: './mapa-page.html',
-  styleUrl: './mapa-page.css'
+  templateUrl: './mapa-page.html'
 })
 export class MapaPageComponent implements OnInit, OnDestroy {
   readonly mapaService = inject(MapaService);

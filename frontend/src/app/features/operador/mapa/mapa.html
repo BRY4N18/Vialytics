@@ -1,59 +1,69 @@
-<div class="mapa-wrapper" [class.modo-seleccion]="modoUbicacion()">
-  <div id="mapa-principal"></div>
+<div class="relative w-full h-full overflow-hidden" [class.cursor-crosshair]="modoUbicacion()">
+  <div id="mapa-principal" class="w-full h-full"></div>
 
-  <!-- Overlay de carga -->
+  <!-- Loading overlay -->
   @if (cargando()) {
-    <div class="mapa-loading">
-      <div class="spinner"></div>
+    <div class="absolute top-20 left-1/2 -translate-x-1/2 bg-card/90 backdrop-blur-sm border border-border rounded-full px-4 py-2 flex items-center gap-2.5 text-text-secondary text-xs z-[1000]">
+      <div class="w-4 h-4 border-2 border-text-muted/20 border-t-text-secondary rounded-full animate-spin"></div>
       <span>Actualizando mapa...</span>
     </div>
   }
 
   <!-- Error banner -->
   @if (error()) {
-    <div class="mapa-error-banner">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+    <div class="absolute top-2.5 left-1/2 -translate-x-1/2 bg-danger/10 border border-danger/30 rounded-sm px-4 py-2 flex items-center gap-2 text-danger text-xs z-[1000]">
+      <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
       </svg>
       {{ error() }}
-      <button (click)="cargarAccidentes()">Reintentar</button>
+      <button class="bg-danger/15 border border-danger/30 text-danger rounded-sm px-2.5 py-0.5 cursor-pointer text-xs font-sans transition-all hover:bg-danger/25" (click)="cargarAccidentes()">Reintentar</button>
     </div>
   }
 
-  <!-- Stats overlay -->
-  <div class="mapa-stats">
-    <div class="stat-chip">
-      <span class="stat-dot" style="background:#EF4444"></span>
+  <!-- Stats -->
+  <div class="absolute top-2.5 left-2.5 z-[1000] flex gap-2">
+    <div class="bg-card/85 backdrop-blur-sm border border-border rounded-full px-3 py-1 flex items-center gap-2 text-xs text-text-secondary transition-all hover:border-info/20 hover:bg-card/95">
+      <span class="w-2 h-2 rounded-full bg-sev-critica"></span>
       Activos: {{ totalAccidentes() }}
     </div>
   </div>
 
   <!-- Legend -->
-  <div class="mapa-leyenda">
-    <div class="leyenda-title">Severidad</div>
-    <div class="leyenda-item"><span class="leyenda-dot" style="background:#10B981"></span>Leve</div>
-    <div class="leyenda-item"><span class="leyenda-dot" style="background:#F59E0B"></span>Moderado</div>
-    <div class="leyenda-item"><span class="leyenda-dot" style="background:#EF4444"></span>Grave</div>
-    <div class="leyenda-item"><span class="leyenda-dot" style="background:#7C3AED"></span>Fatal</div>
+  <div class="absolute bottom-20 right-2.5 bg-card/85 backdrop-blur-md border border-border rounded-card px-4 py-3 z-[1000] shadow-card">
+    <div class="text-[0.68rem] font-bold text-text-secondary uppercase tracking-wider mb-2">Severidad</div>
+    <div class="flex items-center gap-2 text-xs text-text-secondary py-0.5 cursor-pointer rounded hover:text-text-primary hover:bg-black/[0.02] hover:pl-2 transition-all">
+      <span class="w-2.5 h-2.5 rounded-full border-2 border-white/20 flex-shrink-0 bg-sev-leve"></span>Leve
+    </div>
+    <div class="flex items-center gap-2 text-xs text-text-secondary py-0.5 cursor-pointer rounded hover:text-text-primary hover:bg-black/[0.02] hover:pl-2 transition-all">
+      <span class="w-2.5 h-2.5 rounded-full border-2 border-white/20 flex-shrink-0 bg-sev-moderada"></span>Moderado
+    </div>
+    <div class="flex items-center gap-2 text-xs text-text-secondary py-0.5 cursor-pointer rounded hover:text-text-primary hover:bg-black/[0.02] hover:pl-2 transition-all">
+      <span class="w-2.5 h-2.5 rounded-full border-2 border-white/20 flex-shrink-0 bg-sev-grave"></span>Grave
+    </div>
+    <div class="flex items-center gap-2 text-xs text-text-secondary py-0.5 cursor-pointer rounded hover:text-text-primary hover:bg-black/[0.02] hover:pl-2 transition-all">
+      <span class="w-2.5 h-2.5 rounded-full border-2 border-white/20 flex-shrink-0 bg-sev-fatal"></span>Fatal
+    </div>
   </div>
 
   <!-- Crosshair overlay for location mode -->
   @if (modoUbicacion()) {
-    <div class="crosshair-overlay">
-      <div class="crosshair-h"></div>
-      <div class="crosshair-v"></div>
+    <div class="absolute inset-0 pointer-events-none z-[500]">
+      <div class="absolute top-1/2 left-0 right-0 h-px border-t border-dashed border-info/20"></div>
+      <div class="absolute left-1/2 top-0 bottom-0 w-px border-l border-dashed border-info/20"></div>
     </div>
   }
 
-  <!-- Botón modo ubicación (solo en modo registro) -->
+  <!-- Location button -->
   @if (modoRegistro()) {
     <button
-      class="btn-modo-ubicacion"
-      [class.active]="modoUbicacion()"
+      class="absolute bottom-5 right-15 flex items-center gap-2 bg-card/90 backdrop-blur-sm border border-border text-text-secondary rounded-sm px-4 py-2.5 text-xs font-medium cursor-pointer z-[1000] transition-all hover:border-info/30 hover:text-info hover:bg-info/10 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(2,132,199,0.15)] active:scale-[0.97] font-sans"
+      [class.bg-info/15]="modoUbicacion()"
+      [class.border-info/40]="modoUbicacion()"
+      [class.text-info]="modoUbicacion()"
       (click)="toggleModoUbicacion()"
       title="Seleccionar ubicación del accidente"
     >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+      <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
         <circle cx="12" cy="10" r="3"/>
       </svg>

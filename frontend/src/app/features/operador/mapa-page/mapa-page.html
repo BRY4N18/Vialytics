@@ -1,21 +1,29 @@
-<div class="mapa-page-viewport">
-  <!-- Panel de filtros flotante (lado izquierdo) -->
-  <div class="mapa-filtros-panel" [class.abierto]="filtrosAbiertos()">
-    <div class="filtros-header">
-      <span class="filtros-titulo">Filtros</span>
-      <button class="filtros-toggle" (click)="toggleFiltros()" title="Toggle filtros">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+<div class="relative w-full h-full overflow-hidden flex">
+  <!-- Filters panel -->
+  <div
+    class="absolute left-4 top-1/2 -translate-y-1/2 z-[500] w-[230px] max-h-[calc(100vh-140px)] bg-card/90 backdrop-blur-2xl border border-border rounded-panel shadow-card transition-all duration-300 overflow-hidden"
+    [class.!w-[42px]]="!filtrosAbiertos()"
+    [class.!cursor-pointer]="!filtrosAbiertos()">
+
+    <div class="flex items-center justify-between px-3.5 py-3 border-b border-border">
+      <span class="text-[0.72rem] font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">Filtros</span>
+      <button
+        class="bg-transparent border-none text-text-muted cursor-pointer p-1 rounded flex items-center justify-center transition-transform duration-300 hover:text-text-primary hover:bg-white/5"
+        [class.rotate-180]="filtrosAbiertos()"
+        (click)="toggleFiltros()" title="Toggle filtros">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M6 9l6 6 6-6"/>
         </svg>
       </button>
     </div>
 
     @if (filtrosAbiertos()) {
-      <div class="filtros-cuerpo">
+      <div class="px-3.5 pb-3.5 pt-2.5 flex flex-col gap-2.5 max-h-[60vh] overflow-y-auto">
         <!-- Severidad -->
-        <div class="filtro-grupo">
-          <label class="filtro-label">Severidad</label>
-          <select class="filtro-select"
+        <div class="flex flex-col gap-1">
+          <label class="text-[0.58rem] uppercase text-text-muted tracking-wider font-semibold">Severidad</label>
+          <select
+            class="appearance-none bg-white border border-border text-text-primary rounded-sm px-2 py-1.5 text-xs outline-none cursor-pointer transition-[border-color] duration-200 w-full font-sans bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%2210%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_8px_center] bg-[length:10px] pr-6 hover:border-info/40 focus:border-info/40 focus:shadow-[0_0_8px_rgba(2,132,199,0.12)]"
             [value]="mapaService.filtros().severidad || ''"
             (change)="onSeveridadChange($any($event.target).value)">
             <option value="">Todas</option>
@@ -25,10 +33,11 @@
           </select>
         </div>
 
-        <!-- Estado del accidente -->
-        <div class="filtro-grupo">
-          <label class="filtro-label">Estado</label>
-          <select class="filtro-select"
+        <!-- Estado -->
+        <div class="flex flex-col gap-1">
+          <label class="text-[0.58rem] uppercase text-text-muted tracking-wider font-semibold">Estado</label>
+          <select
+            class="appearance-none bg-white border border-border text-text-primary rounded-sm px-2 py-1.5 text-xs outline-none cursor-pointer transition-[border-color] duration-200 w-full font-sans bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%2210%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_8px_center] bg-[length:10px] pr-6 hover:border-info/40 focus:border-info/40 focus:shadow-[0_0_8px_rgba(2,132,199,0.12)]"
             [value]="mapaService.filtros().estado || ''"
             (change)="onEstadoChange($any($event.target).value)">
             <option value="">Todos</option>
@@ -38,10 +47,11 @@
           </select>
         </div>
 
-        <!-- PaÃ­s -->
-        <div class="filtro-grupo">
-          <label class="filtro-label">Pai­s</label>
-          <select class="filtro-select"
+        <!-- País -->
+        <div class="flex flex-col gap-1">
+          <label class="text-[0.58rem] uppercase text-text-muted tracking-wider font-semibold">País</label>
+          <select
+            class="appearance-none bg-white border border-border text-text-primary rounded-sm px-2 py-1.5 text-xs outline-none cursor-pointer transition-[border-color] duration-200 w-full font-sans bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%2210%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_8px_center] bg-[length:10px] pr-6 hover:border-info/40 focus:border-info/40 focus:shadow-[0_0_8px_rgba(2,132,199,0.12)]"
             [value]="mapaService.filtros().idpais || ''"
             (change)="onPaisChange($any($event.target).value)">
             <option value="">Todos</option>
@@ -53,9 +63,10 @@
 
         <!-- Estado/Provincia -->
         @if (estadosList().length) {
-          <div class="filtro-grupo">
-            <label class="filtro-label">Estado/Prov.</label>
-            <select class="filtro-select"
+          <div class="flex flex-col gap-1">
+            <label class="text-[0.58rem] uppercase text-text-muted tracking-wider font-semibold">Estado/Prov.</label>
+            <select
+              class="appearance-none bg-white border border-border text-text-primary rounded-sm px-2 py-1.5 text-xs outline-none cursor-pointer transition-[border-color] duration-200 w-full font-sans bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%2210%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_8px_center] bg-[length:10px] pr-6 hover:border-info/40 focus:border-info/40 focus:shadow-[0_0_8px_rgba(2,132,199,0.12)]"
               [value]="mapaService.filtros().idestado || ''"
               (change)="onIdEstadoChange($any($event.target).value)">
               <option value="">Todos</option>
@@ -68,9 +79,10 @@
 
         <!-- Condado -->
         @if (condadosList().length) {
-          <div class="filtro-grupo">
-            <label class="filtro-label">Condado</label>
-            <select class="filtro-select"
+          <div class="flex flex-col gap-1">
+            <label class="text-[0.58rem] uppercase text-text-muted tracking-wider font-semibold">Condado</label>
+            <select
+              class="appearance-none bg-white border border-border text-text-primary rounded-sm px-2 py-1.5 text-xs outline-none cursor-pointer transition-[border-color] duration-200 w-full font-sans bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%2210%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_8px_center] bg-[length:10px] pr-6 hover:border-info/40 focus:border-info/40 focus:shadow-[0_0_8px_rgba(2,132,199,0.12)]"
               [value]="mapaService.filtros().idcondado || ''"
               (change)="onCondadoChange($any($event.target).value)">
               <option value="">Todos</option>
@@ -83,9 +95,10 @@
 
         <!-- Ciudad -->
         @if (ciudadesList().length) {
-          <div class="filtro-grupo">
-            <label class="filtro-label">Ciudad</label>
-            <select class="filtro-select"
+          <div class="flex flex-col gap-1">
+            <label class="text-[0.58rem] uppercase text-text-muted tracking-wider font-semibold">Ciudad</label>
+            <select
+              class="appearance-none bg-white border border-border text-text-primary rounded-sm px-2 py-1.5 text-xs outline-none cursor-pointer transition-[border-color] duration-200 w-full font-sans bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%2210%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_8px_center] bg-[length:10px] pr-6 hover:border-info/40 focus:border-info/40 focus:shadow-[0_0_8px_rgba(2,132,199,0.12)]"
               [value]="mapaService.filtros().idciudad || ''"
               (change)="onCiudadChange($any($event.target).value)">
               <option value="">Todas</option>
@@ -98,9 +111,10 @@
 
         <!-- Calle -->
         @if (callesList().length) {
-          <div class="filtro-grupo">
-            <label class="filtro-label">Calle</label>
-            <select class="filtro-select"
+          <div class="flex flex-col gap-1">
+            <label class="text-[0.58rem] uppercase text-text-muted tracking-wider font-semibold">Calle</label>
+            <select
+              class="appearance-none bg-white border border-border text-text-primary rounded-sm px-2 py-1.5 text-xs outline-none cursor-pointer transition-[border-color] duration-200 w-full font-sans bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%2210%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_8px_center] bg-[length:10px] pr-6 hover:border-info/40 focus:border-info/40 focus:shadow-[0_0_8px_rgba(2,132,199,0.12)]"
               [value]="mapaService.filtros().idcalle || ''"
               (change)="onCalleChange($any($event.target).value)">
               <option value="">Todas</option>
@@ -111,23 +125,27 @@
           </div>
         }
 
-        <!-- Rango de fechas -->
-        <div class="filtro-grupo">
-          <label class="filtro-label">Desde</label>
-          <input type="date" class="filtro-date"
+        <!-- Fechas -->
+        <div class="flex flex-col gap-1">
+          <label class="text-[0.58rem] uppercase text-text-muted tracking-wider font-semibold">Desde</label>
+          <input type="date"
+            class="appearance-none bg-white border border-border text-text-primary rounded-sm px-2 py-1.5 text-xs outline-none cursor-pointer transition-[border-color] duration-200 w-full font-sans box-border hover:border-info/40 focus:border-info/40 focus:shadow-[0_0_8px_rgba(2,132,199,0.12)]"
             [value]="mapaService.filtros().fecha_inicio || ''"
             (change)="onFechaInicioChange($any($event.target).value)"/>
         </div>
 
-        <div class="filtro-grupo">
-          <label class="filtro-label">Hasta</label>
-          <input type="date" class="filtro-date"
+        <div class="flex flex-col gap-1">
+          <label class="text-[0.58rem] uppercase text-text-muted tracking-wider font-semibold">Hasta</label>
+          <input type="date"
+            class="appearance-none bg-white border border-border text-text-primary rounded-sm px-2 py-1.5 text-xs outline-none cursor-pointer transition-[border-color] duration-200 w-full font-sans box-border hover:border-info/40 focus:border-info/40 focus:shadow-[0_0_8px_rgba(2,132,199,0.12)]"
             [value]="mapaService.filtros().fecha_fin || ''"
             (change)="onFechaFinChange($any($event.target).value)"/>
         </div>
 
-        <button class="filtros-limpiar" (click)="clearFiltros()" title="Limpiar filtros">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+        <button
+          class="flex items-center justify-center gap-1.5 bg-transparent border border-border text-text-secondary rounded-sm px-3 py-1.5 text-[0.7rem] font-semibold cursor-pointer transition-all mt-0.5 font-sans hover:bg-gray-50 hover:text-text-primary"
+          (click)="clearFiltros()" title="Limpiar filtros">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
           </svg>
           Limpiar
@@ -136,17 +154,19 @@
     }
   </div>
 
-  <!-- BotÃ³n para abrir filtros cuando estÃ¡ cerrado -->
+  <!-- Open filters button when closed -->
   @if (!filtrosAbiertos()) {
-    <button class="btn-abrir-filtros" (click)="toggleFiltros()" title="Abrir filtros">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+    <button
+      class="absolute left-4 top-1/2 -translate-y-1/2 z-[500] w-[42px] h-[42px] bg-card/90 backdrop-blur-xl border border-border rounded-panel text-text-muted cursor-pointer flex items-center justify-center transition-all shadow-card hover:text-info hover:border-info/30"
+      (click)="toggleFiltros()" title="Abrir filtros">
+      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
       </svg>
     </button>
   }
 
-  <!-- Mapa -->
-  <div class="mapa-main-area">
+  <!-- Map area -->
+  <div class="flex-1 relative">
     <app-mapa
       [refrescarTrigger]="mapaService.refrescarTrigger()"
       [filtros]="mapaService.filtros()"
@@ -157,9 +177,9 @@
     </app-mapa>
   </div>
 
-  <!-- Panel detalle (solo operadores) -->
+  <!-- Side panel -->
   @if (selectedAccidenteId() && authService.isLoggedIn()) {
-    <div class="mapa-side-panel shadow-2xl animate-slide-in">
+    <div class="absolute right-4 top-4 bottom-4 w-[380px] z-[400] rounded-panel overflow-hidden bg-card/92 backdrop-blur-2xl border border-border shadow-2xl animate-slide-in-right">
       <app-panel-detalle
         [accidenteId]="selectedAccidenteId()!"
         (cerrar)="onCerrarDetalle()"
@@ -171,8 +191,8 @@
 
   <!-- Modal Despacho -->
   @if (mostrarDespacho() && selectedAccidenteId() && authService.isLoggedIn()) {
-    <div class="sga-modal-backdrop" (click)="onCerrarDespacho()">
-      <div class="sga-modal-content glass-card animate-zoom-in" (click)="$event.stopPropagation()">
+    <div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[2000] flex items-center justify-center" (click)="onCerrarDespacho()">
+      <div class="max-w-[520px] w-[90%] max-h-[80vh] overflow-y-auto rounded-card bg-card/95 backdrop-blur-2xl border border-border shadow-modal animate-scale-in" (click)="$event.stopPropagation()">
         <app-despacho
           [accidenteId]="selectedAccidenteId()!"
           (cerrar)="onCerrarDespacho()">
@@ -183,8 +203,8 @@
 
   <!-- Modal Actualizar Estado -->
   @if (mostrarActualizarEstado() && selectedAccidenteId() && authService.isLoggedIn()) {
-    <div class="sga-modal-backdrop" (click)="onCerrarActualizarEstado()">
-      <div class="sga-modal-content glass-card animate-zoom-in" (click)="$event.stopPropagation()">
+    <div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[2000] flex items-center justify-center" (click)="onCerrarActualizarEstado()">
+      <div class="max-w-[520px] w-[90%] max-h-[80vh] overflow-y-auto rounded-card bg-card/95 backdrop-blur-2xl border border-border shadow-modal animate-scale-in" (click)="$event.stopPropagation()">
         <app-actualizar-estado
           [accidenteId]="selectedAccidenteId()!"
           [estadoActual]="selectedAccidenteEstado() || 'ACTIVO'"

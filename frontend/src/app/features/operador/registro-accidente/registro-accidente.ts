@@ -40,7 +40,6 @@ declare const L: any;
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './registro-accidente.html',
-  styleUrl: './registro-accidente.css',
 })
 export class RegistroAccidenteComponent implements OnInit {
   ubicacion = input<{ lat: number; lng: number } | null>(null);
@@ -85,15 +84,10 @@ export class RegistroAccidenteComponent implements OnInit {
   readonly seleccionadoModalCoords = signal<{ lat: number; lng: number } | null>(null);
   readonly resolviendoDireccion = signal(false);
   readonly estadoResolucion = signal<string>('');
+  readonly mostrarModalRevision = signal(false);
 
   private modalMap: any = null;
   private modalMarker: any = null;
-
-  // Step wizard
-  readonly pasoActual = signal(1);
-  readonly totalPasos = 5;
-  readonly pasos = signal(['Ubicación', 'Impacto', 'Vehículos', 'Entorno', 'Revisión']);
-  readonly esUltimoPaso = computed(() => this.pasoActual() === this.totalPasos);
 
   readonly severidadCalculada = computed(() => {
     const h = Number(this.formValues().numheridos) || 0;
@@ -244,7 +238,39 @@ export class RegistroAccidenteComponent implements OnInit {
     }
   }
 
-  // --- STEP WIZARD NAVIGATION ---
+  // Step wizard
+  readonly pasoActual = signal(1);
+  readonly totalPasos = 5;
+  readonly pasos = signal(['Ubicación', 'Impacto', 'Vehículos', 'Entorno', 'Revisión']);
+  readonly esUltimoPaso = computed(() => this.pasoActual() === this.totalPasos);
+
+  avanzarPaso(): void {
+    this.marcarStepTocado();
+    if (!this.validateCurrentStep()) return;
+    if (this.esUltimoPaso()) {
+      this.submit();
+    } else {
+      this.pasoActual.update(p => p + 1);
+    }
+  }
+
+  retrocederPaso(): void {
+    if (this.pasoActual() > 1) {
+      this.pasoActual.update(p => p - 1);
+    }
+  }
+
+  irAPaso(n: number): void {
+    if (n < this.pasoActual()) {
+      this.pasoActual.set(n);
+      return;
+    }
+    if (n === this.pasoActual()) return;
+    this.marcarStepTocado();
+    if (this.validateCurrentStep()) {
+      this.pasoActual.set(n);
+    }
+  }
 
   private validateCurrentStep(): boolean {
     switch (this.pasoActual()) {
@@ -315,37 +341,6 @@ export class RegistroAccidenteComponent implements OnInit {
     }
   }
 
-  avanzarPaso(): void {
-    if (!this.validateCurrentStep()) {
-      this.marcarStepTocado();
-      return;
-    }
-    if (this.esUltimoPaso()) {
-      this.submit();
-    } else {
-      this.pasoActual.update(p => p + 1);
-    }
-  }
-
-  retrocederPaso(): void {
-    if (this.pasoActual() > 1) {
-      this.pasoActual.update(p => p - 1);
-    }
-  }
-
-  irAPaso(n: number): void {
-    if (n < this.pasoActual()) {
-      this.pasoActual.set(n);
-      return;
-    }
-    if (n === this.pasoActual()) return;
-    if (this.validateCurrentStep()) {
-      this.pasoActual.set(n);
-    } else {
-      this.marcarStepTocado();
-    }
-  }
-
   onCancelar(): void {
     if (this.form.dirty) {
       const confirmed = confirm('¿Está seguro de cancelar el registro? Se perderán los datos ingresados.');
@@ -354,8 +349,6 @@ export class RegistroAccidenteComponent implements OnInit {
     this.cancelar.emit();
     this.router.navigate(['/']);
   }
-
-  // --- END STEP WIZARD ---
 
   private loadInitialCatalogs(): void {
     this.accidenteService.getTiposReportado().subscribe({
@@ -586,16 +579,10 @@ export class RegistroAccidenteComponent implements OnInit {
   }
 
   submit(): void {
-    this.marcarStepTocado();
-    if (!this.validateCurrentStep()) return;
-
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
-
-    this.cargando.set(true);
-    this.error.set(null);
 
     const payload = this.buildPayload();
 
@@ -865,6 +852,25 @@ export class RegistroAccidenteComponent implements OnInit {
     }
     this.modalMarker = null;
     this.mostrarMapaModal.set(false);
+  }
+
+  abrirModalRevision(): void {
+    this.marcarStepTocado();
+    if (!this.validateCurrentStep()) return;
+    this.mostrarModalRevision.set(true);
+  }
+
+  cerrarModalRevision(): void {
+    this.mostrarModalRevision.set(false);
+  }
+
+  confirmarYEnviar(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    this.mostrarModalRevision.set(false);
+    this.submit();
   }
 
   initModalMap(): void {

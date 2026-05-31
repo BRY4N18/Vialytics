@@ -8,8 +8,7 @@ import { UnidadEmergencia } from '../../../core/models/unidad-emergencia.model';
   selector: 'app-despacho',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './despacho.html',
-  styleUrl: './despacho.css'
+  templateUrl: './despacho.html'
 })
 export class DespachoComponent implements OnInit {
   accidenteId = input.required<string>();

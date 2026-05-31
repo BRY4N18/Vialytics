@@ -1,0 +1,75 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: ["./src/**/*.{html,ts}"],
+  theme: {
+    extend: {
+      colors: {
+        sidebar: {
+          DEFAULT: 'var(--color-sidebar)',
+          hover: 'var(--color-sidebar-hover)',
+          active: 'var(--color-sidebar-active)',
+        },
+        surface: 'var(--color-surface)',
+        card: {
+          DEFAULT: 'var(--color-card)',
+          hover: 'var(--color-card-hover)',
+        },
+        'text-primary': 'var(--color-text-primary)',
+        'text-secondary': 'var(--color-text-secondary)',
+        'text-muted': 'var(--color-text-muted)',
+        'accent-gray': 'var(--color-accent-gray)',
+        border: 'var(--color-border)',
+        'border-light': 'var(--color-border-light)',
+        success: 'var(--color-success)',
+        warning: 'var(--color-warning)',
+        danger: 'var(--color-danger)',
+        info: 'var(--color-info)',
+        sev: {
+          leve: 'var(--color-sev-leve)',
+          moderada: 'var(--color-sev-moderada)',
+          grave: 'var(--color-sev-grave)',
+          critica: 'var(--color-sev-critica)',
+          fatal: 'var(--color-sev-fatal)',
+        },
+      },
+      fontFamily: {
+        sans: ['Geist', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Geist Mono', 'Fira Code', 'Consolas', 'monospace'],
+      },
+      borderRadius: {
+        card: '16px',
+        panel: '12px',
+        sm: '8px',
+      },
+      boxShadow: {
+        card: '0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)',
+        elevated: '0 4px 20px rgba(0,0,0,0.08)',
+        modal: '0 20px 60px rgba(0,0,0,0.12)',
+        'glow-cyan': '0 0 20px rgba(6,182,212,0.15)',
+        'glow-amber': '0 0 20px rgba(245,158,11,0.15)',
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.3s ease-out',
+        'fade-in-up': 'fadeInUp 0.4s ease-out',
+        'slide-in-right': 'slideInRight 0.3s ease-out',
+        'scale-in': 'scaleIn 0.35s ease-out',
+        'badge-bounce': 'badgeBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        'fatal-pulse': 'fatalPulse 2s ease-in-out infinite',
+        spin: 'spin 0.8s linear infinite',
+        shimmer: 'shimmer 1.5s ease-in-out infinite',
+        'modal-enter': 'modalEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+      },
+      keyframes: {
+        fadeIn: { 'from': { opacity: '0' }, 'to': { opacity: '1' } },
+        fadeInUp: { 'from': { opacity: '0', transform: 'translateY(12px)' }, 'to': { opacity: '1', transform: 'translateY(0)' } },
+        slideInRight: { 'from': { opacity: '0', transform: 'translateX(20px)' }, 'to': { opacity: '1', transform: 'translateX(0)' } },
+        scaleIn: { 'from': { opacity: '0', transform: 'scale(0.95)' }, 'to': { opacity: '1', transform: 'scale(1)' } },
+        badgeBounce: { '0%': { transform: 'scale(0.5)' }, '60%': { transform: 'scale(1.08)' }, '100%': { transform: 'scale(1)' } },
+        fatalPulse: { '0%,100%': { boxShadow: '0 0 0 0 rgba(139,92,246,0.4)' }, '50%': { boxShadow: '0 0 0 12px rgba(139,92,246,0)' } },
+        shimmer: { '0%': { backgroundPosition: '-200% 0' }, '100%': { backgroundPosition: '200% 0' } },
+        modalEnter: { 'from': { opacity: '0', transform: 'scale(0.95) translateY(10px)' }, 'to': { opacity: '1', transform: 'scale(1) translateY(0)' } },
+      },
+    },
+  },
+  plugins: [],
+}

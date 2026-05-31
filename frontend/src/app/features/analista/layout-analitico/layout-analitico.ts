@@ -7,8 +7,7 @@ import { AuthService } from '../../../core/services/auth.service';
   selector: 'app-layout-analitico',
   standalone: true,
   imports: [CommonModule, RouterModule],
-  templateUrl: './layout-analitico.html',
-  styleUrl: './layout-analitico.css'
+  templateUrl: './layout-analitico.html'
 })
 export class LayoutAnaliticoComponent {
   readonly authService = inject(AuthService);

@@ -1,45 +1,56 @@
-<div class="analitico-shell">
-  <aside class="analitico-sidebar">
-    <div class="sidebar-brand">
-      <div class="brand-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<div class="flex h-full w-full overflow-hidden bg-surface">
+  <aside class="w-60 flex-shrink-0 flex flex-col bg-sidebar border-r border-border overflow-y-auto max-768:w-16 max-768:min-w-16">
+    <div class="flex items-center gap-3 px-5 py-6 pb-5 border-b border-border max-768:justify-center max-768:px-3 max-768:py-5">
+      <div class="w-10 h-10 bg-gradient-to-br from-[#06b6d4] to-[#8b5cf6] rounded-[10px] flex items-center justify-center text-white flex-shrink-0 shadow-[0_0_20px_rgba(6,182,212,0.2)]">
+        <svg class="w-[22px] h-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M12 2L2 7l10 5 10-5-10-5z"/>
           <path d="M2 17l10 5 10-5"/>
           <path d="M2 12l10 5 10-5"/>
         </svg>
       </div>
-      <div class="brand-text">
-        <span class="brand-title">Portal Analítico</span>
-        <span class="brand-subtitle">SGA</span>
+      <div class="flex flex-col gap-[1px] max-768:hidden">
+        <span class="text-[0.95rem] font-extrabold text-text-primary tracking-tight">AnalyticsVial</span>
+        <span class="text-[0.65rem] font-semibold text-info uppercase tracking-wider">Portal Analítico</span>
       </div>
     </div>
 
-    <nav class="sidebar-nav">
-      <a class="nav-link" routerLink="/analitico/accidentes" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-icon">
+    <nav class="flex-1 flex flex-col gap-1 px-3 py-4">
+      <a routerLink="/analitico/accidentes" routerLinkActive #rla1="routerLinkActive"
+         class="flex items-center gap-3 px-3.5 py-2.5 rounded-sm text-sm font-semibold text-text-secondary no-underline transition-all hover:bg-white/[0.03] hover:text-text-primary cursor-pointer max-768:justify-center max-768:px-2.5"
+         [class.bg-info/10]="rla1.isActive"
+         [class.text-info]="rla1.isActive"
+         [class.border]="rla1.isActive"
+         [class.border-info/15]="rla1.isActive"
+         [routerLinkActiveOptions]="{ exact: true }">
+        <svg class="w-[18px] h-[18px] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <circle cx="11" cy="11" r="8"/>
           <line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
-        <span>Buscar Accidentes</span>
+        <span class="max-768:hidden">Buscar Accidentes</span>
       </a>
-      <a class="nav-link" routerLink="/mapa" routerLinkActive="active">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-icon">
+      <a routerLink="/mapa" routerLinkActive #rla2="routerLinkActive"
+         class="flex items-center gap-3 px-3.5 py-2.5 rounded-sm text-sm font-semibold text-text-secondary no-underline transition-all hover:bg-white/[0.03] hover:text-text-primary cursor-pointer max-768:justify-center max-768:px-2.5"
+         [class.bg-info/10]="rla2.isActive"
+         [class.text-info]="rla2.isActive"
+         [class.border]="rla2.isActive"
+         [class.border-info/15]="rla2.isActive">
+        <svg class="w-[18px] h-[18px] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <polygon points="5 3 19 12 5 21 5 3"/>
         </svg>
-        <span>Mapa Público</span>
+        <span class="max-768:hidden">Mapa Público</span>
       </a>
     </nav>
 
-    <div class="sidebar-footer">
-      <div class="user-badge">
-        <div class="user-avatar">{{ authService.userInitials() }}</div>
-        <div class="user-meta">
-          <span class="user-name">{{ authService.userFullName() }}</span>
-          <span class="user-role">{{ authService.userRole() }}</span>
+    <div class="px-3 py-4 border-t border-border flex items-center gap-2.5">
+      <div class="flex items-center gap-2.5 flex-1 min-w-0">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#06b6d4] to-[#8b5cf6] text-white text-[0.7rem] font-extrabold flex items-center justify-center flex-shrink-0">{{ authService.userInitials() }}</div>
+        <div class="flex flex-col min-w-0 max-768:hidden">
+          <span class="text-[0.78rem] font-bold text-text-primary truncate">{{ authService.userFullName() }}</span>
+          <span class="text-[0.62rem] text-text-muted truncate">{{ authService.userRole() }}</span>
         </div>
       </div>
-      <button class="btn-logout" (click)="authService.logout()" title="Cerrar sesión">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="logout-icon">
+      <button class="w-9 h-9 rounded-lg border border-border bg-transparent text-text-muted flex items-center justify-center cursor-pointer transition-all flex-shrink-0 hover:bg-danger/10 hover:border-danger/30 hover:text-danger max-768:hidden" (click)="authService.logout()" title="Cerrar sesión">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
           <polyline points="16 17 21 12 16 7"/>
           <line x1="21" y1="12" x2="9" y2="12"/>
@@ -48,17 +59,17 @@
     </div>
   </aside>
 
-  <main class="analitico-main">
-    <div class="main-header">
-      <div class="header-breadcrumb">
-        <span class="breadcrumb-item">Portal Analítico</span>
+  <main class="flex-1 flex flex-col overflow-hidden bg-surface">
+    <div class="flex items-center justify-between px-7 py-4 border-b border-border bg-sidebar/60 backdrop-blur-lg min-h-[60px]">
+      <div class="flex items-center gap-1.5">
+        <span class="text-[0.78rem] font-semibold text-text-secondary">Portal Analítico</span>
       </div>
-      <div class="header-actions">
-        <span class="header-user">{{ authService.userFullName() }}</span>
-        <span class="header-role-badge">{{ authService.userRole() }}</span>
+      <div class="flex items-center gap-3">
+        <span class="text-[0.8rem] font-semibold text-text-primary">{{ authService.userFullName() }}</span>
+        <span class="text-[0.62rem] font-bold text-info bg-info/10 px-2.5 py-1 rounded-full border border-info/20 tracking-wider uppercase">{{ authService.userRole() }}</span>
       </div>
     </div>
-    <div class="main-content">
+    <div class="flex-1 overflow-y-auto overflow-x-hidden">
       <router-outlet></router-outlet>
     </div>
   </main>

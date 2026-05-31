@@ -9,7 +9,6 @@ import { TipoEstadoIncidente, ActualizarEstadoPayload } from '../../../core/mode
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './actualizar-estado.html',
-  styleUrl: './actualizar-estado.css'
 })
 export class ActualizarEstadoComponent implements OnInit {
   accidenteId = input.required<string>();

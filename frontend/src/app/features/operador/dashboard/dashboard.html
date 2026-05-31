@@ -1,68 +1,68 @@
-<div class="dashboard-viewport">
+<div class="h-full overflow-auto bg-surface">
   @if (cargando()) {
-    <div class="dashboard-container">
-      <div class="kpi-grid">
+    <div class="max-w-[1400px] mx-auto flex flex-col gap-6 p-6">
+      <div class="grid grid-cols-4 gap-5 max-[992px]:grid-cols-2 max-[576px]:grid-cols-1">
         @for (item of [1,2,3,4]; track $index) {
-          <div class="kpi-card skeleton-card">
-            <div class="kpi-inner">
-              <div class="kpi-info">
-                <div class="skeleton skeleton-label"></div>
-                <div class="skeleton skeleton-value"></div>
+          <div class="bg-card rounded-card shadow-card overflow-hidden pointer-events-none">
+            <div class="flex items-center justify-between p-5">
+              <div class="flex flex-col gap-1">
+                <div class="animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] w-20 h-3"></div>
+                <div class="animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] w-16 h-8 mt-2"></div>
               </div>
-              <div class="skeleton skeleton-icon"></div>
+              <div class="animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] w-10 h-10 rounded-lg"></div>
             </div>
           </div>
         }
       </div>
-      <div class="charts-row-central">
-        <div class="chart-card">
-          <div class="chart-inner">
-            <div class="skeleton skeleton-header"></div>
-            <div class="skeleton skeleton-chart"></div>
+      <div class="grid grid-cols-2 gap-5 max-[1200px]:grid-cols-1">
+        <div class="bg-card rounded-card shadow-card overflow-hidden">
+          <div class="p-5">
+            <div class="animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] w-32 h-4 mb-4"></div>
+            <div class="animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] w-full h-48"></div>
           </div>
         </div>
-        <div class="chart-card">
-          <div class="chart-inner">
-            <div class="skeleton skeleton-header"></div>
-            <div class="skeleton skeleton-chart"></div>
+        <div class="bg-card rounded-card shadow-card overflow-hidden">
+          <div class="p-5">
+            <div class="animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] w-32 h-4 mb-4"></div>
+            <div class="animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] w-full h-48"></div>
           </div>
         </div>
       </div>
-      <div class="charts-row-bottom">
+      <div class="grid grid-cols-3 gap-5 max-[1200px]:grid-cols-1">
         @for (item of [1,2,3]; track $index) {
-          <div class="chart-card">
-            <div class="chart-inner">
-              <div class="skeleton skeleton-header"></div>
-              <div class="skeleton skeleton-chart"></div>
+          <div class="bg-card rounded-card shadow-card overflow-hidden">
+            <div class="p-5">
+              <div class="animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] w-32 h-4 mb-4"></div>
+              <div class="animate-shimmer rounded bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] w-full h-48"></div>
             </div>
           </div>
         }
       </div>
     </div>
   } @else if (error()) {
-    <div class="dashboard-error-overlay">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+    <div class="flex flex-col items-center justify-center gap-4 py-20 max-w-[400px] mx-auto text-center min-h-[80vh]">
+      <svg class="text-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
         <circle cx="12" cy="12" r="10"/>
         <line x1="12" y1="8" x2="12" y2="12"/>
         <line x1="12" y1="16" x2="12.01" y2="16"/>
       </svg>
-      <h3>Error de Conexión</h3>
-      <p>{{ error() }}</p>
-      <button class="btn-retry" (click)="cargarEstadisticas()">Reintentar Conexión</button>
+      <h3 class="text-lg font-bold text-text-primary">Error de Conexión</h3>
+      <p class="text-sm text-text-secondary">{{ error() }}</p>
+      <button class="px-5 py-2.5 bg-danger text-white rounded-sm font-semibold hover:bg-danger/90 transition-all" (click)="cargarEstadisticas()">Reintentar Conexión</button>
     </div>
   } @else {
-    <div class="dashboard-container">
+    <div class="max-w-[1400px] mx-auto flex flex-col gap-6 p-6">
 
       <!-- Dashboard Header -->
-      <div class="dashboard-header">
-        <div class="header-left">
-          <h1 class="dashboard-title">Panel de Monitoreo</h1>
+      <div class="sticky top-0 z-10 flex items-center justify-between py-4 bg-surface/80 backdrop-blur-sm">
+        <div class="flex flex-col gap-1">
+          <h1 class="text-2xl font-extrabold text-text-primary">Panel de Monitoreo</h1>
           @if (ultimaActualizacion()) {
-            <span class="last-update">Última actualización: {{ ultimaActualizacion() }}</span>
+            <span class="text-xs text-text-muted">Última actualización: {{ ultimaActualizacion() }}</span>
           }
         </div>
-        <button class="btn-refresh-dash" (click)="refrescar()" [disabled]="cargando()" title="Actualizar datos">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16" [class.spin]="cargando()">
+        <button class="flex items-center gap-2 px-4 py-2 bg-sidebar text-white rounded-sm text-sm font-semibold hover:bg-sidebar-hover transition-all disabled:opacity-50" (click)="refrescar()" [disabled]="cargando()" title="Actualizar datos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16" [class.animate-spin]="cargando()">
             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
           </svg>
           <span>Actualizar</span>
@@ -70,14 +70,14 @@
       </div>
 
       <!-- KPI Cards Row -->
-      <div class="kpi-grid">
-        <div class="kpi-card accent-red">
-          <div class="kpi-inner">
-            <div class="kpi-info">
-              <span class="kpi-label">TOTAL ACCIDENTES</span>
-              <h2 class="kpi-value">{{ totalAccidentes() }}</h2>
+      <div class="grid grid-cols-4 gap-5 max-[992px]:grid-cols-2 max-[576px]:grid-cols-1">
+        <div class="bg-card rounded-card shadow-card overflow-hidden border-t-4 border-t-danger/30 transition-all duration-200 hover:-translate-y-1 hover:shadow-elevated">
+          <div class="flex items-center justify-between p-5">
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-semibold text-text-muted uppercase tracking-wider">TOTAL ACCIDENTES</span>
+              <h2 class="text-2xl font-extrabold text-text-primary leading-none">{{ totalAccidentes() }}</h2>
             </div>
-            <div class="kpi-icon">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-danger/10 text-danger">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
                 <path d="M12 2L2 22h20L12 2z"/>
                 <line x1="12" y1="9" x2="12" y2="15"/>
@@ -87,13 +87,13 @@
           </div>
         </div>
 
-        <div class="kpi-card accent-amber">
-          <div class="kpi-inner">
-            <div class="kpi-info">
-              <span class="kpi-label">SEVERIDAD CRÍTICA</span>
-              <h2 class="kpi-value">{{ severidadCritica() }}</h2>
+        <div class="bg-card rounded-card shadow-card overflow-hidden border-t-4 border-t-warning/30 transition-all duration-200 hover:-translate-y-1 hover:shadow-elevated">
+          <div class="flex items-center justify-between p-5">
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-semibold text-text-muted uppercase tracking-wider">SEVERIDAD CRÍTICA</span>
+              <h2 class="text-2xl font-extrabold text-text-primary leading-none">{{ severidadCritica() }}</h2>
             </div>
-            <div class="kpi-icon">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-warning/10 text-warning">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
                 <rect x="3" y="3" width="18" height="18" rx="2"/>
                 <line x1="9" y1="9" x2="15" y2="15"/>
@@ -103,13 +103,13 @@
           </div>
         </div>
 
-        <div class="kpi-card accent-blue">
-          <div class="kpi-inner">
-            <div class="kpi-info">
-              <span class="kpi-label">DISTANCIA PROMEDIO</span>
-              <h2 class="kpi-value">{{ distanciaPromedio() }}</h2>
+        <div class="bg-card rounded-card shadow-card overflow-hidden border-t-4 border-t-info/30 transition-all duration-200 hover:-translate-y-1 hover:shadow-elevated">
+          <div class="flex items-center justify-between p-5">
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-semibold text-text-muted uppercase tracking-wider">DISTANCIA PROMEDIO</span>
+              <h2 class="text-2xl font-extrabold text-text-primary leading-none">{{ distanciaPromedio() }}</h2>
             </div>
-            <div class="kpi-icon">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-info/10 text-info">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
                 <path d="M17.8 19.2L16 11l3.5-3.5L16 4l-4 4 3.5 3.5-1.8 8.2"/>
                 <circle cx="6" cy="18" r="3"/>
@@ -118,13 +118,13 @@
           </div>
         </div>
 
-        <div class="kpi-card accent-emerald">
-          <div class="kpi-inner">
-            <div class="kpi-info">
-              <span class="kpi-label">CALLES AFECTADAS</span>
-              <h2 class="kpi-value">{{ callesAfectadas() }}</h2>
+        <div class="bg-card rounded-card shadow-card overflow-hidden border-t-4 border-t-success/30 transition-all duration-200 hover:-translate-y-1 hover:shadow-elevated">
+          <div class="flex items-center justify-between p-5">
+            <div class="flex flex-col gap-1">
+              <span class="text-xs font-semibold text-text-muted uppercase tracking-wider">CALLES AFECTADAS</span>
+              <h2 class="text-2xl font-extrabold text-text-primary leading-none">{{ callesAfectadas() }}</h2>
             </div>
-            <div class="kpi-icon">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-success/10 text-success">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                 <circle cx="12" cy="10" r="3"/>
@@ -135,32 +135,32 @@
       </div>
 
       <!-- Charts Row Central -->
-      <div class="charts-row-central">
-        <div class="chart-card">
-          <div class="chart-inner">
-            <div class="chart-card-header">
-              <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+      <div class="grid grid-cols-2 gap-5 max-[1200px]:grid-cols-1">
+        <div class="bg-card rounded-card shadow-card overflow-hidden">
+          <div class="p-5">
+            <div class="flex items-center gap-2.5 mb-4 pb-3 border-b border-border">
+              <svg class="w-4 h-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                 <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
                 <polyline points="17 6 23 6 23 12"/>
               </svg>
-              <h3>Tendencia Mensual de Accidentes</h3>
+              <h3 class="text-sm font-semibold text-text-primary">Tendencia Mensual de Accidentes</h3>
             </div>
-            <div class="chart-container-inner">
+            <div class="relative w-full h-[280px]">
               <canvas #trendCanvas></canvas>
             </div>
           </div>
         </div>
 
-        <div class="chart-card">
-          <div class="chart-inner">
-            <div class="chart-card-header">
-              <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+        <div class="bg-card rounded-card shadow-card overflow-hidden">
+          <div class="p-5">
+            <div class="flex items-center gap-2.5 mb-4 pb-3 border-b border-border">
+              <svg class="w-4 h-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                 <circle cx="12" cy="12" r="10"/>
                 <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
               </svg>
-              <h3>Distribución por Severidad</h3>
+              <h3 class="text-sm font-semibold text-text-primary">Distribución por Severidad</h3>
             </div>
-            <div class="chart-container-inner">
+            <div class="relative w-full h-[280px]">
               <canvas #severityCanvas></canvas>
             </div>
           </div>
@@ -168,48 +168,48 @@
       </div>
 
       <!-- Charts Row Bottom -->
-      <div class="charts-row-bottom">
-        <div class="chart-card">
-          <div class="chart-inner">
-            <div class="chart-card-header">
-              <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+      <div class="grid grid-cols-3 gap-5 max-[1200px]:grid-cols-1">
+        <div class="bg-card rounded-card shadow-card overflow-hidden">
+          <div class="p-5">
+            <div class="flex items-center gap-2.5 mb-4 pb-3 border-b border-border">
+              <svg class="w-4 h-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                 <rect x="3" y="3" width="18" height="18" rx="2"/>
                 <line x1="21" y1="9" x2="3" y2="9"/>
                 <line x1="21" y1="15" x2="3" y2="15"/>
                 <line x1="12" y1="3" x2="12" y2="21"/>
               </svg>
-              <h3>Top 10 Estados</h3>
+              <h3 class="text-sm font-semibold text-text-primary">Top 10 Estados</h3>
             </div>
-            <div class="chart-container-inner">
+            <div class="relative w-full h-[240px]">
               <canvas #statesCanvas></canvas>
             </div>
           </div>
         </div>
 
-        <div class="chart-card">
-          <div class="chart-inner">
-            <div class="chart-card-header">
-              <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+        <div class="bg-card rounded-card shadow-card overflow-hidden">
+          <div class="p-5">
+            <div class="flex items-center gap-2.5 mb-4 pb-3 border-b border-border">
+              <svg class="w-4 h-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                 <circle cx="12" cy="12" r="10"/>
                 <polyline points="12 6 12 12 16 14"/>
               </svg>
-              <h3>Distribución por Hora del Día</h3>
+              <h3 class="text-sm font-semibold text-text-primary">Distribución por Hora del Día</h3>
             </div>
-            <div class="chart-container-inner">
+            <div class="relative w-full h-[240px]">
               <canvas #hourlyCanvas></canvas>
             </div>
           </div>
         </div>
 
-        <div class="chart-card">
-          <div class="chart-inner">
-            <div class="chart-card-header">
-              <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+        <div class="bg-card rounded-card shadow-card overflow-hidden">
+          <div class="p-5">
+            <div class="flex items-center gap-2.5 mb-4 pb-3 border-b border-border">
+              <svg class="w-4 h-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                 <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
               </svg>
-              <h3>Condiciones Climáticas</h3>
+              <h3 class="text-sm font-semibold text-text-primary">Condiciones Climáticas</h3>
             </div>
-            <div class="chart-container-inner">
+            <div class="relative w-full h-[240px]">
               <canvas #weatherCanvas></canvas>
             </div>
           </div>

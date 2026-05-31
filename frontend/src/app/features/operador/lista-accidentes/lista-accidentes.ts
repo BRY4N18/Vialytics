@@ -12,7 +12,6 @@ import { ActualizarEstadoComponent } from '../actualizar-estado/actualizar-estad
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule, ActualizarEstadoComponent],
   templateUrl: './lista-accidentes.html',
-  styleUrl: './lista-accidentes.css'
 })
 export class ListaAccidentesComponent implements OnInit {
   private readonly accidenteService = inject(AccidenteService);

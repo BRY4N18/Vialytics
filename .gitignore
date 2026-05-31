@@ -3,6 +3,7 @@
 docker-compose.yml
 *.png
 SGA(SISTEMA DE GESTION DE ACCIDENTES).md
+Interfaces/
 
 # Ignorar base de datos
 database/

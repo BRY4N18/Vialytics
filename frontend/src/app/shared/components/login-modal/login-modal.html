@@ -1,76 +1,85 @@
-<div class="login-modal-backdrop" (click)="onClose()">
-  <div class="login-card-container" (click)="$event.stopPropagation()">
-    
-    <!-- Decorative Grid Background & Glowing Orbs -->
-    <div class="login-card-glow-blue"></div>
-    <div class="login-card-glow-purple"></div>
-    
-    <div class="login-card">
-      <!-- Close button -->
-      <button class="btn-close" (click)="onClose()" title="Cerrar ventana">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+<div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in" (click)="onClose()">
+  <div class="relative w-full max-w-md mx-5 animate-modal-enter" (click)="$event.stopPropagation()">
+
+    <div class="absolute -top-10 -left-10 w-52 h-52 bg-info/25 blur-[70px] rounded-full pointer-events-none z-1"></div>
+    <div class="absolute -bottom-10 -right-10 w-52 h-52 bg-sev-fatal/20 blur-[70px] rounded-full pointer-events-none z-1"></div>
+
+    <div class="relative z-2 bg-card shadow-modal rounded-card overflow-hidden p-8">
+      <button class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-black/5 border border-border text-text-secondary cursor-pointer transition-all duration-200 hover:bg-danger/10 hover:border-danger/30 hover:text-danger hover:rotate-90" (click)="onClose()" title="Cerrar">
+        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
 
-      <!-- Brand Header -->
-      <div class="login-header">
-        <div class="brand-glow-logo">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div class="flex flex-col items-center text-center mb-6">
+        <div class="w-14 h-14 bg-gradient-to-br from-cyan-500 to-violet-500 rounded-xl flex items-center justify-center text-white mb-3.5 shadow-lg relative">
+          <div class="absolute -inset-1 border-2 border-cyan-400/20 rounded-[18px]"></div>
+          <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M12 2L2 7l10 5 10-5-10-5z"/>
             <path d="M2 17l10 5 10-5"/>
             <path d="M2 12l10 5 10-5"/>
           </svg>
         </div>
-        <div class="login-title-group">
-          <h1>ACCESO SEGURO</h1>
-          <p>Consola de Gestión de Accidentes (SGA)</p>
+        <div>
+          <h1 class="text-2xl font-black m-0 bg-gradient-to-r from-text-primary to-info bg-clip-text text-transparent">AnalyticsVial</h1>
+          <p class="text-xs text-text-secondary mt-1 tracking-wide">Acceso Seguro — Gestión de Accidentes</p>
         </div>
       </div>
 
-      <!-- Quick Access Simulator (Wow factor) -->
-      <div class="quick-access-section">
-        <span class="section-label">Simulador de Accesos (Roles de Base de Datos)</span>
-        <div class="demo-users-grid">
+      <div class="flex flex-col gap-2 mb-5">
+        <span class="text-xs font-bold text-info tracking-widest uppercase">Acceso Rápido por Roles</span>
+        <div class="grid grid-cols-2 gap-2">
           @for (user of demoUsers; track user.user) {
-            <button 
+            <button
               type="button"
-              class="btn-demo-user"
-              [class]="user.color"
-              [class.active]="selectedDemo() === user"
+              class="flex items-center gap-3 p-3 rounded-panel border border-border bg-card cursor-pointer text-left transition-all hover:-translate-y-0.5 hover:shadow-elevated active:scale-[0.97]"
+              [class.border-sev-leve/30]="selectedDemo() === user && user.color === 'emerald'"
+              [class.border-info/30]="selectedDemo() === user && user.color === 'cyan'"
+              [class.border-sev-fatal/30]="selectedDemo() === user && user.color === 'violet'"
+              [class.border-sev-moderada/30]="selectedDemo() === user && user.color === 'amber'"
+              [class.bg-sev-leve/5]="selectedDemo() === user && user.color === 'emerald'"
+              [class.bg-info/5]="selectedDemo() === user && user.color === 'cyan'"
+              [class.bg-sev-fatal/5]="selectedDemo() === user && user.color === 'violet'"
+              [class.bg-sev-moderada/5]="selectedDemo() === user && user.color === 'amber'"
               (click)="selectDemo(user)">
-              <div class="demo-avatar-mini">{{ user.name.substring(0,2) }}</div>
-              <div class="demo-info">
-                <span class="demo-role">{{ user.role }}</span>
-                <span class="demo-name">{{ user.name }}</span>
+              <div class="w-6 h-6 rounded-md text-xs font-extrabold text-white flex items-center justify-center flex-shrink-0"
+                   [style.background]="user.color === 'emerald' ? 'linear-gradient(135deg, #10b981, #059669)' : user.color === 'cyan' ? 'linear-gradient(135deg, #06b6d4, #0284c7)' : user.color === 'violet' ? 'linear-gradient(135deg, #8b5cf6, #6d28d9)' : 'linear-gradient(135deg, #f59e0b, #d97706)'">{{ user.name.substring(0,2) }}</div>
+              <div class="flex flex-col min-w-0">
+                <span class="text-xs font-bold text-text-primary leading-tight">{{ user.role }}</span>
+                <span class="text-[0.62rem] text-text-secondary truncate mt-px">{{ user.name }}</span>
               </div>
-              <span class="status-dot"></span>
+              <span class="w-1.5 h-1.5 rounded-full ml-auto flex-shrink-0 transition-shadow"
+                    [class.bg-sev-leve]="user.color === 'emerald'"
+                    [class.bg-info]="user.color === 'cyan'"
+                    [class.bg-sev-fatal]="user.color === 'violet'"
+                    [class.bg-sev-moderada]="user.color === 'amber'"
+                    [style.box-shadow]="selectedDemo() === user ? (user.color === 'emerald' ? '0 0 8px #10b981' : user.color === 'cyan' ? '0 0 8px #06b6d4' : user.color === 'violet' ? '0 0 8px #8b5cf6' : '0 0 8px #f59e0b') : 'none'"></span>
             </button>
           }
         </div>
       </div>
 
-      <!-- Divider -->
-      <div class="login-divider">
-        <span>O INGRESE MANUALMENTE</span>
+      <div class="flex items-center my-5 w-full">
+        <div class="flex-1 border-b border-border"></div>
+        <span class="text-[0.58rem] font-bold text-text-muted mx-2.5 tracking-widest whitespace-nowrap">O INGRESE MANUALMENTE</span>
+        <div class="flex-1 border-b border-border"></div>
       </div>
 
-      <!-- Main Login Form -->
-      <form class="login-form" (submit)="$event.preventDefault(); onLogin()">
-        
-        <!-- Input Username -->
-        <div class="form-field">
-          <label class="field-label" for="username">Código de Operador</label>
-          <div class="input-wrapper" [class.field-filled]="username()">
-            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <form class="flex flex-col gap-4" (submit)="$event.preventDefault(); onLogin()">
+
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-semibold text-text-secondary tracking-wide uppercase" for="username">Usuario</label>
+          <div class="relative flex items-center gap-2 bg-white border border-border rounded-sm px-3 py-2 transition-all duration-200 focus-within:border-info/50 focus-within:shadow-[0_0_12px_rgba(6,182,212,0.15)]" [class.border-info/30]="username()">
+            <svg class="w-[18px] h-[18px] text-text-muted flex-shrink-0 transition-colors peer-focus:text-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
               <circle cx="12" cy="7" r="4"/>
             </svg>
-            <input 
+            <input
               id="username"
-              type="text" 
+              type="text"
               name="username"
-              placeholder="Ej: operador_sga" 
+              placeholder="Ej: operador_sga"
+              class="peer w-full bg-transparent border-none outline-none text-sm text-text-primary placeholder:text-text-muted"
               [value]="username()"
               (input)="username.set($any($event.target).value)"
               [disabled]="loading()"
@@ -78,37 +87,37 @@
           </div>
         </div>
 
-        <!-- Input Password -->
-        <div class="form-field">
-          <label class="field-label" for="password">Contraseña Cifrada</label>
-          <div class="input-wrapper" [class.field-filled]="password()">
-            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-semibold text-text-secondary tracking-wide uppercase" for="password">Contraseña</label>
+          <div class="relative flex items-center gap-2 bg-white border border-border rounded-sm px-3 py-2 transition-all duration-200 focus-within:border-info/50 focus-within:shadow-[0_0_12px_rgba(6,182,212,0.15)]" [class.border-info/30]="password()">
+            <svg class="w-[18px] h-[18px] text-text-muted flex-shrink-0 transition-colors peer-focus:text-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
-            <input 
+            <input
               id="password"
-              [type]="showPassword() ? 'text' : 'password'" 
+              [type]="showPassword() ? 'text' : 'password'"
               name="password"
-              placeholder="••••••••••••" 
+              placeholder="••••••••••••"
+              class="peer w-full bg-transparent border-none outline-none text-sm text-text-primary placeholder:text-text-muted"
               [value]="password()"
               (input)="password.set($any($event.target).value)"
               [disabled]="loading()"
               autocomplete="current-password" />
-            
-            <button 
-              type="button" 
-              class="btn-toggle-pwd" 
-              (click)="toggleShowPassword()" 
+
+            <button
+              type="button"
+              class="bg-transparent border-none text-text-muted cursor-pointer flex items-center justify-center transition-colors hover:text-info p-1 flex-shrink-0"
+              (click)="toggleShowPassword()"
               tabindex="-1"
-              title="Mostrar/ocultar contraseña">
+              title="Mostrar/ocultar">
               @if (showPassword()) {
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18">
                   <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
                   <line x1="1" y1="1" x2="23" y2="23"/>
                 </svg>
               } @else {
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                   <circle cx="12" cy="12" r="3"/>
                 </svg>
@@ -117,42 +126,33 @@
           </div>
         </div>
 
-        <!-- Error Notification -->
         @if (errorMsg(); as err) {
-          <div class="login-error-banner animate-slide-up">
-            <svg class="error-banner-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <div class="flex items-center gap-2.5 bg-danger/10 border border-danger/20 px-3.5 py-2.5 rounded-sm animate-fade-in-up">
+            <svg class="w-[18px] h-[18px] text-danger flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
               <line x1="12" y1="8" x2="12" y2="12"/>
               <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
-            <p>{{ err }}</p>
+            <p class="text-xs font-medium text-danger m-0 leading-tight">{{ err }}</p>
           </div>
         }
 
-        <!-- Actions -->
-        <div class="login-actions">
-          <button 
-            type="button" 
-            class="btn-cancel" 
-            (click)="onClose()" 
-            [disabled]="loading()">
+        <div class="flex items-center justify-end gap-3 mt-2">
+          <button type="button" class="bg-transparent border border-border text-text-secondary px-5 py-2.5 text-sm font-semibold rounded-sm cursor-pointer transition-all duration-200 hover:bg-black/5 hover:border-border-light hover:text-text-primary active:scale-[0.97]" (click)="onClose()" [disabled]="loading()">
             Cancelar
           </button>
-          
-          <button 
-            type="submit" 
-            class="btn-submit-login" 
-            [disabled]="loading()">
+
+          <button type="submit" class="group flex items-center justify-center gap-2 bg-sidebar text-white px-5 py-2.5 text-sm font-semibold rounded-sm cursor-pointer transition-all duration-200 hover:brightness-125 hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed" [disabled]="loading()">
             @if (loading()) {
-              <div class="spinner-mini"></div>
-              <span>Verificando Credenciales...</span>
+              <div class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              <span>Verificando...</span>
             } @else {
-              <svg class="submit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
                 <polyline points="10 17 15 12 10 7"/>
                 <line x1="15" y1="12" x2="3" y2="12"/>
               </svg>
-              <span>Iniciar Conexión Segura</span>
+              <span>Ingresar</span>
             }
           </button>
         </div>
