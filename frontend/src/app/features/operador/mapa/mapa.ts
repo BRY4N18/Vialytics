@@ -33,7 +33,6 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   modoRegistro = input<boolean>(false);
   selectedAccidenteId = input<string | null>(null);
 
-  // Outputs
   accidenteSeleccionado = output<AccidenteMapa>();
   ubicacionSeleccionada = output<{ lat: number; lng: number }>();
 
@@ -42,6 +41,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private map: any = null;
   private markersLayer: any = null;
+  private clusterGroup: any = null;
   private locationMarker: any = null;
   private initialBoundsSet = false;
   private renderedMarkers: Record<string, any> = {};
@@ -65,6 +65,18 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     4: 'Fatal',
   };
 
+  private readonly ESTADO_LABELS: Record<string, string> = {
+    ACTIVO: 'Reportado',
+    EN_ATENCION: 'En Atención',
+    EN_TRASLADO: 'En Traslado',
+    CONTROLADO: 'Despejado',
+    ARCHIVADO: 'Archivado',
+    Reportado: 'Reportado',
+    Asignado: 'Asignado',
+    'En Escena': 'En Escena',
+    Despejado: 'Despejado',
+  };
+
   private formatearFecha(iso: string): string {
     if (!iso) return '';
     try {
@@ -79,7 +91,6 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   constructor() {
-    // React to refrescarTrigger changes
     effect(() => {
       const trigger = this.refrescarTrigger();
       if (this.map && trigger >= 0) {
@@ -87,8 +98,6 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
-
-    // React to filtros changes
     effect(() => {
       const f = this.filtros();
       if (this.map) {
@@ -97,7 +106,6 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
-    // React to modoRegistro changes
     effect(() => {
       const modo = this.modoRegistro();
       if (!modo) {
@@ -106,7 +114,6 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
-    // React to selectedAccidenteId changes to focus Leaflet camera
     effect(() => {
       const id = this.selectedAccidenteId();
       if (this.map && id) {
@@ -130,7 +137,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private initMap(): void {
     if (!this.isLeafletAvailable()) {
-      console.error('Leaflet no está disponible. Verifica que el CDN esté cargado.');
+      console.error('Leaflet no está disponible.');
       this.error.set('Error: Librería de mapas no disponible');
       return;
     }
@@ -142,7 +149,6 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
       attributionControl: false,
     });
 
-    // Dark tile layer
     L.tileLayer(
       'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
       {
@@ -152,16 +158,22 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     ).addTo(this.map);
 
-    // Custom zoom control
     L.control.zoom({ position: 'bottomright' }).addTo(this.map);
-
-    // Attribution
     L.control.attribution({ position: 'bottomleft', prefix: 'AnalyticsVial © 2026' }).addTo(this.map);
 
-    // Markers layer group
-    this.markersLayer = L.layerGroup().addTo(this.map);
+    this.clusterGroup = L.markerClusterGroup({
+      chunkedLoading: true,
+      maxClusterRadius: 60,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      disableClusteringAtZoom: 16,
+      iconCreateFunction: (cluster: any) => this.createClusterIcon(cluster),
+    });
+    this.map.addLayer(this.clusterGroup);
 
-    // Click handler for location selection
+    this.markersLayer = L.layerGroup();
+
     this.map.on('click', (e: any) => {
       if (this.modoUbicacion()) {
         const { lat, lng } = e.latlng;
@@ -175,7 +187,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private isLeafletAvailable(): boolean {
     try {
-      return typeof L !== 'undefined';
+      return typeof L !== 'undefined' && typeof L.markerClusterGroup !== 'undefined';
     } catch {
       return false;
     }
@@ -207,7 +219,8 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private renderMarkers(accidentes: AccidenteMapa[]): void {
-    if (!this.markersLayer) return;
+    if (!this.clusterGroup) return;
+    this.clusterGroup.clearLayers();
     this.markersLayer.clearLayers();
     this.renderedMarkers = {};
 
@@ -219,82 +232,239 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
 
     accidentes.forEach((acc) => {
       const color = this.SEVERITY_COLORS[acc.severidad_nivel] || '#6B7280';
+      const severity = acc.severidad_nivel || 1;
+      const size = this.getMarkerSize(acc);
 
-      const circleMarker = L.circleMarker(
-        [acc.latitudinicio, acc.longitudinicio],
-        {
-          radius: 10 + acc.numheridos * 0.5,
-          fillColor: color,
-          color: '#ffffff',
-          weight: 2,
-          opacity: 0.9,
-          fillOpacity: 0.85,
-        }
-      );
+      const icon = this.createSeverityIcon(severity, color, size);
+      const marker = L.marker([acc.latitudinicio, acc.longitudinicio], { icon });
+      (marker as any).__severidad = severity;
 
-      // Popup - menos detalle para pÃºblico (ya viene con datos limpiados del backend)
-      const isPublic = !this.authService.isLoggedIn();
-      const sevLabel = this.SEVERITY_LABELS[acc.severidad_nivel] || '';
-      const fechaStr = this.formatearFecha(acc.fecha_actualizacion);
-      const popupContent = `
-        <div class="sga-popup">
-          <div class="sga-popup-header" style="border-left: 4px solid ${color};">
-            <strong>${(acc.calle_nombre && acc.calle_nombre !== 'Ubicación Registrada') ? acc.calle_nombre : 'Sin registrar'}</strong>
-            <span class="sga-popup-ciudad">${(acc.ciudad_nombre && acc.ciudad_nombre !== 'Ubicación Registrada') ? acc.ciudad_nombre : ''}</span>
-          </div>
-          <div class="sga-popup-body">
-            <div class="sga-popup-row">
-              <span>Estado:</span><strong>${acc.estado_actual}</strong>
-            </div>
-            <div class="sga-popup-row">
-              <span>Severidad:</span><strong style="color:${color}">${sevLabel}</strong>
-            </div>
-            ${fechaStr ? `<div class="sga-popup-row"><span>Fecha:</span><strong>${fechaStr}</strong></div>` : ''}
-            ${!isPublic ? `
-            <div class="sga-popup-row">
-              <span>Heridos:</span><strong style="color:#F59E0B">${acc.numheridos}</strong>
-            </div>
-            <div class="sga-popup-row">
-              <span>Fallecidos:</span><strong style="color:#EF4444">${acc.numfallecidos}</strong>
-            </div>
-            ` : ''}
-          </div>
-          ${!isPublic && acc.descripcion ? `<div class="sga-popup-footer">${acc.descripcion.substring(0, 80)}...</div>` : ''}
-        </div>
-      `;
+      const isActive = acc.estado_actual === 'Reportado' ||
+        acc.estado_actual === 'Asignado' ||
+        acc.estado_actual === 'En Escena' ||
+        acc.estado_actual === 'ACTIVO' ||
+        acc.estado_actual === 'EN_ATENCION';
 
-      circleMarker.bindPopup(popupContent, { maxWidth: 260 });
+      if (isActive) {
+        (marker as any).__isActive = true;
+      }
 
-      circleMarker.on('click', () => {
+      const popupContent = this.buildPopupContent(acc, color);
+      marker.bindPopup(popupContent, {
+        maxWidth: 300,
+        className: 'sga-popup-wrapper',
+        closeButton: true,
+      });
+
+      marker.on('click', () => {
         if (!this.modoUbicacion()) {
           this.accidenteSeleccionado.emit(acc);
         }
       });
 
-      // Pulse animation for active accidents
-      if (
-        acc.estado_actual === 'Reportado' ||
-        acc.estado_actual === 'Asignado' ||
-        acc.estado_actual === 'En Escena' ||
-        acc.estado_actual === 'ACTIVO' ||
-        acc.estado_actual === 'EN_ATENCION'
-      ) {
-        const pulseMarker = L.circleMarker(
-          [acc.latitudinicio, acc.longitudinicio],
-          {
-            radius: 24,
-            fillColor: color,
-            color: color,
-            weight: 2,
-            opacity: 0.25,
-            fillOpacity: 0.06,
-          }
-        );
-        this.markersLayer.addLayer(pulseMarker);
+      if (isActive) {
+        const pulse = L.circleMarker([acc.latitudinicio, acc.longitudinicio], {
+          radius: size * 2.2,
+          fillColor: color,
+          color: color,
+          weight: 1.5,
+          opacity: 0.4,
+          fillOpacity: 0.08,
+          className: 'sga-pulse-ring',
+        });
+        (pulse as any)._pulseTime = Date.now();
+        (pulse as any)._pulseColor = color;
+        this.markersLayer.addLayer(pulse);
       }
 
-      this.markersLayer.addLayer(circleMarker);
-      this.renderedMarkers[acc.idaccidente] = circleMarker;
+      marker.on('mouseover', () => {
+        const el = marker.getElement();
+        if (el) {
+          const pin = el.querySelector('.sga-marker-pin') as HTMLElement;
+          if (pin) {
+            pin.style.transform = 'scale(1.25)';
+            pin.style.filter = `drop-shadow(0 0 12px ${color}88)`;
+          }
+        }
+      });
+
+      marker.on('mouseout', () => {
+        const el = marker.getElement();
+        if (el) {
+          const pin = el.querySelector('.sga-marker-pin') as HTMLElement;
+          if (pin) {
+            pin.style.transform = '';
+            pin.style.filter = '';
+          }
+        }
+      });
+
+      this.clusterGroup.addLayer(marker);
+      this.renderedMarkers[acc.idaccidente] = marker;
+    });
+
+    if (this.markersLayer) {
+      this.map.addLayer(this.markersLayer);
+    }
+
+    this.startPulseAnimation();
+  }
+
+  private getMarkerSize(acc: AccidenteMapa): number {
+    const h = acc.numheridos || 0;
+    const f = acc.numfallecidos || 0;
+    const base = 28;
+    const extra = Math.min(h + f * 2, 30);
+    return base + extra;
+  }
+
+  private createSeverityIcon(severity: number, color: string, size: number): any {
+    const num = severity;
+    const scale = size / 28;
+    const w = 40;
+    const h = 48;
+    const sw = Math.round(w * scale);
+    const sh = Math.round(h * scale);
+
+    const html = `
+      <div class="sga-marker-pin" style="width:${sw}px;height:${sh}px;">
+        <svg viewBox="0 0 ${w} ${h}" width="${sw}" height="${sh}" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="shadow-${num}" x="-10%" y="-10%" width="130%" height="140%">
+              <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.35"/>
+            </filter>
+            <linearGradient id="grad-${num}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="${this.lightenColor(color, 15)}"/>
+              <stop offset="100%" stop-color="${color}"/>
+            </linearGradient>
+          </defs>
+          <path d="M20 0C9 0 0 9 0 20c0 11 20 28 20 28s20-17 20-28C40 9 31 0 20 0z"
+                fill="url(#grad-${num})" filter="url(#shadow-${num})"/>
+        </svg>
+      </div>`;
+
+    return L.divIcon({
+      className: 'sga-divicon',
+      html,
+      iconSize: [sw, sh],
+      iconAnchor: [sw / 2, sh],
+      popupAnchor: [0, -sh],
+    });
+  }
+
+  private createClusterIcon(cluster: any): any {
+    const markers = cluster.getAllChildMarkers();
+    const count = markers.length;
+
+    const severityScores: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0 };
+    markers.forEach((m: any) => {
+      const sev = (m as any).__severidad || 1;
+      severityScores[sev] = (severityScores[sev] || 0) + 1;
+    });
+
+    let dominantSeverity = 1;
+    let maxCount = 0;
+    for (const [sev, cnt] of Object.entries(severityScores)) {
+      if (cnt > maxCount) {
+        maxCount = cnt;
+        dominantSeverity = Number(sev);
+      }
+    }
+
+    const color = this.SEVERITY_COLORS[dominantSeverity] || '#6B7280';
+    const size = Math.min(50 + count * 3, 80);
+
+    const html = `
+      <div class="sga-cluster-icon" style="
+        width:${size}px;height:${size}px;
+        background:${color};
+        box-shadow:0 0 0 4px ${color}22, 0 4px 16px ${color}44;
+      ">
+        <span>${count}</span>
+      </div>`;
+
+    return L.divIcon({
+      className: 'sga-cluster-divicon',
+      html,
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+    });
+  }
+
+  private buildPopupContent(acc: AccidenteMapa, color: string): string {
+    const isPublic = !this.authService.isLoggedIn();
+    const sevLabel = this.SEVERITY_LABELS[acc.severidad_nivel] || '';
+    const fechaStr = this.formatearFecha(acc.fecha_actualizacion);
+    const estadoLabel = this.ESTADO_LABELS[acc.estado_actual] || acc.estado_actual;
+    const calle = (acc.calle_nombre && acc.calle_nombre !== 'Ubicación Registrada') ? acc.calle_nombre : 'Sin registrar';
+    const ciudad = (acc.ciudad_nombre && acc.ciudad_nombre !== 'Ubicación Registrada') ? acc.ciudad_nombre : '';
+
+    const estadoColor = acc.estado_actual === 'Despejado' || acc.estado_actual === 'CONTROLADO' || acc.estado_actual === 'ARCHIVADO'
+      ? '#10B981'
+      : acc.estado_actual === 'ACTIVO' || acc.estado_actual === 'Reportado' || acc.estado_actual === 'En Escena' || acc.estado_actual === 'EN_ATENCION'
+      ? '#EF4444'
+      : '#F59E0B';
+
+    return `
+      <div class="sga-popup-v2">
+        <div class="sga-popup-v2-header" style="background:${color}">
+          <div class="sga-popup-v2-header-content">
+            <div class="sga-popup-v2-sev-badge">${sevLabel}</div>
+            <div class="sga-popup-v2-estado" style="background:${estadoColor}22; color:${estadoColor}">${estadoLabel}</div>
+          </div>
+        </div>
+        <div class="sga-popup-v2-body">
+          <div class="sga-popup-v2-location">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            <span><strong>${calle}</strong>${ciudad ? ', ' + ciudad : ''}</span>
+          </div>
+          ${fechaStr ? `
+          <div class="sga-popup-v2-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span>${fechaStr}</span>
+          </div>` : ''}
+          ${!isPublic ? `
+          <div class="sga-popup-v2-stats">
+            <div class="sga-popup-v2-stat" style="color:#F59E0B">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+              </svg>
+              <span>${acc.numheridos}</span>
+            </div>
+            <div class="sga-popup-v2-stat" style="color:#EF4444">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span>${acc.numfallecidos}</span>
+            </div>
+          </div>
+          ${acc.descripcion ? `<div class="sga-popup-v2-desc">${acc.descripcion.substring(0, 100)}${acc.descripcion.length > 100 ? '...' : ''}</div>` : ''}
+          ` : ''}
+        </div>
+        ${!isPublic ? `
+        <div class="sga-popup-v2-footer" style="border-top-color:${color}22">
+          <span>ID: ${acc.idaccidente.substring(0, 8)}</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </div>` : ''}
+      </div>`;
+  }
+
+  private startPulseAnimation(): void {
+    if (!this.markersLayer) return;
+    this.markersLayer.eachLayer((layer: any) => {
+      if (layer._pulseTime !== undefined) {
+        const el = layer.getElement();
+        if (el) {
+          el.style.animation = 'sgaPulse 2s ease-in-out infinite';
+        }
+      }
     });
   }
 
@@ -302,58 +472,39 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     const marker = this.renderedMarkers[id];
     if (marker) {
       const latlng = marker.getLatLng();
-      this.map.flyTo(latlng, 15, { animate: true, duration: 1.5 });
+      this.map.flyTo(latlng, 16, { animate: true, duration: 1.2 });
       setTimeout(() => marker.openPopup(), 600);
+
+      const el = marker.getElement();
+      if (el) {
+        el.style.filter = `drop-shadow(0 0 20px ${this.SEVERITY_COLORS[1]}88)`;
+        el.style.transition = 'filter 0.3s ease';
+        el.style.zIndex = '10000';
+        setTimeout(() => {
+          el.style.filter = '';
+          el.style.zIndex = '';
+        }, 3000);
+      }
     } else {
-      // Si no está renderizado en el mapa actual (por límites o filtros), consultamos detalles para enfocar temporalmente
       this.accidenteService.getAccidenteDetalle(id).subscribe({
         next: (acc) => {
           if (acc && this.map) {
-            const latlng = [acc.latitudinicio, acc.longitudinicio];
-            this.map.flyTo(latlng, 15, { animate: true, duration: 1.5 });
+            const latlng: [number, number] = [acc.latitudinicio, acc.longitudinicio];
+            this.map.flyTo(latlng, 16, { animate: true, duration: 1.2 });
 
             const color = this.SEVERITY_COLORS[acc.severidad_nivel] || '#6B7280';
-            const tempMarker = L.circleMarker(latlng, {
-              radius: 12,
-              fillColor: color,
-              color: '#ffffff',
-              weight: 3,
-              opacity: 0.95,
-              fillOpacity: 0.9,
-            }).addTo(this.markersLayer);
+            const severity = acc.severidad_nivel || 1;
+            const size = this.getMarkerSize(acc);
+            const icon = this.createSeverityIcon(severity, color, size);
 
-            const isPublic = !this.authService.isLoggedIn();
-            const sevLabel = this.SEVERITY_LABELS[acc.severidad_nivel] || '';
-            const fechaStr = this.formatearFecha(acc.fecha_actualizacion);
-            const popupContent = `
-              <div class="sga-popup">
-                <div class="sga-popup-header" style="border-left: 4px solid ${color};">
-                  <strong>${(acc.calle_nombre && acc.calle_nombre !== 'Ubicación Registrada') ? acc.calle_nombre : 'Sin registrar'}</strong>
-                  <span class="sga-popup-ciudad">${(acc.ciudad_nombre && acc.ciudad_nombre !== 'Ubicación Registrada') ? acc.ciudad_nombre : ''}</span>
-                </div>
-                <div class="sga-popup-body">
-                  <div class="sga-popup-row">
-                    <span>Estado:</span><strong>${acc.estado_actual}</strong>
-                  </div>
-                  <div class="sga-popup-row">
-                    <span>Severidad:</span><strong style="color:${color}">${sevLabel}</strong>
-                  </div>
-                  ${fechaStr ? `<div class="sga-popup-row"><span>Fecha:</span><strong>${fechaStr}</strong></div>` : ''}
-                  ${!isPublic ? `
-                  <div class="sga-popup-row">
-                    <span>Heridos:</span><strong style="color:#F59E0B">${acc.numheridos}</strong>
-                  </div>
-                  <div class="sga-popup-row">
-                    <span>Fallecidos:</span><strong style="color:#EF4444">${acc.numfallecidos}</strong>
-                  </div>
-                  ` : ''}
-                </div>
-                ${!isPublic && acc.descripcion ? `<div class="sga-popup-footer">${acc.descripcion.substring(0, 80)}...</div>` : ''}
-              </div>
-            `;
-            tempMarker.bindPopup(popupContent, { maxWidth: 260 });
+            const tempMarker = L.marker(latlng, { icon }).addTo(this.markersLayer);
+            const popupContent = this.buildPopupContent(acc, color);
+            tempMarker.bindPopup(popupContent, {
+              maxWidth: 300,
+              className: 'sga-popup-wrapper',
+            });
+
             this.renderedMarkers[id] = tempMarker;
-            
             setTimeout(() => tempMarker.openPopup(), 600);
           }
         }
@@ -398,5 +549,14 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.map) {
       this.map.getContainer().style.cursor = '';
     }
+  }
+
+  private lightenColor(hex: string, percent: number): string {
+    const num = parseInt(hex.replace('#', ''), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = Math.min(255, (num >> 16) + amt);
+    const G = Math.min(255, ((num >> 8) & 0x00FF) + amt);
+    const B = Math.min(255, (num & 0x0000FF) + amt);
+    return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
   }
 }

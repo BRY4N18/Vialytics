@@ -171,7 +171,7 @@ class PinotRepository:
                 url,
                 json=payload,
                 headers=headers,
-                timeout=15.0
+                timeout=5.0
             )
 
             if response.status_code == 200:

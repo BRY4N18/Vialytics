@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from django.conf import settings
+from django.core.cache import cache
 from accidentes.services.severidad_service import SeveridadService
 from accidentes.repositories import KafkaRepository, PinotRepository
 
@@ -19,30 +20,35 @@ class AccidenteService:
         """
         Calcula estadísticas avanzadas y métricas agregadas para el dashboard
         consultando en tiempo real en Apache Pinot (con fallback a SQLite).
+        Resultados cacheados por 60s para evitar consultas repetitivas.
         """
-        # Intentar ejecutar consultas en Pinot
+        cache_key = "dashboard_stats"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return cached
+
         try:
-            # 1. KPIs
-            kpi_q = "SELECT count(*) as total, avg(distanciamillas) as avg_dist, count(distinct(idcalle)) as unique_calles FROM accidentes"
+            # 1. KPIs (combinados en una sola query)
+            kpi_q = (
+                "SELECT count(*) as total, avg(distanciamillas) as avg_dist, "
+                "count(distinct(idcalle)) as unique_calles, "
+                "sum(CASE WHEN idseveridad = -206169288 THEN 1 ELSE 0 END) as critical "
+                "FROM accidentes"
+            )
             kpi_res = PinotRepository.execute_query(kpi_q)
-            
-            crit_q = "SELECT count(*) as total FROM accidentes WHERE idseveridad = -206169288"
-            crit_res = PinotRepository.execute_query(crit_q)
-            
+
             total_accidentes = 0
             severidad_critica = 0
             distancia_promedio = 0.0
             calles_afectadas = 0
-            
+
             if kpi_res:
-                total_accidentes = int(kpi_res[0].get('count(*)', 0) or kpi_res[0].get('total', 0))
-                distancia_promedio = float(kpi_res[0].get('avg(distanciamillas)', 0.0) or kpi_res[0].get('avg_dist', 0.0))
-                calles_afectadas = int(kpi_res[0].get('distinctcount(idcalle)', 0) or kpi_res[0].get('unique_calles', 0))
-                
-            if crit_res:
-                severidad_critica = int(crit_res[0].get('count(*)', 0) or crit_res[0].get('total', 0))
-                
-            # 2. Tendencia Mensual (Agregar 3 años a fechahoraclima para proyectarlo al 2026 de forma interactiva y coherente)
+                total_accidentes = int(kpi_res[0].get('total', 0))
+                distancia_promedio = float(kpi_res[0].get('avg_dist', 0.0))
+                calles_afectadas = int(kpi_res[0].get('unique_calles', 0))
+                severidad_critica = int(kpi_res[0].get('critical', 0))
+
+            # 2. Tendencia Mensual
             trend_q = (
                 "SELECT YEAR(fechahoraclima) as y, MONTH(fechahoraclima) as m, count(*) as count "
                 "FROM accidentes "
@@ -51,20 +57,19 @@ class AccidenteService:
                 "ORDER BY 1, 2"
             )
             trend_res = PinotRepository.execute_query(trend_q, use_multistage=True)
-            
+
             monthly_trend = []
             month_names = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
-            
+
             for r in trend_res:
                 y = int(r.get('y', 2020))
                 m = int(r.get('m', 1))
                 c = int(r.get('count', 0))
-                
-                # Proyección temporal agregando 3 años para terminar en May 2026
+
                 projected_year = y + 3
                 if projected_year > 2026 or (projected_year == 2026 and m > 5):
-                    continue # Excluir proyecciones futuras más allá de la fecha actual de 2026
-                    
+                    continue
+
                 month_label = f"{month_names[m-1]} {projected_year}"
                 monthly_trend.append({
                     "month": month_label,
@@ -72,8 +77,8 @@ class AccidenteService:
                     "year": projected_year,
                     "month_num": m
                 })
-                
-            # 3. Distribucion por Severidad (Donut)
+
+            # 3. Distribucion por Severidad
             sev_q = (
                 "SELECT s.descripcion as name, count(*) as count "
                 "FROM accidentes a "
@@ -93,13 +98,13 @@ class AccidenteService:
                     name = 'Grave'
                 elif name == 'Nivel 4':
                     name = 'Fatal'
-                
+
                 severity_distribution.append({
                     "name": name,
                     "count": int(r.get('EXPR$1', 0) or r.get('count', 0))
                 })
-                
-            # 4. Top 10 Estados (Horizontal Bar)
+
+            # 4. Top 10 Estados
             states_q = (
                 "SELECT e.estado as state, count(*) as count "
                 "FROM accidentes a "
@@ -115,8 +120,8 @@ class AccidenteService:
                     "state": str(r.get('state', '')),
                     "count": int(r.get('EXPR$1', 0) or r.get('count', 0))
                 })
-                
-            # 5. Distribucion por Hora del Día (Smooth Line)
+
+            # 5. Distribucion por Hora
             hourly_q = (
                 "SELECT SUBSTR(horainicio, 1, 2) as hour, count(*) as count "
                 "FROM accidentes "
@@ -134,8 +139,8 @@ class AccidenteService:
                             hourly_distribution[hr] = int(r.get('count(*)', 0) or r.get('count', 0))
                 except Exception:
                     pass
-                    
-            # 6. Condiciones Climáticas (Vertical Bar)
+
+            # 6. Condiciones Climáticas
             weather_q = (
                 "SELECT c.condicionclima as weather, count(*) as count "
                 "FROM accidentes a "
@@ -154,9 +159,8 @@ class AccidenteService:
                     "weather": w_name,
                     "count": int(r.get('EXPR$1', 0) or r.get('count', 0))
                 })
-                
-            # Retornar los resultados agregados
-            return {
+
+            result = {
                 "kpis": {
                     "total_accidentes": total_accidentes,
                     "severidad_critica": severidad_critica,
@@ -169,11 +173,13 @@ class AccidenteService:
                 "hourly_distribution": hourly_distribution,
                 "weather_distribution": weather_distribution
             }
-            
+
+            cache.set(cache_key, result, 60)
+            return result
+
         except Exception as exc:
             logger.warning(f"Error querying Pinot, falling back to simulated DB stats: {exc}")
-            
-        # Fallback dinámico con datos reales de la base de datos local / estadísticas simuladas de alta fidelidad
+
         return {
             "kpis": {
                 "total_accidentes": 2000002,

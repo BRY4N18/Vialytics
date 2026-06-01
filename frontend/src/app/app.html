@@ -3,21 +3,21 @@
     <app-header></app-header>
   }
   @if (!authService.isLoggedIn()) {
-    <header class="absolute top-4 left-4 right-4 z-[999] bg-card/80 backdrop-blur-xl border border-border rounded-panel shadow-card flex items-center justify-between px-5 py-2.5 animate-fade-in">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 bg-gradient-to-br from-cyan-500 to-violet-500 rounded-lg flex items-center justify-center text-white shadow-[0_0_15px_rgba(6,182,212,0.25)]">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-            <path d="M2 17l10 5 10-5"/>
-            <path d="M2 12l10 5 10-5"/>
-          </svg>
+    <header class="absolute top-0 left-0 right-0 z-[999] bg-sidebar/90 backdrop-blur-xl border-b border-white/[0.06] flex items-center justify-between px-6 h-14 animate-fade-in">
+      <div class="flex items-center gap-3 cursor-pointer" routerLink="/mapa">
+          <div class="w-8 h-8 bg-gradient-to-br from-cyan-500 to-violet-500 rounded-lg flex items-center justify-center text-white shadow-[0_0_15px_rgba(6,182,212,0.25)]">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <div class="flex flex-col leading-none">
+            <span class="text-sm font-extrabold text-white tracking-tight">AnalictysVial</span>
+            <span class="text-[0.55rem] text-white/40 tracking-wide">Gestión de Accidentes</span>
+          </div>
         </div>
-        <div class="flex flex-col leading-none">
-          <span class="text-sm font-extrabold text-text-primary bg-gradient-to-r from-text-primary to-cyan-600 bg-clip-text text-transparent">AnalictysVial</span>
-          <span class="text-[0.55rem] text-text-muted tracking-wide">Gestión de Accidentes</span>
-        </div>
-      </div>
-      <button class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 text-cyan-600 text-xs font-bold rounded-sm cursor-pointer transition-all hover:from-cyan-500/30 hover:to-violet-500/30 hover:text-cyan-700 active:scale-[0.97]"
+      <button class="flex items-center gap-2 px-4 py-1.5 bg-white/[0.08] border border-white/[0.1] text-white/80 text-xs font-semibold rounded-md cursor-pointer transition-all hover:bg-white/[0.12] hover:text-white active:scale-[0.97]"
               (click)="authService.showLoginModal.set(true)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
           <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>

@@ -9,7 +9,7 @@ Plataforma web para la gestión operativa y analítica del ciclo de vida complet
 | Capa | Tecnología | Versión |
 |------|-----------|---------|
 | Frontend | Angular (standalone) | 21.x |
-| UI | CSS plano (sin Tailwind), Leaflet 1.9.4 (CDN) | — |
+| UI | CSS plano (sin Tailwind), Leaflet 1.9.4 + MarkerCluster 1.5.3 (CDN) | — |
 | Backend | Django + Django REST Framework | 5.x |
 | Base de datos operacional | Apache Pinot (vía Kafka) | — |
 | Mensajería | Kafka | — |
@@ -96,7 +96,8 @@ Endpoint de login: `POST /api/v1/auth/login/` con JSON `{ "username": "...", "pa
 - **Componentes standalone** (no NgModules).
 - **Signals** para estado reactivo (no RxJS BehaviorSubject para estado local).
 - **CSS plano con variables CSS** — paleta oscura táctica con colores desaturados. No usar Tailwind ni librerías UI externas.
-- **Leaflet vía CDN** (no npm). Tipos declarados en `src/types/leaflet.d.ts`.
+- **Leaflet vía CDN** (no npm). Tipos declarados en `src/types/leaflet.d.ts`. MarkerCluster añadido vía CDN (`leaflet.markercluster` 1.5.3) con severidad por colores en iconos de cluster.
+- **Marcadores SVG personalizados** — pines con gradiente cromático por severidad (sin números), animación de pulso para accidentes activos, efecto hover (escala + glow). Popups rediseñados con cabecera degradada, badge de severidad y estadísticas SVG inline.
 - **Estilo Double-Bezel** en cards: `border-radius: 10px`, transiciones `cubic-bezier(0.16, 1, 0.3, 1)` 200ms.
 - **Interceptor HTTP** para JWT (`auth.interceptor.ts`) y manejo de errores (`error.interceptor.ts`).
 - **Rutas públicas**: `/mapa` (AllowAny). **Rutas protegidas**: `/dashboard`, `/lista`, `/registro` (requieren auth. guard).
@@ -152,6 +153,23 @@ readonly estados = [
 
 ### 6. `idusuario_id` hardcodeado
 Al crear/actualizar accidentes y estados, `idusuario_id` se envía como `1`. No se usa el usuario autenticado del JWT. Pendiente de corregir.
+
+### 7. Tipos de TypeScript para MarkerCluster no declarados
+**Error**: `L.markerClusterGroup` da error de tipo en compilación (`Property 'markerClusterGroup' does not exist on type 'typeof L'`).
+
+**Causa**: `leaflet.markercluster` no tiene tipos nativos. Solo se declararon tipos mínimos en `leaflet.d.ts`.
+
+**Solución**: Ya declarado en `src/types/leaflet.d.ts`. Si se actualiza la librería, verificar que los tipos sigan siendo compatibles con la sintaxis `L.markerClusterGroup()`.
+
+### 8. Dashboard lento por múltiples queries secuenciales a Pinot
+**Error**: El dashboard tarda varios segundos en cargar porque ejecuta 7 queries secuenciales a Pinot.
+
+**Causa**: Cada llamada a `PinotRepository.execute_query()` es una request HTTP síncrona. 6 queries con JOINs usan multi-stage engine, que es más lento.
+
+**Solución implementada**: 
+- Caché en memoria con Django `LocMemCache` (TTL 60s) — la primera carga puede tardar, las siguientes son instantáneas.
+- KPIs combinados en una sola query (antes eran 2 separadas).
+- Timeout reducido de 15s a 5s para fallar rápido si Pinot no responde.
 
 ---
 
