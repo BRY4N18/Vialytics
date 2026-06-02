@@ -216,41 +216,27 @@ readonly estados = [
 ];
 ```
 
-### 2. `idelementofisico_id` hardcodeado en registro
-**Error**: Al registrar un accidente, el campo `idelementofisico_id` siempre se enviaba como `1`.
-
-**Causa**: El método `buildPayload()` usaba `idelementofisico_id: 1` en vez de mapear los checkboxes.
-
-**Solución**: `matchElementoFisicoId()` en `registro-accidente.ts:522` que busca en el catálogo `elementosFisicos` la combinación exacta de checkboxes seleccionados.
-
-### 3. `idestadoclima_id` hardcodeado
-**Error**: Similar al anterior, se enviaba `idestadoclima_id: 1`.
-
-**Causa**: Frontend hardcodeaba 1, backend usaba `=` en vez de `LIKE` para matchear nombres bilingües (el catálogo puede tener "Soleado" o "Sunny").
-
-**Solución**: Backend usa `LIKE '%{cond_escaped}%'` y frontend usa el valor seleccionado del dropdown de clima.
-
-### 4. Comboboxes de ubicación no se llenan al editar
+### 2. Comboboxes de ubicación no se llenan al editar
 **Error**: Al editar un accidente, los comboboxes de país/estado/ciudad/calle no se seleccionan automáticamente.
 
 **Causa**: El método `poblarCascadaConIds()` fallaba cuando los IDs numéricos no coincidían exactamente con los valores de los arrays de opciones, y no tenía fallback por nombre.
 
 **Solución**: Agregar fallback por nombre de calle/ciudad, tolerar ID=0, validación con función `pid()`.
 
-### 5. Estados duplicados en seed data
+### 3. Estados duplicados en seed data
 **Nota**: Los seed data de `tiposestadosincidentes` tienen 5 registros, pero IDs 2 y 3 tienen nombres distintos (`EN_ATENCION` vs `EN_TRASLADO`). El mapeo en el servicio trata ambos como `EN_ATENCION`. Si se agregan nuevos estados, actualizar TAMBIÉN el `estados_catalogo` en `accidente_service.py` y el array `estados[]` en `lista-accidentes.ts`.
 
-### 6. `idusuario_id` hardcodeado
+### 4. `idusuario_id` hardcodeado
 Al crear/actualizar accidentes y estados, `idusuario_id` se envía como `1`. No se usa el usuario autenticado del JWT. Pendiente de corregir.
 
-### 7. Tipos de TypeScript para MarkerCluster no declarados
+### 5. Tipos de TypeScript para MarkerCluster no declarados
 **Error**: `L.markerClusterGroup` da error de tipo en compilación (`Property 'markerClusterGroup' does not exist on type 'typeof L'`).
 
 **Causa**: `leaflet.markercluster` no tiene tipos nativos. Solo se declararon tipos mínimos en `leaflet.d.ts`.
 
 **Solución**: Ya declarado en `src/types/leaflet.d.ts`. Si se actualiza la librería, verificar que los tipos sigan siendo compatibles con la sintaxis `L.markerClusterGroup()`.
 
-### 8. Dashboard lento por múltiples queries secuenciales a Pinot
+### 6. Dashboard lento por múltiples queries secuenciales a Pinot
 **Error**: El dashboard tarda varios segundos en cargar porque ejecuta 7 queries secuenciales a Pinot.
 
 **Causa**: Cada llamada a `PinotRepository.execute_query()` es una request HTTP síncrona. 6 queries con JOINs usan multi-stage engine, que es más lento.
