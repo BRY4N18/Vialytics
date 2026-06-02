@@ -1,0 +1,81 @@
+<div class="mapa-publico-container">
+  <header class="public-header">
+    <h1>Mapa de Incidentes — Acceso Público</h1>
+    <p class="public-subtitle">Visualización en tiempo real de accidentes reportados</p>
+  </header>
+
+  <div class="toolbar">
+    <button class="btn-filtros" (click)="toggleFiltros()">
+      {{ filtrosAbiertos() ? 'Ocultar' : 'Mostrar' }} Filtros
+    </button>
+  </div>
+
+  @if (filtrosAbiertos()) {
+  <div class="filtros-panel">
+    <div class="filtro-item">
+      <label>Severidad</label>
+      <select (change)="onSeveridadChange($event)">
+        <option value="">Todas</option>
+        @for (sev of severidades; track sev.value) {
+        <option [value]="sev.value">{{ sev.label }}</option>
+        }
+      </select>
+    </div>
+    <div class="filtro-item">
+      <label>Fecha inicio</label>
+      <input type="date" (change)="onFechaInicioChange($event)" />
+    </div>
+    <div class="filtro-item">
+      <label>Fecha fin</label>
+      <input type="date" (change)="onFechaFinChange($event)" />
+    </div>
+    <div class="filtro-item">
+      <label>País</label>
+      <select (change)="onPaisChange($event)">
+        <option value="">Todos</option>
+        @for (p of paisesList(); track p.pais) {
+        <option [value]="p.pais">{{ p.pais }}</option>
+        }
+      </select>
+    </div>
+    @if (estadosList().length) {
+    <div class="filtro-item">
+      <label>Estado / Provincia</label>
+      <select (change)="onIdEstadoChange($event)">
+        <option value="">Todos</option>
+        @for (e of estadosList(); track e.estado) {
+        <option [value]="e.estado">{{ e.estado }}</option>
+        }
+      </select>
+    </div>
+    }
+    @if (condadosList().length) {
+    <div class="filtro-item">
+      <label>Condado</label>
+      <select (change)="onCondadoChange($event)">
+        <option value="">Todos</option>
+        @for (c of condadosList(); track c.condado) {
+        <option [value]="c.condado">{{ c.condado }}</option>
+        }
+      </select>
+    </div>
+    }
+    @if (ciudadesList().length) {
+    <div class="filtro-item">
+      <label>Ciudad</label>
+      <select (change)="onCiudadChange($event)">
+        <option value="">Todas</option>
+        @for (c of ciudadesList(); track c.ciudad) {
+        <option [value]="c.ciudad">{{ c.ciudad }}</option>
+        }
+      </select>
+    </div>
+    }
+    <button class="btn-limpiar" (click)="clearFiltros()">Limpiar filtros</button>
+  </div>
+  }
+
+  <div class="mapa-wrapper">
+    <app-mapa />
+  </div>
+</div>

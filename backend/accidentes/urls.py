@@ -1,28 +1,42 @@
 from django.urls import path
-from .views.accidente_views import AccidenteRegistroView, AccidenteMapaView, AccidenteDetalleView, AccidenteDashboardView, AccidenteExpedienteView
-from .views.estado_views import AccidenteEstadoView
-from .views.despacho_views import DespachoView
-from .views.unidad_views import UnidadesEmergenciaView, UnidadEstadoView
-from .views.catalogo_views import (
+from accidentes.PKG1_Gestion_Accidentes.CU01_Registrar_Accidente.views import AccidenteRegistroView
+from accidentes.PKG1_Gestion_Accidentes.CU02_Visualizar_Mapa.views import AccidenteMapaView
+from accidentes.PKG1_Gestion_Accidentes.CU03_Actualizar_Estado.views import AccidenteEstadoView
+from accidentes.PKG1_Gestion_Accidentes.CU04_Despachar_Emergencias.views import DespachoView
+from accidentes.PKG2_Respuesta_Emergencias.CU08_Actualizar_Estado_Unidad.views import UnidadesEmergenciaView, UnidadEstadoView
+from accidentes.PKG3_Consulta_Analisis.CU10_Buscar_Accidentes.views import AccidenteBusquedaView
+from accidentes.PKG3_Consulta_Analisis.CU14_Solicitar_Expediente.views import AccidenteDetalleView, AccidenteExpedienteView
+from accidentes.PKG1_Gestion_Accidentes.CU20_Dashboard_KPIs.views import AccidenteDashboardView
+from accidentes.PKG5_Administracion.CU21_Iniciar_Sesion.views import LoginView, VerifyTokenView, RefreshTokenView
+from accidentes.PKG4_Portal_Externo.CU15_Consultar_Mapa_Publico.views import MapaPublicoView
+from accidentes.PKG4_Portal_Externo.CU16_Consultar_Estadisticas.views import EstadisticasPublicasView
+from accidentes.shared.catalogo_views import (
     SeveridadListView, TipoReportadoListView, TipoEstadoListView,
     PaisListView, EstadoListView, CondadoListView, CiudadListView,
     CalleListView, ClimaListView, ElementoFisicoListView, PeriodoDiaListView
 )
-from .views.auth_views import LoginView, VerifyTokenView, RefreshTokenView
 
 urlpatterns = [
+    # Autenticación
     path('auth/login/', LoginView.as_view(), name='auth-login'),
     path('auth/refresh/', RefreshTokenView.as_view(), name='auth-refresh'),
     path('auth/verify/', VerifyTokenView.as_view(), name='auth-verify'),
+    # Portal público (PKG-4)
+    path('public/mapa/', MapaPublicoView.as_view(), name='public-mapa'),
+    path('public/estadisticas/', EstadisticasPublicasView.as_view(), name='public-estadisticas'),
+    # Gestión de Accidentes (PKG-1)
     path('accidentes/dashboard/', AccidenteDashboardView.as_view(), name='accidente-dashboard'),
     path('accidentes/', AccidenteRegistroView.as_view(), name='accidente-registro'),
+    path('accidentes/buscar/', AccidenteBusquedaView.as_view(), name='accidente-busqueda'),
     path('accidentes/mapa/', AccidenteMapaView.as_view(), name='accidente-mapa'),
     path('accidentes/<str:accidente_id>/', AccidenteDetalleView.as_view(), name='accidente-detalle'),
     path('accidentes/<str:accidente_id>/estado/', AccidenteEstadoView.as_view(), name='accidente-estado'),
     path('accidentes/<str:accidente_id>/despachos/', DespachoView.as_view(), name='accidente-despacho'),
     path('accidentes/<str:accidente_id>/expediente/', AccidenteExpedienteView.as_view(), name='accidente-expediente'),
+    # Respuesta a Emergencias (PKG-2)
     path('unidades/', UnidadesEmergenciaView.as_view(), name='unidades-lista'),
     path('unidades/<int:unidad_id>/estado/', UnidadEstadoView.as_view(), name='unidad-estado'),
+    # Catálogos (Shared)
     path('tipos-reportado/', TipoReportadoListView.as_view(), name='tipos-reportado'),
     path('severidades/', SeveridadListView.as_view(), name='severidades'),
     path('tipos-estado/', TipoEstadoListView.as_view(), name='tipos-estado'),

@@ -1,0 +1,216 @@
+<div class="relative w-full h-full overflow-hidden flex">
+  <!-- Filters panel -->
+  <div
+    class="absolute left-4 top-1/2 -translate-y-1/2 z-[500] w-[230px] max-h-[calc(100vh-140px)] bg-card/90 backdrop-blur-2xl border border-border rounded-panel shadow-card transition-all duration-300 overflow-hidden"
+    [class.!w-[42px]]="!filtrosAbiertos()"
+    [class.!cursor-pointer]="!filtrosAbiertos()">
+
+    <div class="flex items-center justify-between px-3.5 py-3 border-b border-border">
+      <span class="text-[0.72rem] font-bold uppercase tracking-wider text-text-muted whitespace-nowrap">Filtros</span>
+      <button
+        class="bg-transparent border-none text-text-muted cursor-pointer p-1 rounded flex items-center justify-center transition-transform duration-300 hover:text-text-primary hover:bg-white/5"
+        [class.rotate-180]="filtrosAbiertos()"
+        (click)="toggleFiltros()" title="Toggle filtros">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 9l6 6 6-6"/>
+        </svg>
+      </button>
+    </div>
+
+    @if (filtrosAbiertos()) {
+      <div class="px-3.5 pb-3.5 pt-2.5 flex flex-col gap-2.5 max-h-[60vh] overflow-y-auto">
+        <!-- Severidad -->
+        <div class="flex flex-col gap-1">
+          <label class="text-[0.58rem] uppercase text-text-muted tracking-wider font-semibold">Severidad</label>
+          <select
+            class="appearance-none bg-white border border-border text-text-primary rounded-sm px-2 py-1.5 text-xs outline-none cursor-pointer transition-[border-color] duration-200 w-full font-sans bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%2210%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_8px_center] bg-[length:10px] pr-6 hover:border-info/40 focus:border-info/40 focus:shadow-[0_0_8px_rgba(2,132,199,0.12)]"
+            [value]="mapaService.filtros().severidad || ''"
+            (change)="onSeveridadChange($any($event.target).value)">
+            <option value="">Todas</option>
+            @for (sev of severidades; track sev.value) {
+              <option [value]="sev.value">{{ sev.label }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Estado -->
+        <div class="flex flex-col gap-1">
+          <label class="text-[0.58rem] uppercase text-text-muted tracking-wider font-semibold">Estado</label>
+          <select
+            class="appearance-none bg-white border border-border text-text-primary rounded-sm px-2 py-1.5 text-xs outline-none cursor-pointer transition-[border-color] duration-200 w-full font-sans bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%2210%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_8px_center] bg-[length:10px] pr-6 hover:border-info/40 focus:border-info/40 focus:shadow-[0_0_8px_rgba(2,132,199,0.12)]"
+            [value]="mapaService.filtros().estado || ''"
+            (change)="onEstadoChange($any($event.target).value)">
+            <option value="">Todos</option>
+            @for (estado of estados; track estado) {
+              <option [value]="estado">{{ estado }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- País -->
+        <div class="flex flex-col gap-1">
+          <label class="text-[0.58rem] uppercase text-text-muted tracking-wider font-semibold">País</label>
+          <select
+            class="appearance-none bg-white border border-border text-text-primary rounded-sm px-2 py-1.5 text-xs outline-none cursor-pointer transition-[border-color] duration-200 w-full font-sans bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%2210%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_8px_center] bg-[length:10px] pr-6 hover:border-info/40 focus:border-info/40 focus:shadow-[0_0_8px_rgba(2,132,199,0.12)]"
+            [value]="mapaService.filtros().idpais || ''"
+            (change)="onPaisChange($any($event.target).value)">
+            <option value="">Todos</option>
+            @for (p of paisesList(); track p.pais) {
+              <option [value]="p.pais">{{ p.pais }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Estado/Provincia -->
+        @if (estadosList().length) {
+          <div class="flex flex-col gap-1">
+            <label class="text-[0.58rem] uppercase text-text-muted tracking-wider font-semibold">Estado/Prov.</label>
+            <select
+              class="appearance-none bg-white border border-border text-text-primary rounded-sm px-2 py-1.5 text-xs outline-none cursor-pointer transition-[border-color] duration-200 w-full font-sans bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%2210%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_8px_center] bg-[length:10px] pr-6 hover:border-info/40 focus:border-info/40 focus:shadow-[0_0_8px_rgba(2,132,199,0.12)]"
+              [value]="mapaService.filtros().idestado || ''"
+              (change)="onIdEstadoChange($any($event.target).value)">
+              <option value="">Todos</option>
+              @for (e of estadosList(); track e.estado) {
+                <option [value]="e.estado">{{ e.estado }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        <!-- Condado -->
+        @if (condadosList().length) {
+          <div class="flex flex-col gap-1">
+            <label class="text-[0.58rem] uppercase text-text-muted tracking-wider font-semibold">Condado</label>
+            <select
+              class="appearance-none bg-white border border-border text-text-primary rounded-sm px-2 py-1.5 text-xs outline-none cursor-pointer transition-[border-color] duration-200 w-full font-sans bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%2210%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_8px_center] bg-[length:10px] pr-6 hover:border-info/40 focus:border-info/40 focus:shadow-[0_0_8px_rgba(2,132,199,0.12)]"
+              [value]="mapaService.filtros().idcondado || ''"
+              (change)="onCondadoChange($any($event.target).value)">
+              <option value="">Todos</option>
+              @for (c of condadosList(); track c.condado) {
+                <option [value]="c.condado">{{ c.condado }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        <!-- Ciudad -->
+        @if (ciudadesList().length) {
+          <div class="flex flex-col gap-1">
+            <label class="text-[0.58rem] uppercase text-text-muted tracking-wider font-semibold">Ciudad</label>
+            <select
+              class="appearance-none bg-white border border-border text-text-primary rounded-sm px-2 py-1.5 text-xs outline-none cursor-pointer transition-[border-color] duration-200 w-full font-sans bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%2210%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_8px_center] bg-[length:10px] pr-6 hover:border-info/40 focus:border-info/40 focus:shadow-[0_0_8px_rgba(2,132,199,0.12)]"
+              [value]="mapaService.filtros().idciudad || ''"
+              (change)="onCiudadChange($any($event.target).value)">
+              <option value="">Todas</option>
+              @for (c of ciudadesList(); track c.ciudad) {
+                <option [value]="c.ciudad">{{ c.ciudad }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        <!-- Calle -->
+        @if (callesList().length) {
+          <div class="flex flex-col gap-1">
+            <label class="text-[0.58rem] uppercase text-text-muted tracking-wider font-semibold">Calle</label>
+            <select
+              class="appearance-none bg-white border border-border text-text-primary rounded-sm px-2 py-1.5 text-xs outline-none cursor-pointer transition-[border-color] duration-200 w-full font-sans bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%2210%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_8px_center] bg-[length:10px] pr-6 hover:border-info/40 focus:border-info/40 focus:shadow-[0_0_8px_rgba(2,132,199,0.12)]"
+              [value]="mapaService.filtros().idcalle || ''"
+              (change)="onCalleChange($any($event.target).value)">
+              <option value="">Todas</option>
+              @for (c of callesList(); track c.calle) {
+                <option [value]="c.calle">{{ c.calle }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        <!-- Fechas -->
+        <div class="flex flex-col gap-1">
+          <label class="text-[0.58rem] uppercase text-text-muted tracking-wider font-semibold">Desde</label>
+          <input type="date"
+            class="appearance-none bg-white border border-border text-text-primary rounded-sm px-2 py-1.5 text-xs outline-none cursor-pointer transition-[border-color] duration-200 w-full font-sans box-border hover:border-info/40 focus:border-info/40 focus:shadow-[0_0_8px_rgba(2,132,199,0.12)]"
+            [value]="mapaService.filtros().fecha_inicio || ''"
+            (change)="onFechaInicioChange($any($event.target).value)"/>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-[0.58rem] uppercase text-text-muted tracking-wider font-semibold">Hasta</label>
+          <input type="date"
+            class="appearance-none bg-white border border-border text-text-primary rounded-sm px-2 py-1.5 text-xs outline-none cursor-pointer transition-[border-color] duration-200 w-full font-sans box-border hover:border-info/40 focus:border-info/40 focus:shadow-[0_0_8px_rgba(2,132,199,0.12)]"
+            [value]="mapaService.filtros().fecha_fin || ''"
+            (change)="onFechaFinChange($any($event.target).value)"/>
+        </div>
+
+        <button
+          class="flex items-center justify-center gap-1.5 bg-transparent border border-border text-text-secondary rounded-sm px-3 py-1.5 text-[0.7rem] font-semibold cursor-pointer transition-all mt-0.5 font-sans hover:bg-gray-50 hover:text-text-primary"
+          (click)="clearFiltros()" title="Limpiar filtros">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+          </svg>
+          Limpiar
+        </button>
+      </div>
+    }
+  </div>
+
+  <!-- Open filters button when closed -->
+  @if (!filtrosAbiertos()) {
+    <button
+      class="absolute left-4 top-1/2 -translate-y-1/2 z-[500] w-[42px] h-[42px] bg-card/90 backdrop-blur-xl border border-border rounded-panel text-text-muted cursor-pointer flex items-center justify-center transition-all shadow-card hover:text-info hover:border-info/30"
+      (click)="toggleFiltros()" title="Abrir filtros">
+      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+      </svg>
+    </button>
+  }
+
+  <!-- Map area -->
+  <div class="flex-1 relative">
+    <app-mapa
+      [refrescarTrigger]="mapaService.refrescarTrigger()"
+      [filtros]="mapaService.filtros()"
+      [modoRegistro]="false"
+      [selectedAccidenteId]="selectedAccidenteId()"
+      (accidenteSeleccionado)="onAccidenteSeleccionado($event)"
+      (ubicacionSeleccionada)="onUbicacionSeleccionada($event)">
+    </app-mapa>
+  </div>
+
+  <!-- Side panel -->
+  @if (selectedAccidenteId() && authService.isLoggedIn()) {
+    <div class="absolute right-4 top-4 bottom-4 w-[420px] z-[400] rounded-card overflow-hidden bg-white border border-border shadow-2xl animate-slide-in-right">
+      <app-panel-detalle
+        [accidenteId]="selectedAccidenteId()!"
+        (cerrar)="onCerrarDetalle()"
+        (abrirDespacho)="onAbrirDespacho()"
+        (abrirActualizarEstado)="onAbrirActualizarEstado()">
+      </app-panel-detalle>
+    </div>
+  }
+
+  <!-- Modal Despacho -->
+  @if (mostrarDespacho() && selectedAccidenteId() && authService.isLoggedIn()) {
+    <div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[2000] flex items-center justify-center" (click)="onCerrarDespacho()">
+      <div class="max-w-[520px] w-[90%] max-h-[80vh] overflow-y-auto rounded-card bg-card/95 backdrop-blur-2xl border border-border shadow-modal animate-scale-in" (click)="$event.stopPropagation()">
+        <app-despacho
+          [accidenteId]="selectedAccidenteId()!"
+          (cerrar)="onCerrarDespacho()">
+        </app-despacho>
+      </div>
+    </div>
+  }
+
+  <!-- Modal Actualizar Estado -->
+  @if (mostrarActualizarEstado() && selectedAccidenteId() && authService.isLoggedIn()) {
+    <div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[2000] flex items-center justify-center" (click)="onCerrarActualizarEstado()">
+      <div class="max-w-[520px] w-[90%] max-h-[80vh] overflow-y-auto rounded-card bg-card/95 backdrop-blur-2xl border border-border shadow-modal animate-scale-in" (click)="$event.stopPropagation()">
+        <app-actualizar-estado
+          [accidenteId]="selectedAccidenteId()!"
+          [estadoActual]="selectedAccidenteEstado() || 'ACTIVO'"
+          (cerrar)="onCerrarActualizarEstado()">
+        </app-actualizar-estado>
+      </div>
+    </div>
+  }
+</div>

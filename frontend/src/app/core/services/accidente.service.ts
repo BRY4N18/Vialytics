@@ -96,7 +96,7 @@ export class AccidenteService {
     }
 
     return this.http
-      .get<{ total_records: number; page: number; page_size: number; results: AccidenteMapa[] }>(`${this.baseUrl}/accidentes/`, { params })
+      .get<{ total_records: number; page: number; page_size: number; results: AccidenteMapa[] }>(`${this.baseUrl}/accidentes/buscar/`, { params })
       .pipe(catchError(this.handleError));
   }
 
@@ -153,6 +153,50 @@ export class AccidenteService {
     }
     return this.http
       .get<AccidenteMapa[]>(`${this.baseUrl}/accidentes/mapa/`, { params })
+      .pipe(catchError(this.handleError));
+  }
+
+  getMapaPublico(filtros?: {
+    severidad?: number;
+    horas?: number;
+    fecha_inicio?: string;
+    fecha_fin?: string;
+    idpais?: string;
+    idestado?: string;
+    idcondado?: string;
+    idciudad?: string;
+    idcalle?: string;
+  }): Observable<AccidenteMapa[]> {
+    let params = new HttpParams();
+    if (filtros?.severidad) {
+      params = params.set('severidad', filtros.severidad.toString());
+    }
+    if (filtros?.horas) {
+      params = params.set('horas', filtros.horas.toString());
+    }
+    if (filtros?.fecha_inicio) {
+      params = params.set('fecha_inicio', filtros.fecha_inicio);
+    }
+    if (filtros?.fecha_fin) {
+      params = params.set('fecha_fin', filtros.fecha_fin);
+    }
+    if (filtros?.idpais) {
+      params = params.set('idpais', filtros.idpais);
+    }
+    if (filtros?.idestado) {
+      params = params.set('idestado', filtros.idestado);
+    }
+    if (filtros?.idcondado) {
+      params = params.set('idcondado', filtros.idcondado);
+    }
+    if (filtros?.idciudad) {
+      params = params.set('idciudad', filtros.idciudad);
+    }
+    if (filtros?.idcalle) {
+      params = params.set('idcalle', filtros.idcalle);
+    }
+    return this.http
+      .get<AccidenteMapa[]>(`${this.baseUrl}/public/mapa/`, { params })
       .pipe(catchError(this.handleError));
   }
 

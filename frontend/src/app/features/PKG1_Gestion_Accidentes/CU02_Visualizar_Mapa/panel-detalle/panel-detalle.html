@@ -1,0 +1,174 @@
+<div class="h-full flex flex-col overflow-hidden bg-white border-l border-border">
+  <div class="flex items-center justify-between px-4 py-3.5 border-b border-border flex-shrink-0">
+    <h2 class="text-sm font-bold text-text-primary">Detalle del Incidente</h2>
+    <button class="w-7 h-7 flex items-center justify-center rounded-full border border-border text-text-secondary cursor-pointer hover:bg-gray-100 hover:text-text-primary transition-all" (click)="onCerrar()" title="Cerrar panel">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  @if (cargando()) {
+    <div class="flex-1 flex flex-col items-center justify-center gap-4 p-6 text-center">
+      <div class="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+      <p class="text-text-secondary text-sm">Cargando detalles del incidente...</p>
+    </div>
+  }
+
+  @if (error(); as err) {
+    <div class="flex-1 flex flex-col items-center justify-center gap-4 p-6 text-center">
+      <svg class="w-12 h-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      <p class="text-text-secondary text-sm">{{ err }}</p>
+      <button class="px-5 py-2.5 bg-sidebar text-white rounded-sm text-sm font-semibold cursor-pointer hover:bg-sidebar-hover active:scale-[0.97]" (click)="cargarDetalle(accidenteId())">Reintentar</button>
+    </div>
+  }
+
+  @if (!cargando() && detalle(); as det) {
+    <div class="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-5 pb-[100px]">
+      <div class="flex flex-col gap-3">
+        <h3 class="text-[0.65rem] font-bold uppercase tracking-wider text-text-secondary">Ubicación y Severidad</h3>
+        <div class="flex flex-col gap-2.5">
+          @if (det.calle_nombre && det.calle_nombre !== 'Ubicación Registrada') {
+            <div class="flex flex-col gap-0.5">
+              <span class="text-[0.6rem] font-semibold uppercase tracking-wider text-text-secondary">Calle</span>
+              <span class="text-sm font-bold text-text-primary leading-snug">{{ det.calle_nombre }}</span>
+            </div>
+          }
+          @if (det.ciudad_nombre && det.ciudad_nombre !== 'Ubicación Registrada') {
+            <div class="flex flex-col gap-0.5">
+              <span class="text-[0.6rem] font-semibold uppercase tracking-wider text-text-secondary">Ciudad</span>
+              <span class="text-sm font-semibold text-text-primary leading-snug">{{ det.ciudad_nombre }}</span>
+            </div>
+          }
+          <div class="grid grid-cols-2 gap-2.5 mt-1">
+            <div class="flex flex-col gap-1">
+              <span class="text-[0.6rem] font-semibold uppercase tracking-wider text-text-secondary">Severidad</span>
+              <app-badge-severidad [severidad]="det.severidad_nivel"></app-badge-severidad>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-[0.6rem] font-semibold uppercase tracking-wider text-text-secondary">Estado</span>
+              <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[0.6rem] font-bold uppercase tracking-wider w-fit"
+                [class.bg-blue-50]="getEstadoClass(det.estado_actual) === 'activo'" [class.text-blue-700]="getEstadoClass(det.estado_actual) === 'activo'"
+                [class.bg-amber-50]="getEstadoClass(det.estado_actual) === 'en-atencion'" [class.text-amber-700]="getEstadoClass(det.estado_actual) === 'en-atencion'"
+                [class.bg-green-50]="getEstadoClass(det.estado_actual) === 'controlado'" [class.text-green-700]="getEstadoClass(det.estado_actual) === 'controlado'"
+                [class.bg-gray-100]="getEstadoClass(det.estado_actual) === 'archivado'" [class.text-gray-500]="getEstadoClass(det.estado_actual) === 'archivado'"
+              >{{ getEstadoLabel(det.estado_actual) }}</span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-[0.6rem] font-semibold uppercase tracking-wider text-text-secondary">Hora Inicio</span>
+              <span class="text-sm font-semibold text-text-primary">{{ det.horainicio }}</span>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-[0.6rem] font-semibold uppercase tracking-wider text-text-secondary">Hora Fin</span>
+              <span class="text-sm font-semibold text-text-primary">{{ det.horafin || '—' }}</span>
+            </div>
+          </div>
+        </div>
+        @if (det.descripcion) {
+          <div class="bg-gray-50 border border-border rounded-sm p-3">
+            <span class="text-[0.6rem] font-semibold uppercase tracking-wider text-text-secondary block mb-1.5">Descripción</span>
+            <p class="text-sm text-text-primary leading-relaxed m-0">{{ det.descripcion }}</p>
+          </div>
+        }
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-[0.65rem] font-bold uppercase tracking-wider text-text-secondary">Estadísticas del Suceso</h3>
+        <div class="grid grid-cols-4 gap-2">
+          <div class="bg-gray-50 border border-border rounded-sm p-2.5 flex flex-col items-center text-center">
+            <span class="text-base font-extrabold text-text-primary">{{ det.numvehiculos }}</span>
+            <span class="text-[0.55rem] font-semibold uppercase tracking-wider text-text-secondary mt-1">Vehíc.</span>
+          </div>
+          <div class="bg-gray-50 border border-border rounded-sm p-2.5 flex flex-col items-center text-center">
+            <span class="text-base font-extrabold text-text-primary">{{ det.numvictimas }}</span>
+            <span class="text-[0.55rem] font-semibold uppercase tracking-wider text-text-secondary mt-1">Víctim.</span>
+          </div>
+          <div class="bg-gray-50 border border-amber-200 rounded-sm p-2.5 flex flex-col items-center text-center">
+            <span class="text-base font-extrabold text-amber-700">{{ det.numheridos }}</span>
+            <span class="text-[0.55rem] font-semibold uppercase tracking-wider text-amber-600 mt-1">Heridos</span>
+          </div>
+          <div class="bg-gray-50 border border-red-200 rounded-sm p-2.5 flex flex-col items-center text-center">
+            <span class="text-base font-extrabold text-red-700">{{ det.numfallecidos }}</span>
+            <span class="text-[0.55rem] font-semibold uppercase tracking-wider text-red-600 mt-1">Fallec.</span>
+          </div>
+        </div>
+        @if (det.codigopostal) {
+          <div class="flex items-center gap-2 text-xs text-text-secondary">
+            <span class="font-semibold">Código Postal:</span>
+            <span>{{ det.codigopostal }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-[0.65rem] font-bold uppercase tracking-wider text-text-secondary">Unidades Despachadas</h3>
+        @if (det.despachos.length === 0) {
+          <div class="bg-gray-50 border border-dashed border-border rounded-sm p-4 text-center text-text-secondary text-xs">
+            <p>No se han despachado unidades aún.</p>
+          </div>
+        } @else {
+          <div class="flex flex-col gap-3 relative pl-4 border-l-2 border-border ml-1">
+            @for (des of det.despachos; track des.iddespacho) {
+              <div class="relative pl-3">
+                <div class="absolute -left-[19px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm"
+                  [class.bg-red-500]="des.tipo_unidad.toLowerCase() === 'ambulancia'"
+                  [class.bg-blue-500]="des.tipo_unidad.toLowerCase() === 'policia'"
+                  [class.bg-amber-500]="des.tipo_unidad.toLowerCase() === 'bomberos'"
+                  [class.bg-green-500]="des.tipo_unidad.toLowerCase() === 'grua'"
+                ></div>
+                <div class="bg-gray-50 border border-border rounded-sm p-2.5">
+                  <div class="flex justify-between items-center mb-1.5">
+                    <strong class="text-xs text-text-primary">{{ des.unidad_nombre }}</strong>
+                    <span class="text-[0.55rem] font-bold uppercase tracking-wider text-text-secondary px-1.5 py-0.5 bg-white border border-border rounded-sm">{{ des.tipo_unidad }}</span>
+                  </div>
+                  <div class="flex flex-col gap-1 text-[0.65rem]">
+                    <div class="flex justify-between"><span class="text-text-secondary">Despachado:</span><span class="font-medium text-text-primary">{{ formatFecha(des.fechahoradespacho) }}</span></div>
+                    @if (des.fechahoraconfirmacion) { <div class="flex justify-between"><span class="text-text-secondary">Confirmado:</span><span class="font-medium text-text-primary">{{ formatFecha(des.fechahoraconfirmacion) }}</span></div> }
+                    @if (des.fechahorallegada) { <div class="flex justify-between"><span class="text-text-secondary">Llegada:</span><span class="font-medium text-green-700">{{ formatFecha(des.fechahorallegada) }}</span></div> }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-[0.65rem] font-bold uppercase tracking-wider text-text-secondary">Historial de Bitácora</h3>
+        @if (det.notas.length === 0) {
+          <div class="bg-gray-50 border border-dashed border-border rounded-sm p-4 text-center text-text-secondary text-xs">
+            <p>Sin anotaciones en la bitácora.</p>
+          </div>
+        } @else {
+          <div class="flex flex-col gap-2.5">
+            @for (nota of det.notas; track nota.idnotaaccidentes) {
+              <div class="bg-gray-50 border border-border rounded-sm p-3 border-l-4"
+                [class.border-l-blue-500]="nota.tipo"
+                [class.border-l-green-500]="!nota.tipo">
+                <div class="flex justify-between items-center mb-1.5">
+                  <span class="text-[0.6rem] text-text-secondary font-medium">{{ formatFecha(nota.fecha_actualizacion) }}</span>
+                  <span class="text-[0.5rem] font-bold px-1.5 py-0.5 rounded uppercase"
+                    [class.bg-blue-50]="nota.tipo" [class.text-blue-700]="nota.tipo"
+                    [class.bg-green-50]="!nota.tipo" [class.text-green-700]="!nota.tipo"
+                  >{{ nota.tipo ? 'Sistema' : 'Operador' }}</span>
+                </div>
+                <p class="m-0 text-xs leading-relaxed text-text-primary">{{ nota.nota }}</p>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    @if (authService.isLoggedIn()) {
+      <div class="flex-shrink-0 px-4 py-3 border-t border-border bg-white flex gap-2.5">
+        <button class="flex-1 py-2.5 bg-sidebar text-white rounded-sm text-xs font-bold cursor-pointer hover:bg-sidebar-hover transition-all active:scale-[0.97]" (click)="onDespachar()">
+          <svg class="w-4 h-4 inline-block align-middle mr-1" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Despachar Unidades
+        </button>
+        <button class="flex-1 py-2.5 bg-transparent border border-border text-text-secondary rounded-sm text-xs font-bold cursor-pointer hover:bg-gray-100 hover:text-text-primary transition-all active:scale-[0.97]" (click)="onActualizarEstado()">
+          <svg class="w-4 h-4 inline-block align-middle mr-1" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+          Actualizar Estado
+        </button>
+      </div>
+    }
+  }
+</div>
