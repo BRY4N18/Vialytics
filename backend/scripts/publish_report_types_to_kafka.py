@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
 django.setup()
 
-from accidentes.repositories import KafkaRepository
+from accidentes.shared.repositories import KafkaRepository
 
 def publish_report_types():
     print("Publishing official report channels strictly to Pinot (via Kafka) - No SQLite...")

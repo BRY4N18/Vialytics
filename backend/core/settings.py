@@ -155,3 +155,4 @@ PINOT_HOST = "localhost"
 PINOT_PORT = "9000"  # Controller port - routes queries to broker internally
 PINOT_PATH = "/sql"
 KAFKA_BROKER = "localhost:9092"
+PINOT_BROKER = "http://localhost:8099"

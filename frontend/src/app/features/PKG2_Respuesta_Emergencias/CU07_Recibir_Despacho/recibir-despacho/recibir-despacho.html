@@ -1,0 +1,339 @@
+<div class="flex h-full w-full overflow-hidden bg-surface">
+  <!-- Sidebar -->
+  <aside class="w-72 flex-shrink-0 flex flex-col bg-sidebar border-r border-border overflow-y-auto">
+    <div class="px-5 py-6 pb-5 border-b border-border">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-[10px] flex items-center justify-center text-white flex-shrink-0 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+          <svg class="w-[22px] h-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+        </div>
+        <div class="flex flex-col gap-[1px]">
+          <span class="text-[0.95rem] font-extrabold text-text-primary tracking-tight">Responder</span>
+          <span class="text-[0.65rem] font-semibold text-emerald-400 uppercase tracking-wider">Unidades de Emergencia</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-1 flex flex-col gap-3 px-4 py-4">
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted">Seleccionar Unidad</label>
+        @if (cargandoUnidades()) {
+          <div class="flex items-center gap-2 text-sm text-text-muted py-2">
+            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"/>
+            </svg>
+            <span>Cargando unidades...</span>
+          </div>
+        } @else {
+          <select
+            class="appearance-none bg-white/5 border border-border text-text-primary rounded-sm px-3 py-2 text-sm outline-none cursor-pointer transition-all w-full font-sans hover:border-emerald-500/40 focus:border-emerald-500/40"
+            [value]="unidadSeleccionada() || ''"
+            (change)="onUnidadChange($any($event.target).value)">
+            <option value="" disabled>— Seleccione una unidad —</option>
+            @for (u of unidades(); track u.idunidademergencia) {
+              <option [value]="u.idunidademergencia">
+                {{ u.unidademergencia }} ({{ u.tipounidademergencia }})
+              </option>
+            }
+          </select>
+        }
+      </div>
+
+      @if (unidadSeleccionada()) {
+        <div class="flex items-center gap-2 mt-1">
+          <button
+            class="flex-1 text-xs font-semibold py-2 rounded-sm border transition-all cursor-pointer"
+            [class.bg-emerald-500/20]="soloPendientes()"
+            [class.border-emerald-500/40]="soloPendientes()"
+            [class.text-emerald-400]="soloPendientes()"
+            [class.bg-transparent]="!soloPendientes()"
+            [class.border-border]="!soloPendientes()"
+            [class.text-text-muted]="!soloPendientes()"
+            (click)="soloPendientes() || togglePendientes()">
+            Pendientes
+          </button>
+          <button
+            class="flex-1 text-xs font-semibold py-2 rounded-sm border transition-all cursor-pointer"
+            [class.bg-cyan-500/20]="!soloPendientes()"
+            [class.border-cyan-500/40]="!soloPendientes()"
+            [class.text-cyan-400]="!soloPendientes()"
+            [class.bg-transparent]="soloPendientes()"
+            [class.border-border]="soloPendientes()"
+            [class.text-text-muted]="soloPendientes()"
+            (click)="!soloPendientes() || togglePendientes()">
+            Todos
+          </button>
+        </div>
+      }
+
+      @if (unidadActual(); as u) {
+        <div class="mt-2 p-3 bg-white/[0.03] border border-border rounded-panel">
+          <div class="text-xs text-text-muted mb-1">Unidad activa:</div>
+          <div class="text-sm font-bold text-text-primary">{{ u.unidademergencia }}</div>
+          <div class="flex items-center gap-2 mt-1">
+            <span class="text-[0.6rem] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider text-text-muted border-border">
+              {{ u.tipounidademergencia }}
+            </span>
+            <span class="text-xs text-text-muted">{{ u.estadounidad }}</span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="border-t border-white/[0.06] px-4 py-3 flex items-center gap-2">
+      <button
+        class="flex-1 flex items-center justify-center gap-2 py-2 bg-white/5 border border-border text-text-secondary text-xs font-semibold rounded-sm cursor-pointer transition-all hover:bg-white/10 hover:text-text-primary"
+        (click)="cargarDespachos()"
+        title="Refrescar">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10"/>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+        </svg>
+        Refrescar
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="flex-1 flex flex-col overflow-hidden bg-surface">
+    <div class="flex items-center justify-between px-7 py-4 border-b border-border bg-sidebar/60 backdrop-blur-lg min-h-[60px]">
+      <div class="flex items-center gap-2">
+        <span class="text-[0.78rem] font-semibold text-text-secondary">Despachos</span>
+        @if (unidadActual(); as u) {
+          <span class="text-[0.78rem] text-text-muted">/</span>
+          <span class="text-[0.78rem] font-semibold text-text-primary">{{ u.unidademergencia }}</span>
+        }
+      </div>
+      <div class="flex items-center gap-3">
+        @if (unidadSeleccionada()) {
+          <span class="text-[0.62rem] text-text-muted">
+            {{ despachosPendientes().length }} pendientes
+            · {{ despachosConfirmados().length }} en camino
+            · {{ despachosCompletados().length }} completados
+          </span>
+        }
+      </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto overflow-x-hidden p-6">
+      @if (error(); as e) {
+        <div class="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-panel text-red-400 text-sm mb-4">
+          <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>{{ e }}</span>
+        </div>
+      }
+
+      @if (cargandoDespachos()) {
+        <div class="flex items-center justify-center h-48">
+          <div class="flex flex-col items-center gap-3">
+            <svg class="w-8 h-8 animate-spin text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"/>
+            </svg>
+            <span class="text-sm text-text-muted">Cargando despachos...</span>
+          </div>
+        </div>
+      } @else if (!unidadSeleccionada()) {
+        <div class="flex items-center justify-center h-48">
+          <div class="flex flex-col items-center gap-3 text-text-muted">
+            <svg class="w-12 h-12 opacity-30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+            <span class="text-sm">Seleccione una unidad para ver sus despachos</span>
+          </div>
+        </div>
+      } @else if (despachos().length === 0) {
+        <div class="flex items-center justify-center h-48">
+          <div class="flex flex-col items-center gap-3 text-text-muted">
+            <svg class="w-12 h-12 opacity-30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="16"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+            <span class="text-sm">No hay despachos para esta unidad</span>
+          </div>
+        </div>
+      } @else {
+        @if (despachosPendientes().length > 0) {
+          <div class="mb-6">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-3 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              Despachos Pendientes
+              <span class="text-[0.6rem] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">{{ despachosPendientes().length }}</span>
+            </h3>
+            <div class="grid gap-3">
+              @for (d of despachosPendientes(); track d.iddespacho) {
+                <div class="bg-white border border-border rounded-panel overflow-hidden transition-all hover:shadow-card">
+                  <div class="flex items-stretch">
+                    <div class="w-1.5 flex-shrink-0" [style.background]="severidadColor(d.accidente.severidad_nivel)"></div>
+                    <div class="flex-1 p-4">
+                      <div class="flex items-start justify-between gap-4">
+                        <div class="flex-1 min-w-0">
+                          <div class="flex items-center gap-2 mb-1">
+                            <span class="text-xs font-bold text-text-muted uppercase tracking-wider">{{ d.tipo_unidad }}</span>
+                            <span class="text-[0.55rem] px-1.5 py-0.5 rounded font-bold uppercase"
+                              [style.background]="severidadColor(d.accidente.severidad_nivel) + '20'"
+                              [style.color]="severidadColor(d.accidente.severidad_nivel)">
+                              {{ severidadLabel(d.accidente.severidad_nivel) }}
+                            </span>
+                          </div>
+                          <div class="text-sm font-bold text-text-primary truncate">
+                            Accidente #{{ d.idaccidente }}
+                          </div>
+                          <div class="text-xs text-text-muted mt-0.5">
+                            {{ d.accidente.calle_nombre }}, {{ d.accidente.ciudad_nombre }}
+                          </div>
+                        </div>
+                        <div class="flex flex-col gap-1.5 flex-shrink-0">
+                          <button
+                            class="px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-xs font-bold rounded-sm cursor-pointer transition-all hover:bg-emerald-500/30 hover:text-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                            [disabled]="confirmandoId() === d.iddespacho"
+                            (click)="confirmar(d.iddespacho)">
+                            @if (confirmandoId() === d.iddespacho) {
+                              <span class="flex items-center gap-1.5">
+                                <svg class="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                  <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"/>
+                                </svg>
+                                Confirmando...
+                              </span>
+                            } @else {
+                              Confirmar Despacho
+                            }
+                          </button>
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-4 mt-2.5 pt-2.5 border-t border-border">
+                        <div class="flex items-center gap-1.5 text-[0.6rem] text-text-muted">
+                          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                          </svg>
+                          <span>{{ d.accidente.calle_nombre || 'Sin ubicación' }}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-[0.6rem] text-text-muted">
+                          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                          </svg>
+                          <span>{{ d.accidente.numheridos || 0 }} heridos</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-[0.6rem] text-text-muted ml-auto">
+                          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                          </svg>
+                          <span>{{ formatoFecha(d.fechahoradespacho) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        @if (despachosConfirmados().length > 0) {
+          <div class="mb-6">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-cyan-400 mb-3 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+              En Camino / En Escena
+              <span class="text-[0.6rem] bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded-full">{{ despachosConfirmados().length }}</span>
+            </h3>
+            <div class="grid gap-3">
+              @for (d of despachosConfirmados(); track d.iddespacho) {
+                <div class="bg-white border border-border rounded-panel overflow-hidden transition-all hover:shadow-card">
+                  <div class="flex items-stretch">
+                    <div class="w-1.5 flex-shrink-0 bg-cyan-500"></div>
+                    <div class="flex-1 p-4">
+                      <div class="flex items-start justify-between gap-4">
+                        <div class="flex-1 min-w-0">
+                          <div class="flex items-center gap-2 mb-1">
+                            <span class="text-xs font-bold text-text-muted uppercase tracking-wider">{{ d.tipo_unidad }}</span>
+                            <span class="text-[0.55rem] px-1.5 py-0.5 bg-cyan-500/20 text-cyan-400 rounded font-bold uppercase">Confirmado</span>
+                          </div>
+                          <div class="text-sm font-bold text-text-primary truncate">
+                            Accidente #{{ d.idaccidente }}
+                          </div>
+                          <div class="text-xs text-text-muted mt-0.5">
+                            {{ d.accidente.calle_nombre }}, {{ d.accidente.ciudad_nombre }}
+                          </div>
+                        </div>
+                        <div class="flex flex-col gap-1.5 flex-shrink-0">
+                          <button
+                            class="px-3 py-1.5 bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 text-xs font-bold rounded-sm cursor-pointer transition-all hover:bg-cyan-500/30 hover:text-cyan-300 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                            [disabled]="llegandoId() === d.iddespacho"
+                            (click)="marcarLlegada(d.iddespacho)">
+                            @if (llegandoId() === d.iddespacho) {
+                              <span class="flex items-center gap-1.5">
+                                <svg class="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                  <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"/>
+                                </svg>
+                                Registrando...
+                              </span>
+                            } @else {
+                              Marcar Llegada
+                            }
+                          </button>
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-4 mt-2.5 pt-2.5 border-t border-border">
+                        <div class="flex items-center gap-1.5 text-[0.6rem] text-text-muted">
+                          <span>Confirmado:</span>
+                          <span class="font-semibold text-text-secondary">{{ formatoFecha(d.fechahoraconfirmacion) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        @if (despachosCompletados().length > 0) {
+          <div>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-text-muted mb-3 flex items-center gap-2">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              Completados
+              <span class="text-[0.6rem] bg-white/5 text-text-muted px-2 py-0.5 rounded-full">{{ despachosCompletados().length }}</span>
+            </h3>
+            <div class="grid gap-3 opacity-60">
+              @for (d of despachosCompletados(); track d.iddespacho) {
+                <div class="bg-white border border-border rounded-panel overflow-hidden">
+                  <div class="flex items-stretch">
+                    <div class="w-1.5 flex-shrink-0 bg-gray-400"></div>
+                    <div class="flex-1 p-4">
+                      <div class="flex items-start justify-between gap-4">
+                        <div class="flex-1 min-w-0">
+                          <div class="flex items-center gap-2 mb-1">
+                            <span class="text-xs font-bold text-text-muted uppercase tracking-wider">{{ d.tipo_unidad }}</span>
+                            <span class="text-[0.55rem] px-1.5 py-0.5 bg-gray-500/20 text-text-muted rounded font-bold uppercase">Completado</span>
+                          </div>
+                          <div class="text-sm font-bold text-text-primary truncate">
+                            Accidente #{{ d.idaccidente }}
+                          </div>
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-4 mt-2.5 pt-2.5 border-t border-border">
+                        <div class="flex items-center gap-1.5 text-[0.6rem] text-text-muted">
+                          <span>Llegada:</span>
+                          <span class="font-semibold text-text-secondary">{{ formatoFecha(d.fechahorallegada) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </main>
+</div>

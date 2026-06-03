@@ -44,6 +44,11 @@ export const routes: Routes = [
       { path: '', redirectTo: 'accidentes', pathMatch: 'full' }
     ]
   },
+  { 
+    path: 'responder', 
+    loadComponent: () => import('./features/PKG2_Respuesta_Emergencias/CU07_Recibir_Despacho/recibir-despacho/recibir-despacho').then(m => m.RecibirDespachoComponent),
+    canActivate: [authGuard]
+  },
   { path: '**', redirectTo: 'dashboard' }
 ];
 

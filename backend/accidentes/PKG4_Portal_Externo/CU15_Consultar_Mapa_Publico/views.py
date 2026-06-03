@@ -1,8 +1,8 @@
 import logging
 from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 
+from accidentes.shared.utils import ok_response, server_error_response
 from accidentes.PKG1_Gestion_Accidentes.CU02_Visualizar_Mapa.services import MapaService
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ class MapaPublicoView(APIView):
             }
 
             accidentes = MapaService.obtener_accidentes_mapa(filtros)
-            return Response(accidentes)
+            return ok_response(accidentes)
         except Exception as exc:
             logger.error('Error obteniendo mapa público: %s', exc)
-            return Response({'error': 'Error obteniendo accidentes'}, status=500)
+            return server_error_response('Error obteniendo accidentes')

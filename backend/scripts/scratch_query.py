@@ -7,7 +7,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
 import django
 django.setup()
 
-from accidentes.repositories import PinotRepository
+from accidentes.shared.repositories import PinotRepository
 
 def run_q(sql):
     print(f"\nQuery: {sql}")

@@ -1,8 +1,9 @@
 import logging
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 
+from accidentes.shared.permissions import EsOperadorOAdministrador
+from accidentes.shared.utils import ok_response, validation_error_response, server_error_response
 from accidentes.PKG1_Gestion_Accidentes.CU03_Actualizar_Estado.serializers import ActualizarEstadoSerializer
 from accidentes.PKG1_Gestion_Accidentes.CU03_Actualizar_Estado.services import EstadoService
 
@@ -10,10 +11,12 @@ logger = logging.getLogger(__name__)
 
 
 class AccidenteEstadoView(APIView):
+    permission_classes = [IsAuthenticated, EsOperadorOAdministrador]
+
     def patch(self, request, accidente_id: str):
         serializer = ActualizarEstadoSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response({'errores': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return validation_error_response(serializer.errors)
         try:
             resultado = EstadoService.actualizar_estado(
                 accidente_id=accidente_id,
@@ -21,7 +24,7 @@ class AccidenteEstadoView(APIView):
                 nota=serializer.validated_data.get('nota'),
                 idusuario_id=1,
             )
-            return Response(resultado)
+            return ok_response(resultado)
         except Exception as exc:
             logger.error('Error actualizando estado %s: %s', accidente_id, exc)
-            return Response({'error': 'Error actualizando estado'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return server_error_response('Error actualizando estado')

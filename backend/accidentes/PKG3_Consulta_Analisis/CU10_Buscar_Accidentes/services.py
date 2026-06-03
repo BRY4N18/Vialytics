@@ -1,8 +1,21 @@
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from accidentes.shared.repositories import PinotRepository
+from accidentes.PKG1_Gestion_Accidentes.CU02_Visualizar_Mapa.repositories import (
+    SeveridadRepository,
+    CalleRepository,
+    CiudadRepository,
+)
+from accidentes.PKG3_Consulta_Analisis.CU10_Buscar_Accidentes.repositories import (
+    BusquedaCalleRepository,
+    BusquedaCiudadRepository,
+    VehiculoBusquedaRepository,
+    ConductorAccidenteBusquedaRepository,
+    EstadoIncidenteRepository,
+    AccidenteBusquedaRepository,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +40,7 @@ class BusquedaService:
         fecha_hasta = filtros.get('fecha_hasta', '')
         matricula = filtros.get('matricula', '').strip()
 
-        sev_rows = PinotRepository.execute_query(
-            "SELECT idseveridad, severidad, descripcion FROM severidades WHERE activo = true LIMIT 10"
-        )
+        sev_rows = SeveridadRepository.get_all()
         sev_map = {}
         sev_id_for_level = {}
         for s in sev_rows:
@@ -74,44 +85,28 @@ class BusquedaService:
                 pass
 
         if search:
-            search_escaped = search.replace("'", "''")
-            clauses = [
-                f"LOWER(descripcion) LIKE '%{search_escaped.lower()}%'",
-                f"LOWER(idaccidente) LIKE '%{search_escaped.lower()}%'"
+            search_escaped = PinotRepository.escape_sql_str(search.lower())
+            search_escaped = search_escaped.replace("%", "\\%").replace("_", "\\_")
+            search_clauses = [
+                f"LOWER(descripcion) LIKE '%{search_escaped}%'",
+                f"LOWER(idaccidente) LIKE '%{search_escaped}%'"
             ]
 
-            calle_rows = PinotRepository.execute_query(
-                f"SELECT idcalle FROM calles WHERE LOWER(calle) LIKE '%{search_escaped.lower()}%' LIMIT 100"
-            )
-            if calle_rows:
-                calle_ids = [str(r['idcalle']) for r in calle_rows]
-                clauses.append(f"idcalle IN ({', '.join(calle_ids)})")
+            calle_ids = BusquedaCalleRepository.find_by_search(search)
+            if calle_ids:
+                search_clauses.append(f"idcalle IN ({', '.join(map(str, calle_ids))})")
 
-            ciudad_rows = PinotRepository.execute_query(
-                f"SELECT idciudad FROM ciudades WHERE LOWER(ciudad) LIKE '%{search_escaped.lower()}%' LIMIT 100"
-            )
-            if ciudad_rows:
-                ciudad_ids = [str(r['idciudad']) for r in ciudad_rows]
-                clauses.append(f"idciudad IN ({', '.join(ciudad_ids)})")
+            ciudad_ids = BusquedaCiudadRepository.find_by_search(search)
+            if ciudad_ids:
+                search_clauses.append(f"idciudad IN ({', '.join(map(str, ciudad_ids))})")
 
-            where_clauses.append(f"({' OR '.join(clauses)})")
+            where_clauses.append(f"({' OR '.join(search_clauses)})")
 
         if matricula:
-            search_escaped = matricula.replace("'", "''")
-            veh_rows = PinotRepository.execute_query(
-                f"SELECT idvehiculo FROM vehiculos WHERE "
-                f"LOWER(modelovehiculo) LIKE '%{search_escaped.lower()}%' "
-                f"OR LOWER(tipovehiculo) LIKE '%{search_escaped.lower()}%' "
-                f"LIMIT 500"
-            )
-            if veh_rows:
-                veh_ids = [str(r['idvehiculo']) for r in veh_rows]
-                ca_rows = PinotRepository.execute_query(
-                    f"SELECT DISTINCT idaccidente FROM conductoresaccidentes "
-                    f"WHERE idvehiculo IN ({', '.join(veh_ids)}) LIMIT 500"
-                )
-                if ca_rows:
-                    acc_ids = [f"'{r['idaccidente']}'" for r in ca_rows]
+            veh_ids = VehiculoBusquedaRepository.find_by_search(matricula)
+            if veh_ids:
+                acc_ids = ConductorAccidenteBusquedaRepository.find_accidente_ids_by_vehiculos(veh_ids)
+                if acc_ids:
                     where_clauses.append(f"idaccidente IN ({', '.join(acc_ids)})")
 
         if estado_param or solo_activos:
@@ -129,11 +124,7 @@ class BusquedaService:
                 estado_ids = [1, 2, 3]
 
             if estado_ids:
-                todos_estados = PinotRepository.execute_query(
-                    f"SELECT idaccidente, idtipoestadoincidente, fechahoramodificado "
-                    f"FROM accidentestiposestadosincidentes "
-                    f"WHERE activo = true LIMIT 100000"
-                )
+                todos_estados = EstadoIncidenteRepository.get_all()
                 if todos_estados:
                     ultimo_estado_por_accidente = {}
                     for r in todos_estados:
@@ -157,70 +148,30 @@ class BusquedaService:
 
         where_str = " AND ".join(where_clauses)
 
-        count_query = f"SELECT count(*) FROM accidentes WHERE {where_str}"
-        total_records = 0
-        try:
-            count_res = PinotRepository.execute_query(count_query)
-            if count_res:
-                total_records = int(count_res[0].get('count(*)', 0))
-        except Exception as e:
-            logger.warning(f"Error al contar en Pinot: {e}")
+        total_records = AccidenteBusquedaRepository.count(where_str)
 
-        query = (
-            f"SELECT idaccidente, latitudinicio, longitudinicio, idseveridad, activo, "
-            f"numheridos, numfallecidos, numvehiculos, numvictimas, descripcion, idcalle, idciudad, fecha_actualizacion "
-            f"FROM accidentes WHERE {where_str} "
-            f"ORDER BY fecha_actualizacion DESC "
-            f"LIMIT {page_size} OFFSET {offset}"
+        columns = (
+            "idaccidente, latitudinicio, longitudinicio, idseveridad, activo, "
+            "numheridos, numfallecidos, numvehiculos, numvictimas, descripcion, "
+            "idcalle, idciudad, fecha_actualizacion"
         )
-
-        rows = []
-        try:
-            rows = PinotRepository.execute_query(query)
-        except Exception as e:
-            logger.error(f"Error consultando listado paginado en Pinot: {e}")
+        rows = AccidenteBusquedaRepository.find_paginated(columns, where_str, page_size, offset)
 
         resultados = []
         if rows:
             calle_ids = {row.get('idcalle') for row in rows if row.get('idcalle') is not None}
             ciudad_ids = {row.get('idciudad') for row in rows if row.get('idciudad') is not None}
 
-            calles_map = {}
-            if calle_ids:
-                try:
-                    ids_str = ", ".join(str(cid) for cid in calle_ids)
-                    calle_rows = PinotRepository.execute_query(
-                        f"SELECT idcalle, calle FROM calles WHERE idcalle IN ({ids_str}) LIMIT 1000"
-                    )
-                    calles_map = {r['idcalle']: r.get('calle', '') for r in calle_rows}
-                except Exception:
-                    pass
-
-            ciudades_map = {}
-            if ciudad_ids:
-                try:
-                    ids_str = ", ".join(str(cid) for cid in ciudad_ids)
-                    ciudad_rows = PinotRepository.execute_query(
-                        f"SELECT idciudad, ciudad FROM ciudades WHERE idciudad IN ({ids_str}) LIMIT 1000"
-                    )
-                    ciudades_map = {r['idciudad']: r.get('ciudad', '') for r in ciudad_rows}
-                except Exception:
-                    pass
+            calles_map = CalleRepository.find_by_ids(list(calle_ids)) if calle_ids else {}
+            ciudades_map = CiudadRepository.find_by_ids(list(ciudad_ids)) if ciudad_ids else {}
 
             acc_ids = [f"'{r['idaccidente']}'" for r in rows if r.get('idaccidente')]
             estado_map = {}
             if acc_ids:
-                estado_rows = PinotRepository.execute_query(
-                    f"SELECT idaccidente, idtipoestadoincidente, fechahoramodificado "
-                    f"FROM accidentestiposestadosincidentes "
-                    f"WHERE idaccidente IN ({', '.join(acc_ids)}) AND activo = true LIMIT 500"
-                )
+                estado_rows = EstadoIncidenteRepository.find_by_accidente_ids(acc_ids)
                 estados_catalogo = {
-                    1: "ACTIVO",
-                    2: "EN_ATENCION",
-                    3: "EN_ATENCION",
-                    4: "CONTROLADO",
-                    5: "ARCHIVADO"
+                    1: "ACTIVO", 2: "EN_ATENCION", 3: "EN_ATENCION",
+                    4: "CONTROLADO", 5: "ARCHIVADO"
                 }
                 latest_estado = {}
                 for r in estado_rows:

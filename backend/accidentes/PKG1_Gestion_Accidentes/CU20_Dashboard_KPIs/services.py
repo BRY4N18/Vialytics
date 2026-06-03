@@ -1,9 +1,15 @@
 import logging
-from datetime import datetime
 from typing import Any, Dict
 
 from django.core.cache import cache
-from accidentes.shared.repositories import PinotRepository
+from accidentes.PKG1_Gestion_Accidentes.CU20_Dashboard_KPIs.repositories import (
+    DashboardKpiRepository,
+    DashboardTrendRepository,
+    DashboardSeveridadRepository,
+    DashboardEstadosRepository,
+    DashboardHorarioRepository,
+    DashboardClimaRepository,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -17,88 +23,47 @@ class DashboardService:
             return cached
 
         try:
-            kpi_q = (
-                "SELECT count(*) as total, avg(distanciamillas) as avg_dist, "
-                "count(distinct(idcalle)) as unique_calles, "
-                "sum(CASE WHEN idseveridad = -206169288 THEN 1 ELSE 0 END) as critical "
-                "FROM accidentes"
-            )
-            kpi_res = PinotRepository.execute_query(kpi_q)
-
+            kpi_res = DashboardKpiRepository.get_kpis()
             total_accidentes = 0
             severidad_critica = 0
             distancia_promedio = 0.0
             calles_afectadas = 0
-
             if kpi_res:
                 total_accidentes = int(kpi_res[0].get('total', 0))
                 distancia_promedio = float(kpi_res[0].get('avg_dist', 0.0))
                 calles_afectadas = int(kpi_res[0].get('unique_calles', 0))
                 severidad_critica = int(kpi_res[0].get('critical', 0))
 
-            trend_q = (
-                "SELECT YEAR(fechahoraclima) as y, MONTH(fechahoraclima) as m, count(*) as count "
-                "FROM accidentes "
-                "WHERE YEAR(fechahoraclima) >= 2019 "
-                "GROUP BY 1, 2 "
-                "ORDER BY 1, 2"
-            )
-            trend_res = PinotRepository.execute_query(trend_q, use_multistage=True)
-
+            trend_res = DashboardTrendRepository.get_monthly_trend()
+            month_names = ["Ene", "Feb", "Mar", "Abr", "May", "Jun",
+                           "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
             monthly_trend = []
-            month_names = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
-
             for r in trend_res:
                 y = int(r.get('y', 2020))
                 m = int(r.get('m', 1))
                 c = int(r.get('count', 0))
-
                 projected_year = y + 3
                 if projected_year > 2026 or (projected_year == 2026 and m > 5):
                     continue
-
-                month_label = f"{month_names[m-1]} {projected_year}"
                 monthly_trend.append({
-                    "month": month_label,
+                    "month": f"{month_names[m-1]} {projected_year}",
                     "count": c,
                     "year": projected_year,
                     "month_num": m
                 })
 
-            sev_q = (
-                "SELECT s.descripcion as name, count(*) as count "
-                "FROM accidentes a "
-                "JOIN severidades s ON a.idseveridad = s.idseveridad "
-                "GROUP BY 1 "
-                "ORDER BY 2 DESC"
-            )
-            sev_res = PinotRepository.execute_query(sev_q, use_multistage=True)
+            sev_res = DashboardSeveridadRepository.get_severity_distribution()
             severity_distribution = []
             for r in sev_res:
                 name = str(r.get('name', ''))
-                if name == 'Nivel 1':
-                    name = 'Leve'
-                elif name == 'Nivel 2':
-                    name = 'Moderado'
-                elif name == 'Nivel 3':
-                    name = 'Grave'
-                elif name == 'Nivel 4':
-                    name = 'Fatal'
-
+                name_clean = {'Nivel 1': 'Leve', 'Nivel 2': 'Moderado',
+                              'Nivel 3': 'Grave', 'Nivel 4': 'Fatal'}.get(name, name)
                 severity_distribution.append({
-                    "name": name,
+                    "name": name_clean,
                     "count": int(r.get('EXPR$1', 0) or r.get('count', 0))
                 })
 
-            states_q = (
-                "SELECT e.estado as state, count(*) as count "
-                "FROM accidentes a "
-                "JOIN estados e ON a.idestado = e.idestado "
-                "GROUP BY 1 "
-                "ORDER BY 2 DESC "
-                "LIMIT 10"
-            )
-            states_res = PinotRepository.execute_query(states_q, use_multistage=True)
+            states_res = DashboardEstadosRepository.get_top_states()
             top_states = []
             for r in states_res:
                 top_states.append({
@@ -106,13 +71,7 @@ class DashboardService:
                     "count": int(r.get('EXPR$1', 0) or r.get('count', 0))
                 })
 
-            hourly_q = (
-                "SELECT SUBSTR(horainicio, 1, 2) as hour, count(*) as count "
-                "FROM accidentes "
-                "GROUP BY 1 "
-                "ORDER BY 1 LIMIT 24"
-            )
-            hourly_res = PinotRepository.execute_query(hourly_q)
+            hourly_res = DashboardHorarioRepository.get_hourly_distribution()
             hourly_distribution = [0] * 24
             for r in hourly_res:
                 try:
@@ -121,18 +80,10 @@ class DashboardService:
                         hr = int(hr_str)
                         if 0 <= hr < 24:
                             hourly_distribution[hr] = int(r.get('count(*)', 0) or r.get('count', 0))
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.warning("Error procesando hora en dashboard: %s", exc)
 
-            weather_q = (
-                "SELECT c.condicionclima as weather, count(*) as count "
-                "FROM accidentes a "
-                "JOIN estadoclima c ON a.idestadoclima = c.idestadoclima "
-                "GROUP BY 1 "
-                "ORDER BY 2 DESC "
-                "LIMIT 7"
-            )
-            weather_res = PinotRepository.execute_query(weather_q, use_multistage=True)
+            weather_res = DashboardClimaRepository.get_weather_distribution()
             weather_distribution = []
             for r in weather_res:
                 w_name = str(r.get('weather', ''))
@@ -203,8 +154,9 @@ class DashboardService:
                 {"state": "OR", "count": 13920}
             ],
             "hourly_distribution": [
-                53301, 50773, 48550, 47832, 47628, 58771, 77758, 91256, 79162, 52133, 45120, 52001,
-                64120, 71500, 89312, 102340, 114500, 138942, 129032, 94230, 75600, 61200, 55100, 48301
+                53301, 50773, 48550, 47832, 47628, 58771, 77758, 91256,
+                79162, 52133, 45120, 52001, 64120, 71500, 89312, 102340,
+                114500, 138942, 129032, 94230, 75600, 61200, 55100, 48301
             ],
             "weather_distribution": [
                 {"weather": "Fair", "count": 201168},

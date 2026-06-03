@@ -2,7 +2,20 @@ import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
-from accidentes.shared.repositories import PinotRepository
+
+from accidentes.PKG1_Gestion_Accidentes.CU02_Visualizar_Mapa.repositories import SeveridadRepository
+from accidentes.shared.catalogo_repositories import (
+    TipoReportadoCatalogoRepository,
+    TipoEstadoCatalogoRepository,
+    PaisCatalogoRepository,
+    EstadoCatalogoRepository,
+    CondadoCatalogoRepository,
+    CiudadCatalogoRepository,
+    CalleCatalogoRepository,
+    ClimaCatalogoRepository,
+    ElementoFisicoCatalogoRepository,
+    PeriodoDiaCatalogoRepository,
+)
 from accidentes.shared.catalogo_serializers import (
     SeveridadSerializer, TipoReportadoSerializer, TipoEstadoIncidenteSerializer,
     PaisSerializer, EstadoSerializer, CondadoSerializer, CiudadSerializer,
@@ -130,13 +143,9 @@ SEED_TIPOS_ESTADOS = [
 class SeveridadListView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
-        try:
-            data = PinotRepository.execute_query("SELECT idseveridad, severidad, descripcion FROM severidades WHERE activo = true LIMIT 10")
-            data = [d for d in data if d.get("severidad") != 0]
-            data.sort(key=lambda x: x.get("severidad", 0))
-        except Exception as exc:
-            logger.warning(f"Error querying severidades from Pinot: {exc}")
-            data = []
+        data = SeveridadRepository.get_all()
+        data = [d for d in data if d.get("severidad") != 0]
+        data.sort(key=lambda x: x.get("severidad", 0))
 
         if not data:
             data = [
@@ -153,18 +162,13 @@ class SeveridadListView(APIView):
 class TipoReportadoListView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
-        data = []
-        try:
-            query = "SELECT idtiporeportado, tiporeportado FROM tiposreportados WHERE activo = true LIMIT 50"
-            rows = PinotRepository.execute_query(query)
-            data = [
-                {
-                    "idtiporeportado": int(r["idtiporeportado"]),
-                    "tiporeportado": r["tiporeportado"]
-                } for r in rows if r.get("tiporeportado") != "N/A"
-            ]
-        except Exception as exc:
-            logger.warning(f"Error querying report types from Pinot: {exc}")
+        rows = TipoReportadoCatalogoRepository.get_all()
+        data = [
+            {
+                "idtiporeportado": int(r["idtiporeportado"]),
+                "tiporeportado": r["tiporeportado"]
+            } for r in rows if r.get("tiporeportado") != "N/A"
+        ]
 
         if not data:
             data = [
@@ -180,18 +184,13 @@ class TipoReportadoListView(APIView):
 class TipoEstadoListView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
-        data = []
-        try:
-            query = "SELECT idtipoestadoincidente, tipoestadoincidente FROM tiposestadosincidentes WHERE activo = true LIMIT 100"
-            rows = PinotRepository.execute_query(query)
-            data = [
-                {
-                    "idtipoestadoincidente": int(r["idtipoestadoincidente"]),
-                    "tipoestadoincidente": r["tipoestadoincidente"]
-                } for r in rows if r.get("tipoestadoincidente") != "N/A"
-            ]
-        except Exception as exc:
-            logger.warning(f"Error querying state catalog from Pinot: {exc}")
+        rows = TipoEstadoCatalogoRepository.get_all()
+        data = [
+            {
+                "idtipoestadoincidente": int(r["idtipoestadoincidente"]),
+                "tipoestadoincidente": r["tipoestadoincidente"]
+            } for r in rows if r.get("tipoestadoincidente") != "N/A"
+        ]
 
         if not data:
             data = SEED_TIPOS_ESTADOS
@@ -204,12 +203,8 @@ class TipoEstadoListView(APIView):
 class PaisListView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
-        try:
-            data = PinotRepository.execute_query("SELECT idpais, pais FROM paises WHERE activo = true LIMIT 100")
-            data = [d for d in data if d.get("pais") != "N/A"]
-        except Exception as exc:
-            logger.warning(f"Error quering paises from Pinot: {exc}")
-            data = []
+        data = PaisCatalogoRepository.get_all()
+        data = [d for d in data if d.get("pais") != "N/A"]
 
         if not data:
             data = SEED_PAISES
@@ -222,16 +217,8 @@ class EstadoListView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
         pais_param = request.query_params.get("pais")
-        try:
-            if pais_param:
-                sql = f"SELECT idestado, estado, pais FROM estados WHERE activo = true AND pais = '{pais_param}' LIMIT 100"
-            else:
-                sql = "SELECT idestado, estado, pais FROM estados WHERE activo = true LIMIT 100"
-            data = PinotRepository.execute_query(sql)
-            data = [d for d in data if d.get("estado") != "N/A"]
-        except Exception as exc:
-            logger.warning(f"Error querying estados from Pinot: {exc}")
-            data = []
+        data = EstadoCatalogoRepository.get_all(pais=pais_param or "")
+        data = [d for d in data if d.get("estado") != "N/A"]
 
         if not data:
             if pais_param:
@@ -247,16 +234,8 @@ class CondadoListView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
         estado_param = request.query_params.get("estado")
-        try:
-            if estado_param:
-                sql = f"SELECT idcondado, condado, estado FROM condados WHERE activo = true AND estado = '{estado_param}' LIMIT 200"
-            else:
-                sql = "SELECT idcondado, condado, estado FROM condados WHERE activo = true LIMIT 200"
-            data = PinotRepository.execute_query(sql)
-            data = [d for d in data if d.get("condado") != "N/A"]
-        except Exception as exc:
-            logger.warning(f"Error querying condados from Pinot: {exc}")
-            data = []
+        data = CondadoCatalogoRepository.get_all(estado=estado_param or "")
+        data = [d for d in data if d.get("condado") != "N/A"]
 
         if not data:
             if estado_param:
@@ -272,16 +251,8 @@ class CiudadListView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
         condado_param = request.query_params.get("condado")
-        try:
-            if condado_param:
-                sql = f"SELECT idciudad, ciudad, condado FROM ciudades WHERE activo = true AND condado = '{condado_param}' LIMIT 500"
-            else:
-                sql = "SELECT idciudad, ciudad, condado FROM ciudades WHERE activo = true LIMIT 500"
-            data = PinotRepository.execute_query(sql)
-            data = [d for d in data if d.get("ciudad") != "N/A"]
-        except Exception as exc:
-            logger.warning(f"Error querying ciudades from Pinot: {exc}")
-            data = []
+        data = CiudadCatalogoRepository.get_all(condado=condado_param or "")
+        data = [d for d in data if d.get("ciudad") != "N/A"]
 
         if not data:
             if condado_param:
@@ -297,16 +268,8 @@ class CalleListView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
         ciudad_param = request.query_params.get("ciudad")
-        try:
-            if ciudad_param:
-                sql = f"SELECT idcalle, calle, ciudad FROM calles WHERE activo = true AND ciudad = '{ciudad_param}' LIMIT 1000"
-            else:
-                sql = "SELECT idcalle, calle, ciudad FROM calles WHERE activo = true LIMIT 1000"
-            data = PinotRepository.execute_query(sql)
-            data = [d for d in data if d.get("calle") != "N/A"]
-        except Exception as exc:
-            logger.warning(f"Error querying calles from Pinot: {exc}")
-            data = []
+        data = CalleCatalogoRepository.get_all(ciudad=ciudad_param or "")
+        data = [d for d in data if d.get("calle") != "N/A"]
 
         if not data:
             if ciudad_param:
@@ -321,12 +284,8 @@ class CalleListView(APIView):
 class ClimaListView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
-        try:
-            data = PinotRepository.execute_query("SELECT idestadoclima, condicionclima, direccionviento, temperaturaf, sensaciontermicaf, humedadporcentaje, presionpulgadas, visibilidadmillas, velocidadvientomph, precipitacionpulgadas FROM estadoclima WHERE activo = true LIMIT 100")
-            data = [d for d in data if d.get("condicionclima") != "N/A"]
-        except Exception as exc:
-            logger.warning(f"Error querying clima from Pinot: {exc}")
-            data = []
+        data = ClimaCatalogoRepository.get_all()
+        data = [d for d in data if d.get("condicionclima") != "N/A"]
 
         if not data:
             data = SEED_CLIMAS
@@ -338,11 +297,7 @@ class ClimaListView(APIView):
 class ElementoFisicoListView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
-        try:
-            data = PinotRepository.execute_query("SELECT idelementofisico, cercacruce, cercasemaforo, cercaparada, cercaestacion, cercabache, cercaviatren FROM elementosfisicos WHERE activo = true LIMIT 100")
-        except Exception as exc:
-            logger.warning(f"Error querying elementos fisicos from Pinot: {exc}")
-            data = []
+        data = ElementoFisicoCatalogoRepository.get_all()
 
         if not data:
             data = SEED_ELEMENTOS
@@ -354,11 +309,7 @@ class ElementoFisicoListView(APIView):
 class PeriodoDiaListView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
-        try:
-            data = PinotRepository.execute_query("SELECT idperiododia, amaneceranochecer, crepusculocivil, crepusculonautico, crepusculoastronomico FROM periodosdias WHERE activo = true LIMIT 100")
-        except Exception as exc:
-            logger.warning(f"Error querying periodos dias from Pinot: {exc}")
-            data = []
+        data = PeriodoDiaCatalogoRepository.get_all()
 
         if not data:
             data = SEED_PERIODOS

@@ -48,7 +48,7 @@ export class AuthService {
     this.userFullName.set(res.nombre);
     this.isLoggedIn.set(true);
     this.showLoginModal.set(false);
-    this.router.navigate(['/dashboard']);
+    this.router.navigate([this.getHomeRoute()]);
   }
 
   logout(): void {
@@ -101,6 +101,17 @@ export class AuthService {
         this.logout();
       }
     }
+  }
+
+  getHomeRoute(): string {
+    const role = this.userRole();
+    if (role === 'Despachador' || role === 'Unidad Respondiente') {
+      return '/responder';
+    }
+    if (role === 'Consumidor Analítico') {
+      return '/analitico';
+    }
+    return '/dashboard';
   }
 
   private async verifyToken(token: string): Promise<void> {

@@ -88,7 +88,34 @@ class KafkaRepository:
         return False
 
 
+class BaseWriteRepository:
+    topic = ""
+    primary_key_field = ""
+
+    @classmethod
+    def create(cls, payload):
+        ahora_ms = int(time.time() * 1000)
+        payload.setdefault("fecha_actualizacion", ahora_ms)
+        try:
+            kafka = KafkaRepository()
+            return kafka.enviar_mensaje(
+                topic=cls.topic,
+                clave_primaria=payload.get(cls.primary_key_field, ""),
+                datos_json=payload,
+                operacion="INSERT",
+            )
+        except Exception as e:
+            logger.error("Error enviando a Kafka (topic=%s): %s", cls.topic, e)
+            return False
+
+
 class PinotRepository:
+    @staticmethod
+    def escape_sql_str(value: str) -> str:
+        escaped = value.replace("'", "''")
+        escaped = escaped.replace("\\", "\\\\")
+        return escaped
+
     @staticmethod
     def execute_query(sql_query, use_multistage=False):
         if not sql_query or not isinstance(sql_query, str):

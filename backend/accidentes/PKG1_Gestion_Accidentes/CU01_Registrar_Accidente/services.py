@@ -3,10 +3,21 @@ import time
 import zlib
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
-from accidentes.shared.repositories import KafkaRepository, PinotRepository
 from accidentes.PKG1_Gestion_Accidentes.CU06_Asignar_Severidad.services import SeveridadService
+from accidentes.PKG1_Gestion_Accidentes.CU01_Registrar_Accidente.repositories import (
+    ClimaRepository,
+    EstacionRepository,
+    AccidenteReadRepository,
+    AccidenteWriteRepository,
+    VehiculoRepository,
+    ConductorRepository,
+    EstadoConductorRepository,
+    ConductorAccidenteRepository,
+    AccidenteEstadoRepository,
+    NotaRepository,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -30,33 +41,6 @@ class AccidenteRegistroService:
         return mapping.get(level, -2082672713)
 
     @staticmethod
-    def _obtener_pinot_id_clima(condicion: str) -> int:
-        if not condicion:
-            return 1620546972
-        try:
-            cond_escaped = condicion.replace("'", "''")
-            rows = PinotRepository.execute_query(
-                f"SELECT idestadoclima FROM estadoclima WHERE condicionclima LIKE '%{cond_escaped}%' LIMIT 1"
-            )
-            if rows:
-                return int(rows[0].get("idestadoclima"))
-        except Exception:
-            pass
-        return 1620546972
-
-    @staticmethod
-    def _obtener_pinot_id_estacion(codigo: str) -> int:
-        if not codigo:
-            return 1
-        try:
-            rows = PinotRepository.execute_query(f"SELECT idreferenciaestacion FROM referenciaestacion WHERE codigoaeropuerto = '{codigo}' LIMIT 1")
-            if rows:
-                return int(rows[0].get("idreferenciaestacion"))
-        except Exception:
-            pass
-        return 1
-
-    @staticmethod
     def registrar_accidente(datos: Dict[str, Any]) -> Dict[str, Any]:
         idaccidente = str(uuid.uuid4())
         datos['idaccidente'] = idaccidente
@@ -72,17 +56,14 @@ class AccidenteRegistroService:
             severidad = int(severidad)
         datos['idseveridad_id'] = severidad
 
-        clima_cond = datos.get('condicion_clima', '')
-        apt = datos.get('codigoaeropuerto', '')
-
         pinot_id_pais = int(datos.get('idpais_id', 1))
         pinot_id_estado = int(datos.get('idestado_id', 1))
         pinot_id_condado = int(datos.get('idcondado_id', 1))
         pinot_id_ciudad = int(datos.get('idciudad_id', 1))
         pinot_id_calle = int(datos.get('idcalle_id', 1))
         pinot_id_severidad = AccidenteRegistroService._obtener_pinot_id_severidad(severidad)
-        pinot_id_clima = AccidenteRegistroService._obtener_pinot_id_clima(clima_cond)
-        pinot_id_estacion = AccidenteRegistroService._obtener_pinot_id_estacion(apt)
+        pinot_id_clima = ClimaRepository.find_id_by_condicion(datos.get('condicion_clima', ''))
+        pinot_id_estacion = EstacionRepository.find_id_by_codigo(datos.get('codigoaeropuerto', ''))
         pinot_tiporeportado = int(datos.get('idtiporeportado_id', 1))
         pinot_fecha = int(datos.get('idfecha_id', 1))
         pinot_periododia = int(datos.get('idperiododia_id', 1))
@@ -122,17 +103,8 @@ class AccidenteRegistroService:
             "longitudinicio": float(datos.get('longitudinicio', -79.8890)),
             "distanciamillas": 0.0,
             "fechahoraclima": ahora_ms,
-            "fecha_actualizacion": ahora_ms
         }
-
-        kafka_repo = KafkaRepository()
-
-        kafka_repo.enviar_mensaje(
-            topic="accidentes_topic",
-            clave_primaria=idaccidente,
-            datos_json=payload_accidente,
-            operacion="INSERT"
-        )
+        AccidenteWriteRepository.create(payload_accidente)
 
         base_id = int(time.time_ns())
         vehiculos_detalles = datos.get('vehiculos_detalles', [])
@@ -142,7 +114,7 @@ class AccidenteRegistroService:
             idestadoconductor = (base_id + idx * 4 + 3) % 10000000000
             idconductoraccidente = (base_id + idx * 4 + 4) % 10000000000
 
-            payload_vehiculo = {
+            VehiculoRepository.create({
                 "idvehiculo": idvehiculo,
                 "tipovehiculo": v.get('tipovehiculo', 'Automóvil'),
                 "modelovehiculo": v.get('modelovehiculo', 'Genérico'),
@@ -150,11 +122,8 @@ class AccidenteRegistroService:
                 "mercanciapeligrosa": bool(v.get('mercanciapeligrosa', False)),
                 "ejes": int(v.get('ejes', 2)),
                 "activo": True,
-                "fecha_actualizacion": ahora_ms
-            }
-            kafka_repo.enviar_mensaje(topic="vehiculos_topic", clave_primaria=idvehiculo, datos_json=payload_vehiculo, operacion="INSERT")
-
-            payload_conductor = {
+            })
+            ConductorRepository.create({
                 "idconductor": idconductor,
                 "nombres": v.get('nombres', 'Nombre'),
                 "apellidos": v.get('apellidos', 'Apellido'),
@@ -165,78 +134,50 @@ class AccidenteRegistroService:
                 "ciudadresidencia": v.get('ciudadresidencia', 'Quito'),
                 "aniosexperiencia": int(v.get('aniosexperiencia', 0)),
                 "activo": True,
-                "fecha_actualizacion": ahora_ms
-            }
-            kafka_repo.enviar_mensaje(topic="conductores_topic", clave_primaria=idconductor, datos_json=payload_conductor, operacion="INSERT")
-
-            payload_estado = {
+            })
+            EstadoConductorRepository.create({
                 "idestadoconductor": idestadoconductor,
                 "estadosobriedad": bool(v.get('estadosobriedad', True)),
                 "nivelatencion": bool(v.get('nivelatencion', True)),
                 "condicionfisica": bool(v.get('condicionfisica', True)),
                 "usoseguridad": bool(v.get('usoseguridad', True)),
                 "activo": True,
-                "fecha_actualizacion": ahora_ms
-            }
-            kafka_repo.enviar_mensaje(topic="estadosconductores_topic", clave_primaria=idestadoconductor, datos_json=payload_estado, operacion="INSERT")
-
-            payload_link = {
+            })
+            ConductorAccidenteRepository.create({
                 "idconductoraccidente": idconductoraccidente,
                 "idaccidente": pinot_id_accidente,
                 "idconductor": idconductor,
                 "idestadoconductor": idestadoconductor,
                 "idvehiculo": idvehiculo,
                 "activo": True,
-                "fecha_actualizacion": ahora_ms
-            }
-            kafka_repo.enviar_mensaje(topic="conductoresaccidentes_topic", clave_primaria=idconductoraccidente, datos_json=payload_link, operacion="INSERT")
+            })
 
         id_estado_rel = int(time.time() * 1000) % 1000000000
-        payload_estado = {
+        AccidenteEstadoRepository.create({
             "idaccidentetipoestadoincidente": id_estado_rel,
             "idaccidente": pinot_id_accidente,
             "idtipoestadoincidente": 1,
             "activo": True,
             "fechahoramodificado": ahora_ms,
-            "fecha_actualizacion": ahora_ms
-        }
-        kafka_repo.enviar_mensaje(
-            topic="accidentestiposestadosincidentes_topic",
-            clave_primaria=id_estado_rel,
-            datos_json=payload_estado,
-            operacion="INSERT"
-        )
+        })
 
         nota_inicial = datos.get('nota_inicial')
         if nota_inicial:
             id_nota = int(time.time() * 1000) % 1000000000
-            payload_nota = {
+            NotaRepository.create({
                 "idnotaaccidentes": id_nota,
                 "idaccidente": pinot_id_accidente,
                 "idusuario": pinot_usuario,
                 "nota": nota_inicial,
                 "tipo": True,
                 "activo": True,
-                "fecha_actualizacion": ahora_ms
-            }
-            kafka_repo.enviar_mensaje(
-                topic="notasaccidentes_topic",
-                clave_primaria=id_nota,
-                datos_json=payload_nota,
-                operacion="INSERT"
-            )
+            })
 
         return payload_accidente
 
     @staticmethod
     def actualizar_accidente(accidente_id: str, datos: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        try:
-            existe = PinotRepository.execute_query(
-                f"SELECT idaccidente FROM accidentes WHERE idaccidente = '{accidente_id}' LIMIT 1"
-            )
-            if not existe:
-                return None
-        except Exception:
+        if not AccidenteReadRepository.exists_by_id(accidente_id):
             return None
 
         numheridos = int(datos.get('numheridos', 0))
@@ -249,17 +190,14 @@ class AccidenteRegistroService:
         else:
             severidad = int(severidad)
 
-        clima_cond = datos.get('condicion_clima', '')
-        apt = datos.get('codigoaeropuerto', '')
-
         pinot_id_pais = int(datos.get('idpais_id', 1))
         pinot_id_estado = int(datos.get('idestado_id', 1))
         pinot_id_condado = int(datos.get('idcondado_id', 1))
         pinot_id_ciudad = int(datos.get('idciudad_id', 1))
         pinot_id_calle = int(datos.get('idcalle_id', 1))
         pinot_id_severidad = AccidenteRegistroService._obtener_pinot_id_severidad(severidad)
-        pinot_id_clima = AccidenteRegistroService._obtener_pinot_id_clima(clima_cond)
-        pinot_id_estacion = AccidenteRegistroService._obtener_pinot_id_estacion(apt)
+        pinot_id_clima = ClimaRepository.find_id_by_condicion(datos.get('condicion_clima', ''))
+        pinot_id_estacion = EstacionRepository.find_id_by_codigo(datos.get('codigoaeropuerto', ''))
         pinot_tiporeportado = int(datos.get('idtiporeportado_id', 1))
         pinot_fecha = int(datos.get('idfecha_id', 1))
         pinot_periododia = int(datos.get('idperiododia_id', 1))
@@ -298,16 +236,9 @@ class AccidenteRegistroService:
             "longitudinicio": float(datos.get('longitudinicio', -79.8890)),
             "distanciamillas": 0.0,
             "fechahoraclima": ahora_ms,
-            "fecha_actualizacion": ahora_ms
         }
 
-        kafka_repo = KafkaRepository()
-        kafka_repo.enviar_mensaje(
-            topic="accidentes_topic",
-            clave_primaria=accidente_id,
-            datos_json=payload_accidente,
-            operacion="INSERT"
-        )
+        AccidenteWriteRepository.create(payload_accidente)
 
         base_id = int(time.time_ns())
         vehiculos_detalles = datos.get('vehiculos_detalles', [])
@@ -317,37 +248,42 @@ class AccidenteRegistroService:
             idestadoconductor = (base_id + idx * 4 + 3) % 10000000000
             idconductoraccidente = (base_id + idx * 4 + 4) % 10000000000
 
-            kafka_repo.enviar_mensaje(topic="vehiculos_topic", clave_primaria=idvehiculo, datos_json={
-                "idvehiculo": idvehiculo, "tipovehiculo": v.get('tipovehiculo', 'Automóvil'),
+            VehiculoRepository.create({
+                "idvehiculo": idvehiculo,
+                "tipovehiculo": v.get('tipovehiculo', 'Automóvil'),
                 "modelovehiculo": v.get('modelovehiculo', 'Genérico'),
                 "categoriausovehiculo": v.get('categoriausovehiculo', 'Particular'),
                 "mercanciapeligrosa": bool(v.get('mercanciapeligrosa', False)),
-                "ejes": int(v.get('ejes', 2)), "activo": True, "fecha_actualizacion": ahora_ms
-            }, operacion="INSERT")
-
-            kafka_repo.enviar_mensaje(topic="conductores_topic", clave_primaria=idconductor, datos_json={
-                "idconductor": idconductor, "nombres": v.get('nombres', 'Nombre'),
-                "apellidos": v.get('apellidos', 'Apellido'), "identificacion": v.get('identificacion', ''),
-                "genero": v.get('genero', 'M'), "tipolicencia": v.get('tipolicencia', 'B'),
+                "ejes": int(v.get('ejes', 2)),
+                "activo": True,
+            })
+            ConductorRepository.create({
+                "idconductor": idconductor,
+                "nombres": v.get('nombres', 'Nombre'),
+                "apellidos": v.get('apellidos', 'Apellido'),
+                "identificacion": v.get('identificacion', ''),
+                "genero": v.get('genero', 'M'),
+                "tipolicencia": v.get('tipolicencia', 'B'),
                 "estadolicencia": v.get('estadolicencia', 'Vigente'),
                 "ciudadresidencia": v.get('ciudadresidencia', 'Quito'),
-                "aniosexperiencia": int(v.get('aniosexperiencia', 0)), "activo": True,
-                "fecha_actualizacion": ahora_ms
-            }, operacion="INSERT")
-
-            kafka_repo.enviar_mensaje(topic="estadosconductores_topic", clave_primaria=idestadoconductor, datos_json={
+                "aniosexperiencia": int(v.get('aniosexperiencia', 0)),
+                "activo": True,
+            })
+            EstadoConductorRepository.create({
                 "idestadoconductor": idestadoconductor,
                 "estadosobriedad": bool(v.get('estadosobriedad', True)),
                 "nivelatencion": bool(v.get('nivelatencion', True)),
                 "condicionfisica": bool(v.get('condicionfisica', True)),
                 "usoseguridad": bool(v.get('usoseguridad', True)),
-                "activo": True, "fecha_actualizacion": ahora_ms
-            }, operacion="INSERT")
-
-            kafka_repo.enviar_mensaje(topic="conductoresaccidentes_topic", clave_primaria=idconductoraccidente, datos_json={
-                "idconductoraccidente": idconductoraccidente, "idaccidente": pinot_id_accidente,
-                "idconductor": idconductor, "idestadoconductor": idestadoconductor,
-                "idvehiculo": idvehiculo, "activo": True, "fecha_actualizacion": ahora_ms
-            }, operacion="INSERT")
+                "activo": True,
+            })
+            ConductorAccidenteRepository.create({
+                "idconductoraccidente": idconductoraccidente,
+                "idaccidente": pinot_id_accidente,
+                "idconductor": idconductor,
+                "idestadoconductor": idestadoconductor,
+                "idvehiculo": idvehiculo,
+                "activo": True,
+            })
 
         return payload_accidente

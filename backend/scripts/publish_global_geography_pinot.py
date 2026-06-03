@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
 django.setup()
 
-from accidentes.repositories import KafkaRepository
+from accidentes.shared.repositories import KafkaRepository
 
 def get_hash_id(name: str) -> int:
     return zlib.crc32(name.encode('utf-8')) & 0x7FFFFFFF

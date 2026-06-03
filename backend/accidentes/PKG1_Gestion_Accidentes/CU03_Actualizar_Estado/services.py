@@ -14,6 +14,18 @@ class EstadoService:
         return zlib.crc32(uuid_str.encode('utf-8')) & 0x7FFFFFFF
 
     @staticmethod
+    def _enviar_kafka_seguro(kafka_repo, topic, clave, datos):
+        try:
+            kafka_repo.enviar_mensaje(
+                topic=topic,
+                clave_primaria=clave,
+                datos_json=datos,
+                operacion="INSERT"
+            )
+        except Exception as e:
+            logger.warning("Error enviando a Kafka (topic=%s): %s", topic, e)
+
+    @staticmethod
     def actualizar_estado(
         accidente_id: str,
         nuevo_estado_id: int,
@@ -22,7 +34,11 @@ class EstadoService:
     ) -> Dict[str, Any]:
         ahora_ms = int(time.time() * 1000)
         pinot_id_accidente = EstadoService._uuid_to_pinot_id(accidente_id)
-        kafka_repo = KafkaRepository()
+        try:
+            kafka_repo = KafkaRepository()
+        except Exception as e:
+            logger.warning("Kafka no disponible, continuando sin Kafka: %s", e)
+            kafka_repo = None
 
         id_estado_rel = int(time.time() * 1000) % 1000000000
         payload_estado = {
@@ -33,12 +49,13 @@ class EstadoService:
             "fechahoramodificado": ahora_ms,
             "fecha_actualizacion": ahora_ms
         }
-        kafka_repo.enviar_mensaje(
-            topic="accidentestiposestadosincidentes_topic",
-            clave_primaria=id_estado_rel,
-            datos_json=payload_estado,
-            operacion="INSERT"
-        )
+        if kafka_repo:
+            EstadoService._enviar_kafka_seguro(
+                kafka_repo,
+                "accidentestiposestadosincidentes_topic",
+                id_estado_rel,
+                payload_estado,
+            )
 
         if nota:
             id_nota = int(time.time() * 1000) % 1000000000
@@ -51,12 +68,13 @@ class EstadoService:
                 "activo": True,
                 "fecha_actualizacion": ahora_ms
             }
-            kafka_repo.enviar_mensaje(
-                topic="notasaccidentes_topic",
-                clave_primaria=id_nota,
-                datos_json=payload_nota,
-                operacion="INSERT"
-            )
+            if kafka_repo:
+                EstadoService._enviar_kafka_seguro(
+                    kafka_repo,
+                    "notasaccidentes_topic",
+                    id_nota,
+                    payload_nota,
+                )
 
         estado_map_nombre = {1: "ACTIVO", 2: "EN_ATENCION", 3: "EN_ATENCION", 4: "CONTROLADO", 5: "ARCHIVADO"}
         estado_nombre = estado_map_nombre.get(nuevo_estado_id, "Reportado")

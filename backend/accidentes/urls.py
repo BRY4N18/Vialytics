@@ -3,6 +3,7 @@ from accidentes.PKG1_Gestion_Accidentes.CU01_Registrar_Accidente.views import Ac
 from accidentes.PKG1_Gestion_Accidentes.CU02_Visualizar_Mapa.views import AccidenteMapaView
 from accidentes.PKG1_Gestion_Accidentes.CU03_Actualizar_Estado.views import AccidenteEstadoView
 from accidentes.PKG1_Gestion_Accidentes.CU04_Despachar_Emergencias.views import DespachoView
+from accidentes.PKG2_Respuesta_Emergencias.CU07_Recibir_Despacho.views import DespachoUnidadView, DespachoConfirmarView, DespachoLLegadaView
 from accidentes.PKG2_Respuesta_Emergencias.CU08_Actualizar_Estado_Unidad.views import UnidadesEmergenciaView, UnidadEstadoView
 from accidentes.PKG3_Consulta_Analisis.CU10_Buscar_Accidentes.views import AccidenteBusquedaView
 from accidentes.PKG3_Consulta_Analisis.CU14_Solicitar_Expediente.views import AccidenteDetalleView, AccidenteExpedienteView
@@ -36,6 +37,9 @@ urlpatterns = [
     # Respuesta a Emergencias (PKG-2)
     path('unidades/', UnidadesEmergenciaView.as_view(), name='unidades-lista'),
     path('unidades/<int:unidad_id>/estado/', UnidadEstadoView.as_view(), name='unidad-estado'),
+    path('despachos/unidad/<int:unidad_id>/', DespachoUnidadView.as_view(), name='despacho-unidad'),
+    path('despachos/<int:despacho_id>/confirmar/', DespachoConfirmarView.as_view(), name='despacho-confirmar'),
+    path('despachos/<int:despacho_id>/llegada/', DespachoLLegadaView.as_view(), name='despacho-llegada'),
     # Catálogos (Shared)
     path('tipos-reportado/', TipoReportadoListView.as_view(), name='tipos-reportado'),
     path('severidades/', SeveridadListView.as_view(), name='severidades'),

@@ -4,7 +4,7 @@ import time
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from accidentes.repositories import KafkaRepository
+from accidentes.shared.repositories import KafkaRepository
 
 def publish():
     print("Publishing Roles and Users to Kafka / Pinot...")

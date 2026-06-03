@@ -1,13 +1,17 @@
 import logging
 from rest_framework.views import APIView
-from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 
+from accidentes.shared.permissions import EsOperadorOAnalistaOAdministrador
+from accidentes.shared.utils import ok_response, server_error_response
 from accidentes.PKG3_Consulta_Analisis.CU10_Buscar_Accidentes.services import BusquedaService
 
 logger = logging.getLogger(__name__)
 
 
 class AccidenteBusquedaView(APIView):
+    permission_classes = [IsAuthenticated, EsOperadorOAnalistaOAdministrador]
+
     def get(self, request):
         try:
             page = int(request.query_params.get('page', 1))
@@ -48,7 +52,7 @@ class AccidenteBusquedaView(APIView):
             }
 
             datos_paginados = BusquedaService.obtener_accidentes_paginados(filtros)
-            return Response(datos_paginados)
+            return ok_response(datos_paginados)
         except Exception as exc:
             logger.error('Error en listado de accidentes paginados: %s', exc)
-            return Response({'error': 'Error interno al obtener listado'}, status=500)
+            return server_error_response('Error interno al obtener listado')
