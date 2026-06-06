@@ -27,3 +27,21 @@ class DespachoWriteRepository(BaseWriteRepository):
 class UnidadEmergenciaWriteRepository(BaseWriteRepository):
     topic = "unidadesemergencia_topic"
     primary_key_field = "idunidademergencia"
+
+
+class AccidenteInfoReadRepository:
+
+    @staticmethod
+    def find_by_id(accidente_id: str) -> Dict[str, Any]:
+        safe = PinotRepository.escape_sql_str(accidente_id)
+        rows = PinotRepository.execute_query(
+            f"SELECT idaccidente, numheridos, numvehiculos "
+            f"FROM accidentes "
+            f"WHERE idaccidente = '{safe}' LIMIT 1"
+        )
+        return rows[0] if rows else {}
+
+
+class NotificacionWriteRepository(BaseWriteRepository):
+    topic = "notificacionesdespachos_topic"
+    primary_key_field = "idnotificaciondespacho"

@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 
 class AccidenteInfoSerializer(serializers.Serializer):
-    idaccidente = serializers.CharField()
+    idaccidente = serializers.CharField(required=False, allow_blank=True, default='')
     latitudinicio = serializers.FloatField(required=False)
     longitudinicio = serializers.FloatField(required=False)
     numheridos = serializers.IntegerField(required=False, default=0)
@@ -14,6 +14,12 @@ class AccidenteInfoSerializer(serializers.Serializer):
     ciudad_nombre = serializers.CharField(required=False, allow_blank=True, default='')
 
 
+class VehiculoSerializer(serializers.Serializer):
+    tipovehiculo = serializers.CharField(required=False, allow_blank=True, default='')
+    modelovehiculo = serializers.CharField(required=False, allow_blank=True, default='')
+    mercanciapeligrosa = serializers.BooleanField(required=False, default=False)
+
+
 class DespachoPendienteSerializer(serializers.Serializer):
     iddespacho = serializers.IntegerField()
     idaccidente = serializers.CharField()
@@ -21,10 +27,20 @@ class DespachoPendienteSerializer(serializers.Serializer):
     unidad_nombre = serializers.CharField(required=False, allow_blank=True, default='')
     tipo_unidad = serializers.CharField(required=False, allow_blank=True, default='')
     fechahoradespacho = serializers.CharField(required=False, allow_blank=True, default='')
-    fechahoraconfirmacion = serializers.CharField(required=False, allow_blank=True, default='', allow_null=True)
     fechahorallegada = serializers.CharField(required=False, allow_blank=True, default='', allow_null=True)
     accidente = AccidenteInfoSerializer(required=False)
+    vehiculos = VehiculoSerializer(many=True, required=False, default=[])
 
 
-class DespachoConfirmacionSerializer(serializers.Serializer):
-    nota = serializers.CharField(required=False, allow_blank=True, default='')
+class NotificacionSerializer(serializers.Serializer):
+    idnotificaciondespacho = serializers.IntegerField()
+    idaccidente = serializers.CharField()
+    numheridos = serializers.IntegerField(required=False, default=0)
+    numvehiculos = serializers.IntegerField(required=False, default=0)
+    fecha_actualizacion = serializers.CharField(required=False, allow_blank=True, default='')
+    accidente = AccidenteInfoSerializer(required=False)
+    vehiculos = VehiculoSerializer(many=True, required=False, default=[])
+
+
+class NotificacionAceptarSerializer(serializers.Serializer):
+    idunidademergencia = serializers.IntegerField()

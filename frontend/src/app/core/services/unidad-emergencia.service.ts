@@ -14,6 +14,36 @@ export class UnidadEmergenciaService {
       .pipe(catchError(this.handleError));
   }
 
+  crearUnidad(nombre: string, tipo: string): Observable<UnidadEmergencia> {
+    return this.http
+      .post<UnidadEmergencia>(`${this.baseUrl}/unidades/`, {
+        unidademergencia: nombre,
+        tipounidademergencia: tipo,
+      })
+      .pipe(catchError(this.handleError));
+  }
+
+  actualizarUnidad(id: number, nombre: string, tipo: string): Observable<UnidadEmergencia> {
+    return this.http
+      .put<UnidadEmergencia>(`${this.baseUrl}/unidades/${id}/`, {
+        unidademergencia: nombre,
+        tipounidademergencia: tipo,
+      })
+      .pipe(catchError(this.handleError));
+  }
+
+  toggleActivo(id: number, activo: boolean): Observable<UnidadEmergencia> {
+    return this.http
+      .patch<UnidadEmergencia>(`${this.baseUrl}/unidades/${id}/activar/`, { activo })
+      .pipe(catchError(this.handleError));
+  }
+
+  getEstadosUnidad(): Observable<{idestadounidad: number; estadounidad: string}[]> {
+    return this.http
+      .get<{idestadounidad: number; estadounidad: string}[]>(`${this.baseUrl}/estados-unidad/`)
+      .pipe(catchError(this.handleError));
+  }
+
   actualizarEstadoUnidad(id: number, estado: string): Observable<UnidadEmergencia> {
     return this.http
       .patch<UnidadEmergencia>(`${this.baseUrl}/unidades/${id}/estado/`, { estado })

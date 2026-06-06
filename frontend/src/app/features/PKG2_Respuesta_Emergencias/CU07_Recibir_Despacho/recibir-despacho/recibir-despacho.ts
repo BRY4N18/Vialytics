@@ -1,11 +1,11 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { DespachoService } from '../../../../core/services/despacho.service';
 import { UnidadEmergenciaService } from '../../../../core/services/unidad-emergencia.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ToastService } from '../../../../core/services/toast.service';
-import { DespachoPendiente } from '../../../../core/models/despacho-pendiente.model';
+import { DespachoPendiente, NotificacionDespacho } from '../../../../core/models/despacho-pendiente.model';
 import { UnidadEmergencia } from '../../../../core/models/unidad-emergencia.model';
 
 @Component({
@@ -22,31 +22,16 @@ export class RecibirDespachoComponent implements OnInit {
 
   readonly unidades = signal<UnidadEmergencia[]>([]);
   readonly unidadSeleccionada = signal<number | null>(null);
+  readonly notificaciones = signal<NotificacionDespacho[]>([]);
   readonly despachos = signal<DespachoPendiente[]>([]);
   readonly cargandoUnidades = signal(false);
+  readonly cargandoNotificaciones = signal(false);
   readonly cargandoDespachos = signal(false);
-  readonly confirmandoId = signal<number | null>(null);
+  readonly aceptandoId = signal<number | null>(null);
   readonly llegandoId = signal<number | null>(null);
   readonly error = signal<string | null>(null);
-  readonly soloPendientes = signal(true);
 
-  readonly unidadActual = computed(() => {
-    const id = this.unidadSeleccionada();
-    if (!id) return null;
-    return this.unidades().find(u => u.idunidademergencia === id) || null;
-  });
-
-  readonly despachosPendientes = computed(() =>
-    this.despachos().filter(d => !d.fechahoraconfirmacion)
-  );
-
-  readonly despachosConfirmados = computed(() =>
-    this.despachos().filter(d => d.fechahoraconfirmacion && !d.fechahorallegada)
-  );
-
-  readonly despachosCompletados = computed(() =>
-    this.despachos().filter(d => d.fechahoraconfirmacion && d.fechahorallegada)
-  );
+  readonly unidadActual = signal<UnidadEmergencia | null>(null);
 
   readonly severidadLabel = (nivel?: number): string => {
     const labels: Record<number, string> = { 1: 'Leve', 2: 'Moderado', 3: 'Grave', 4: 'Fatal' };
@@ -60,12 +45,11 @@ export class RecibirDespachoComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarUnidades();
+    this.cargarNotificaciones();
   }
 
   cargarUnidades(): void {
     this.cargandoUnidades.set(true);
-    this.error.set(null);
-
     this.unidadEmergenciaService.getUnidades().subscribe({
       next: (data) => {
         this.unidades.set(data);
@@ -74,56 +58,64 @@ export class RecibirDespachoComponent implements OnInit {
           this.seleccionarUnidad(data[0].idunidademergencia);
         }
       },
-      error: (err) => {
-        this.error.set(err.message || 'Error al cargar unidades');
-        this.cargandoUnidades.set(false);
-      }
+      error: () => this.cargandoUnidades.set(false)
+    });
+  }
+
+  cargarNotificaciones(): void {
+    this.cargandoNotificaciones.set(true);
+    this.despachoService.getNotificaciones().subscribe({
+      next: (data) => {
+        this.notificaciones.set(data);
+        this.cargandoNotificaciones.set(false);
+      },
+      error: () => this.cargandoNotificaciones.set(false)
     });
   }
 
   onUnidadChange(value: string): void {
     const id = Number(value);
     if (id) {
-      this.unidadSeleccionada.set(id);
-      this.cargarDespachos();
+      this.seleccionarUnidad(id);
     }
   }
 
   seleccionarUnidad(unidadId: number): void {
     this.unidadSeleccionada.set(unidadId);
+    this.unidadActual.set(this.unidades().find(u => u.idunidademergencia === unidadId) || null);
     this.cargarDespachos();
   }
 
   cargarDespachos(): void {
     const id = this.unidadSeleccionada();
     if (!id) return;
-
     this.cargandoDespachos.set(true);
-    this.error.set(null);
-
-    this.despachoService.getDespachosPorUnidad(id, this.soloPendientes()).subscribe({
+    this.despachoService.getDespachosPorUnidad(id).subscribe({
       next: (data) => {
         this.despachos.set(data);
         this.cargandoDespachos.set(false);
       },
-      error: (err) => {
-        this.error.set(err.message || 'Error al cargar despachos');
-        this.cargandoDespachos.set(false);
-      }
+      error: () => this.cargandoDespachos.set(false)
     });
   }
 
-  confirmar(despachoId: number): void {
-    this.confirmandoId.set(despachoId);
-    this.despachoService.confirmarDespacho(despachoId).subscribe({
-      next: () => {
-        this.toastService.show('Despacho confirmado exitosamente');
-        this.confirmandoId.set(null);
+  aceptarNotificacion(notificacionId: number): void {
+    const unidadId = this.unidadSeleccionada();
+    if (!unidadId) {
+      this.toastService.show('Seleccione una unidad primero');
+      return;
+    }
+    this.aceptandoId.set(notificacionId);
+    this.despachoService.aceptarNotificacion(notificacionId, unidadId).subscribe({
+      next: (res) => {
+        this.toastService.show(res.mensaje || 'Despacho aceptado exitosamente');
+        this.aceptandoId.set(null);
+        this.cargarNotificaciones();
         this.cargarDespachos();
       },
       error: (err) => {
-        this.toastService.show(err.message || 'Error al confirmar despacho');
-        this.confirmandoId.set(null);
+        this.toastService.show(err.message || 'Error al aceptar notificación');
+        this.aceptandoId.set(null);
       }
     });
   }
@@ -141,11 +133,6 @@ export class RecibirDespachoComponent implements OnInit {
         this.llegandoId.set(null);
       }
     });
-  }
-
-  togglePendientes(): void {
-    this.soloPendientes.update(v => !v);
-    this.cargarDespachos();
   }
 
   formatoFecha(iso: string | null): string {

@@ -15,11 +15,13 @@ from accidentes.shared.catalogo_repositories import (
     ClimaCatalogoRepository,
     ElementoFisicoCatalogoRepository,
     PeriodoDiaCatalogoRepository,
+    EstadoUnidadCatalogoRepository,
 )
 from accidentes.shared.catalogo_serializers import (
     SeveridadSerializer, TipoReportadoSerializer, TipoEstadoIncidenteSerializer,
     PaisSerializer, EstadoSerializer, CondadoSerializer, CiudadSerializer,
-    CalleSerializer, ClimaSerializer, ElementoFisicoSerializer, PeriodoDiaSerializer
+    CalleSerializer, ClimaSerializer, ElementoFisicoSerializer, PeriodoDiaSerializer,
+    EstadoUnidadCatalogoSerializer
 )
 
 logger = logging.getLogger(__name__)
@@ -315,4 +317,25 @@ class PeriodoDiaListView(APIView):
             data = SEED_PERIODOS
 
         serializer = PeriodoDiaSerializer(data, many=True)
+        return Response(serializer.data)
+
+
+SEED_ESTADOS_UNIDAD = [
+    {"idestadounidad": 1, "estadounidad": "En base"},
+    {"idestadounidad": 2, "estadounidad": "En camino"},
+    {"idestadounidad": 3, "estadounidad": "En escena"},
+    {"idestadounidad": 4, "estadounidad": "En traslado"},
+    {"idestadounidad": 5, "estadounidad": "Regreso"},
+    {"idestadounidad": 6, "estadounidad": "Disponible"},
+]
+
+
+class EstadoUnidadListView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        data = EstadoUnidadCatalogoRepository.get_all()
+        if not data:
+            data = SEED_ESTADOS_UNIDAD
+        serializer = EstadoUnidadCatalogoSerializer(data, many=True)
         return Response(serializer.data)

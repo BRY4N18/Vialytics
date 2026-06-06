@@ -10,5 +10,5 @@ class UnidadEmergenciaSerializer(serializers.Serializer):
 
 
 class UnidadEstadoUpdateSerializer(serializers.Serializer):
-    ESTADOS = ['EN_BASE', 'EN_CAMINO', 'EN_ESCENA', 'EN_TRASLADO', 'REGRESO', 'DISPONIBLE']
+    ESTADOS = ['En base', 'En camino', 'En escena', 'En traslado', 'Regreso', 'Disponible']
     estadounidad = serializers.ChoiceField(choices=ESTADOS)

@@ -1,8 +1,14 @@
-import { Component, OnInit, input, output, signal, inject, computed } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { UnidadEmergenciaService } from '../../../../core/services/unidad-emergencia.service';
 import { AccidenteService } from '../../../../core/services/accidente.service';
-import { UnidadEmergencia } from '../../../../core/models/unidad-emergencia.model';
+import { inject } from '@angular/core';
+
+interface TipoVehiculo {
+  clave: string;
+  label: string;
+  icon: string;
+  color: string;
+}
 
 @Component({
   selector: 'app-despacho',
@@ -10,85 +16,49 @@ import { UnidadEmergencia } from '../../../../core/models/unidad-emergencia.mode
   imports: [CommonModule],
   templateUrl: './despacho.html'
 })
-export class DespachoComponent implements OnInit {
+export class DespachoComponent {
   accidenteId = input.required<string>();
 
   cerrar = output<void>();
 
-  private readonly unidadEmergenciaService = inject(UnidadEmergenciaService);
   private readonly accidenteService = inject(AccidenteService);
 
-  readonly unidades = signal<UnidadEmergencia[]>([]);
-  readonly selectedUnidadesIds = signal<Set<number>>(new Set());
-  readonly filtroTipo = signal<string>('TODAS');
+  readonly TIPOS: TipoVehiculo[] = [
+    { clave: 'AMBULANCIA', label: 'Ambulancia', icon: 'plus', color: '#F59E0B' },
+    { clave: 'POLICIA', label: 'Policía', icon: 'shield', color: '#06B6D4' },
+    { clave: 'BOMBEROS', label: 'Bomberos', icon: 'flame', color: '#EF4444' },
+    { clave: 'GRUA', label: 'Grúa', icon: 'truck', color: '#6B7280' },
+  ];
 
-  readonly cargando = signal(false);
+  readonly tiposSeleccionados = signal<Set<string>>(new Set());
   readonly guardando = signal(false);
   readonly error = signal<string | null>(null);
 
-  // Computed state for filtered list of responding units
-  readonly unidadesFiltradas = computed(() => {
-    const list = this.unidades();
-    const type = this.filtroTipo();
-    if (type === 'TODAS') {
-      return list;
-    }
-    return list.filter(u => u.tipounidademergencia === type);
-  });
-
-  ngOnInit(): void {
-    this.cargarUnidades();
-  }
-
-  cargarUnidades(): void {
-    this.cargando.set(true);
-    this.error.set(null);
-
-    this.unidadEmergenciaService.getUnidades().subscribe({
-      next: (data) => {
-        this.unidades.set(data);
-        this.cargando.set(false);
-      },
-      error: (err) => {
-        this.error.set(err.message || 'Error al obtener la lista de unidades viales.');
-        this.cargando.set(false);
-      }
-    });
-  }
-
-  isDisponible(unidad: UnidadEmergencia): boolean {
-    return unidad.estadounidad === 'EN_BASE' || unidad.estadounidad === 'DISPONIBLE';
-  }
-
-  toggleSeleccion(unidadId: number): void {
-    const currentSet = new Set(this.selectedUnidadesIds());
-    if (currentSet.has(unidadId)) {
-      currentSet.delete(unidadId);
+  toggleTipo(clave: string): void {
+    const s = new Set(this.tiposSeleccionados());
+    if (s.has(clave)) {
+      s.delete(clave);
     } else {
-      currentSet.add(unidadId);
+      s.add(clave);
     }
-    this.selectedUnidadesIds.set(currentSet);
-  }
-
-  setFiltroTipo(tipo: string): void {
-    this.filtroTipo.set(tipo);
+    this.tiposSeleccionados.set(s);
   }
 
   submit(): void {
-    const ids = Array.from(this.selectedUnidadesIds());
-    if (ids.length === 0) return;
+    const tipos = Array.from(this.tiposSeleccionados());
+    if (tipos.length === 0) return;
 
     this.guardando.set(true);
     this.error.set(null);
 
-    this.accidenteService.despacharUnidades(this.accidenteId(), { unidades_ids: ids }).subscribe({
+    this.accidenteService.despacharUnidades(this.accidenteId(), { tipos }).subscribe({
       next: () => {
         this.guardando.set(false);
-        this.cerrar.emit(); // Success, close dispatcher modal
+        this.cerrar.emit();
       },
       error: (err) => {
         this.guardando.set(false);
-        this.error.set(err.message || 'Error al realizar el despacho de unidades.');
+        this.error.set(err.message || 'Error al crear notificación de despacho.');
       }
     });
   }

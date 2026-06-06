@@ -1,0 +1,247 @@
+<div class="max-w-6xl mx-auto px-6 py-8">
+  <!-- Header -->
+  <header class="mb-8">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-violet-500/20 rounded-[10px] flex items-center justify-center flex-shrink-0">
+          <svg class="w-5 h-5 text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xl font-extrabold text-text-primary tracking-tight">Unidades de Emergencia</h1>
+          <p class="text-xs text-text-muted mt-0.5">Gestione las unidades de emergencia del sistema</p>
+        </div>
+      </div>
+      <button
+        class="px-4 py-2 bg-violet-500/20 border border-violet-500/40 text-violet-400 text-xs font-bold rounded-sm cursor-pointer transition-all hover:bg-violet-500/30 hover:text-violet-300 flex items-center gap-1.5"
+        (click)="abrirModalCrear()">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Nueva Unidad
+      </button>
+    </div>
+  </header>
+
+  @if (cargando()) {
+    <div class="flex items-center justify-center h-48">
+      <div class="flex items-center gap-2 text-sm text-text-muted">
+        <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"/>
+        </svg>
+        Cargando unidades...
+      </div>
+    </div>
+  } @else {
+    <!-- Tabla -->
+    <div class="bg-white border border-border rounded-panel overflow-hidden">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left px-4 py-3 text-[0.55rem] font-bold uppercase tracking-wider text-text-muted">ID</th>
+            <th class="text-left px-4 py-3 text-[0.55rem] font-bold uppercase tracking-wider text-text-muted">Nombre</th>
+            <th class="text-left px-4 py-3 text-[0.55rem] font-bold uppercase tracking-wider text-text-muted">Tipo</th>
+            <th class="text-left px-4 py-3 text-[0.55rem] font-bold uppercase tracking-wider text-text-muted">Estado</th>
+            <th class="text-left px-4 py-3 text-[0.55rem] font-bold uppercase tracking-wider text-text-muted">Activo</th>
+            <th class="text-right px-4 py-3 text-[0.55rem] font-bold uppercase tracking-wider text-text-muted">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of unidades(); track u.idunidademergencia) {
+            <tr class="border-b border-border/50 transition-all hover:bg-white/[0.02]">
+              <td class="px-4 py-3 text-text-muted font-mono text-xs">{{ u.idunidademergencia }}</td>
+              <td class="px-4 py-3 font-semibold text-text-primary">{{ u.unidademergencia }}</td>
+              <td class="px-4 py-3">
+                <span class="text-[0.55rem] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider text-text-muted border-border">
+                  {{ u.tipounidademergencia }}
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                <span class="text-[0.55rem] font-bold uppercase tracking-wider"
+                  [class.text-emerald-400]="u.estadounidad === 'En base'"
+                  [class.text-amber-400]="u.estadounidad !== 'En base'">
+                  {{ u.estadounidad }}
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                @if (u.activo) {
+                  <span class="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 uppercase">Sí</span>
+                } @else {
+                  <span class="text-[0.55rem] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 uppercase">No</span>
+                }
+              </td>
+              <td class="px-4 py-3 text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <button
+                    class="px-3 py-1.5 bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 text-[0.55rem] font-bold rounded-sm cursor-pointer transition-all hover:bg-cyan-500/30 hover:text-cyan-300"
+                    (click)="abrirModalEditar(u)">
+                    Editar
+                  </button>
+                  <button
+                    class="px-3 py-1.5 border text-[0.55rem] font-bold rounded-sm cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    [class.bg-red-500/20]="u.activo"
+                    [class.border-red-500/40]="u.activo"
+                    [class.text-red-400]="u.activo"
+                    [class.hover:bg-red-500/30]="u.activo"
+                    [class.hover:text-red-300]="u.activo"
+                    [class.bg-emerald-500/20]="!u.activo"
+                    [class.border-emerald-500/40]="!u.activo"
+                    [class.text-emerald-400]="!u.activo"
+                    [class.hover:bg-emerald-500/30]="!u.activo"
+                    [class.hover:text-emerald-300]="!u.activo"
+                    [disabled]="togglingId() === u.idunidademergencia"
+                    (click)="toggleActivo(u)">
+                    @if (togglingId() === u.idunidademergencia) {
+                      <span class="flex items-center gap-1">
+                        <svg class="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"/>
+                        </svg>
+                      </span>
+                    } @else {
+                      {{ u.activo ? 'Desactivar' : 'Activar' }}
+                    }
+                  </button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="px-4 py-8 text-center text-sm text-text-muted">No hay unidades de emergencia registradas</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- Modal Crear -->
+  @if (modalCrearAbierto()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" (click)="cerrarModalCrear()">
+      <div class="bg-card border border-border rounded-panel w-full max-w-md p-6 shadow-2xl" (click)="$event.stopPropagation()">
+        <div class="flex items-center justify-between mb-5">
+          <h3 class="text-sm font-bold text-text-primary">Nueva Unidad de Emergencia</h3>
+          <button class="text-text-muted hover:text-text-secondary cursor-pointer" (click)="cerrarModalCrear()">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="flex flex-col gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[0.55rem] font-bold uppercase tracking-wider text-text-muted">Nombre</label>
+            <input
+              class="bg-white border border-border text-text-primary rounded-sm px-3 py-2 text-sm outline-none transition-all focus:border-violet-500/40 w-full"
+              placeholder="Ej: Ambulancia 3"
+              [value]="crearNombre()"
+              (input)="crearNombre.set($any($event.target).value)" />
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[0.55rem] font-bold uppercase tracking-wider text-text-muted">Tipo</label>
+            <div class="relative">
+              <select
+                class="appearance-none bg-white border border-border text-text-primary rounded-sm px-3 py-2 pr-8 text-sm outline-none cursor-pointer transition-all hover:border-violet-500/40 focus:border-violet-500/40 w-full"
+                [value]="crearTipo()"
+                (change)="crearTipo.set($any($event.target).value)">
+                <option value="" disabled>— Seleccione tipo —</option>
+                @for (t of tiposUnidad; track $index) {
+                  <option [value]="t">{{ t }}</option>
+                }
+              </select>
+              <svg class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+          </div>
+
+          @if (errorCrear()) {
+            <div class="text-xs text-red-400">{{ errorCrear() }}</div>
+          }
+
+          <button
+            class="w-full py-2.5 bg-violet-500/20 border border-violet-500/40 text-violet-400 text-xs font-bold rounded-sm cursor-pointer transition-all hover:bg-violet-500/30 hover:text-violet-300 disabled:opacity-50 disabled:cursor-not-allowed mt-1"
+            [disabled]="!crearNombre().trim() || !crearTipo() || creando()"
+            (click)="crearUnidad()">
+            @if (creando()) {
+              <span class="flex items-center justify-center gap-1.5">
+                <svg class="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"/>
+                </svg>
+                Creando...
+              </span>
+            } @else {
+              Crear Unidad
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal Editar -->
+  @if (modalEditarAbierto()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" (click)="cerrarModalEditar()">
+      <div class="bg-card border border-border rounded-panel w-full max-w-md p-6 shadow-2xl" (click)="$event.stopPropagation()">
+        <div class="flex items-center justify-between mb-5">
+          <h3 class="text-sm font-bold text-text-primary">Editar Unidad</h3>
+          <button class="text-text-muted hover:text-text-secondary cursor-pointer" (click)="cerrarModalEditar()">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="flex flex-col gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[0.55rem] font-bold uppercase tracking-wider text-text-muted">Nombre</label>
+            <input
+              class="bg-white/5 border border-border text-text-primary rounded-sm px-3 py-2 text-sm outline-none transition-all focus:border-violet-500/40 w-full"
+              placeholder="Nombre de la unidad"
+              [value]="editarNombre()"
+              (input)="editarNombre.set($any($event.target).value)" />
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[0.55rem] font-bold uppercase tracking-wider text-text-muted">Tipo</label>
+            <div class="relative">
+              <select
+                class="appearance-none bg-white border border-border text-text-primary rounded-sm px-3 py-2 pr-8 text-sm outline-none cursor-pointer transition-all hover:border-violet-500/40 focus:border-violet-500/40 w-full"
+                [value]="editarTipo()"
+                (change)="editarTipo.set($any($event.target).value)">
+                <option value="" disabled>— Seleccione tipo —</option>
+                @for (t of tiposUnidad; track $index) {
+                  <option [value]="t">{{ t }}</option>
+                }
+              </select>
+              <svg class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+          </div>
+
+          @if (errorEditar()) {
+            <div class="text-xs text-red-400">{{ errorEditar() }}</div>
+          }
+
+          <button
+            class="w-full py-2.5 bg-violet-500/20 border border-violet-500/40 text-violet-400 text-xs font-bold rounded-sm cursor-pointer transition-all hover:bg-violet-500/30 hover:text-violet-300 disabled:opacity-50 disabled:cursor-not-allowed mt-1"
+            [disabled]="!editarNombre().trim() || !editarTipo() || editando()"
+            (click)="guardarEditar()">
+            @if (editando()) {
+              <span class="flex items-center justify-center gap-1.5">
+                <svg class="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"/>
+                </svg>
+                Guardando...
+              </span>
+            } @else {
+              Guardar Cambios
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

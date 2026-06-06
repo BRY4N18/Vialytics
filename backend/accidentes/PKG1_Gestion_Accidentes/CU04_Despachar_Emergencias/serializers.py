@@ -13,4 +13,4 @@ class DespachoSerializer(serializers.Serializer):
 
 
 class DespachoCrearSerializer(serializers.Serializer):
-    unidades_ids = serializers.ListField(child=serializers.IntegerField(), min_length=1)
+    tipos = serializers.ListField(child=serializers.CharField(), min_length=1)

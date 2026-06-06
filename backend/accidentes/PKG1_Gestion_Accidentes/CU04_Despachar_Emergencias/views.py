@@ -28,11 +28,11 @@ class DespachoView(APIView):
         if not serializer.is_valid():
             return validation_error_response(serializer.errors)
         try:
-            despachos = DespachoService.despachar_unidades(
+            resultado = DespachoService.despachar_unidades(
                 accidente_id=accidente_id,
-                unidades_ids=serializer.validated_data['unidades_ids'],
+                tipos=serializer.validated_data['tipos'],
             )
-            return ok_response(DespachoSerializer(despachos, many=True).data, status=status.HTTP_201_CREATED)
+            return ok_response(resultado, status=status.HTTP_201_CREATED)
         except Exception as exc:
             logger.error('Error despachando %s: %s', accidente_id, exc)
             return server_error_response('Error al despachar')

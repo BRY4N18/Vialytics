@@ -49,6 +49,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/PKG2_Respuesta_Emergencias/CU07_Recibir_Despacho/recibir-despacho/recibir-despacho').then(m => m.RecibirDespachoComponent),
     canActivate: [authGuard]
   },
+  { 
+    path: 'unidades', 
+    loadComponent: () => import('./features/PKG5_Administracion/CU17_Gestionar_Unidades_Emergencia/gestionar-unidades/gestionar-unidades').then(m => m.GestionarUnidadesComponent),
+    canActivate: [authGuard]
+  },
   { path: '**', redirectTo: 'dashboard' }
 ];
 

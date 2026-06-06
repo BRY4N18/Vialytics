@@ -1,12 +1,12 @@
-export type TipoUnidad = 'AMBULANCIA' | 'POLICIA' | 'GRUA' | 'BOMBEROS';
+export type TipoUnidad = 'AMBULANCIA' | 'BOMBEROS' | 'TRANSITO' | 'GRUA';
 
 export type EstadoUnidad =
-  | 'EN_BASE'
-  | 'EN_CAMINO'
-  | 'EN_ESCENA'
-  | 'EN_TRASLADO'
-  | 'REGRESO'
-  | 'DISPONIBLE';
+  | 'En base'
+  | 'En camino'
+  | 'En escena'
+  | 'En traslado'
+  | 'Regreso'
+  | 'Disponible';
 
 export interface UnidadEmergencia {
   idunidademergencia: number;

@@ -11,6 +11,12 @@ export interface AccidenteInfo {
   ciudad_nombre: string;
 }
 
+export interface Vehiculo {
+  tipovehiculo: string;
+  modelovehiculo: string;
+  mercanciapeligrosa: boolean;
+}
+
 export interface DespachoPendiente {
   iddespacho: number;
   idaccidente: string;
@@ -18,11 +24,18 @@ export interface DespachoPendiente {
   unidad_nombre: string;
   tipo_unidad: string;
   fechahoradespacho: string;
-  fechahoraconfirmacion: string | null;
   fechahorallegada: string | null;
   accidente: AccidenteInfo;
+  vehiculos: Vehiculo[];
 }
 
-export interface DespachoConfirmacionPayload {
-  nota?: string;
+export interface NotificacionDespacho {
+  idnotificaciondespacho: number;
+  idaccidente: string;
+  numheridos: number;
+  numvehiculos: number;
+  tipos_necesarios: string[];
+  fecha_actualizacion: string;
+  accidente: AccidenteInfo;
+  vehiculos: Vehiculo[];
 }

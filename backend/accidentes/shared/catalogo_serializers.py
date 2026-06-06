@@ -75,3 +75,8 @@ class PeriodoDiaSerializer(serializers.Serializer):
     crepusculocivil = serializers.CharField()
     crepusculonautico = serializers.CharField()
     crepusculoastronomico = serializers.CharField()
+
+
+class EstadoUnidadCatalogoSerializer(serializers.Serializer):
+    idestadounidad = serializers.IntegerField()
+    estadounidad = serializers.CharField()

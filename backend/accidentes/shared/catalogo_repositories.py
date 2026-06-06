@@ -133,15 +133,39 @@ class PeriodoDiaCatalogoRepository:
         )
 
 
+_ESTADOS_UNIDAD_CATALOGO = [
+    {"idestadounidad": 1, "estadounidad": "En base"},
+    {"idestadounidad": 2, "estadounidad": "En camino"},
+    {"idestadounidad": 3, "estadounidad": "En escena"},
+    {"idestadounidad": 4, "estadounidad": "En traslado"},
+    {"idestadounidad": 5, "estadounidad": "Regreso"},
+    {"idestadounidad": 6, "estadounidad": "Disponible"},
+]
+
+
+class EstadoUnidadCatalogoRepository:
+
+    @staticmethod
+    def get_all() -> List[Dict[str, Any]]:
+        rows = PinotRepository.execute_query(
+            "SELECT idestadounidad, estadounidad "
+            "FROM estadosunidadesemergencias WHERE activo = true LIMIT 20"
+        )
+        if rows:
+            return rows
+        logger.warning("Error querying estados unidad from Pinot, using fallback")
+        return _ESTADOS_UNIDAD_CATALOGO
+
+
 _UNIDADES_CATALOGO = [
-    {"idunidademergencia": 1, "unidademergencia": "Alfa 1", "tipounidademergencia": "AMBULANCIA", "estadounidad": "EN_BASE", "activo": True},
-    {"idunidademergencia": 2, "unidademergencia": "Alfa 2", "tipounidademergencia": "AMBULANCIA", "estadounidad": "EN_BASE", "activo": True},
-    {"idunidademergencia": 3, "unidademergencia": "Rescate 1", "tipounidademergencia": "BOMBEROS", "estadounidad": "EN_BASE", "activo": True},
-    {"idunidademergencia": 4, "unidademergencia": "Bomberos 4", "tipounidademergencia": "BOMBEROS", "estadounidad": "EN_BASE", "activo": True},
-    {"idunidademergencia": 5, "unidademergencia": "ATM Movil 10", "tipounidademergencia": "TRANSITO", "estadounidad": "EN_BASE", "activo": True},
-    {"idunidademergencia": 6, "unidademergencia": "ATM Movil 12", "tipounidademergencia": "TRANSITO", "estadounidad": "EN_BASE", "activo": True},
-    {"idunidademergencia": 7, "unidademergencia": "Patrulla 105", "tipounidademergencia": "POLICIA", "estadounidad": "EN_BASE", "activo": True},
-    {"idunidademergencia": 8, "unidademergencia": "Patrulla 109", "tipounidademergencia": "POLICIA", "estadounidad": "EN_BASE", "activo": True},
+    {"idunidademergencia": 1, "unidademergencia": "Alfa 1", "tipounidademergencia": "AMBULANCIA", "estadounidad": "En base", "activo": True},
+    {"idunidademergencia": 2, "unidademergencia": "Alfa 2", "tipounidademergencia": "AMBULANCIA", "estadounidad": "En base", "activo": True},
+    {"idunidademergencia": 3, "unidademergencia": "Rescate 1", "tipounidademergencia": "BOMBEROS", "estadounidad": "En base", "activo": True},
+    {"idunidademergencia": 4, "unidademergencia": "Bomberos 4", "tipounidademergencia": "BOMBEROS", "estadounidad": "En base", "activo": True},
+    {"idunidademergencia": 5, "unidademergencia": "ATM Movil 10", "tipounidademergencia": "TRANSITO", "estadounidad": "En base", "activo": True},
+    {"idunidademergencia": 6, "unidademergencia": "ATM Movil 12", "tipounidademergencia": "TRANSITO", "estadounidad": "En base", "activo": True},
+    {"idunidademergencia": 7, "unidademergencia": "Patrulla 105", "tipounidademergencia": "POLICIA", "estadounidad": "En base", "activo": True},
+    {"idunidademergencia": 8, "unidademergencia": "Patrulla 109", "tipounidademergencia": "POLICIA", "estadounidad": "En base", "activo": True},
 ]
 
 
@@ -160,4 +184,11 @@ class UnidadEmergenciaCatalogoRepository:
 
     @staticmethod
     def get_info_map() -> Dict[int, tuple]:
+        rows = PinotRepository.execute_query(
+            "SELECT idunidademergencia, unidademergencia, tipounidademergencia "
+            "FROM unidadesemergencia WHERE activo = true LIMIT 100"
+        )
+        if rows:
+            return {u["idunidademergencia"]: (u["unidademergencia"], u["tipounidademergencia"]) for u in rows}
+        logger.warning("Error querying unidades info_map from Pinot, using fallback")
         return {u["idunidademergencia"]: (u["unidademergencia"], u["tipounidademergencia"]) for u in _UNIDADES_CATALOGO}

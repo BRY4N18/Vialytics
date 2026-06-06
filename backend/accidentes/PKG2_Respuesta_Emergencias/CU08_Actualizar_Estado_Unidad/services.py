@@ -5,6 +5,8 @@ from typing import List, Optional, Dict, Any
 from accidentes.PKG2_Respuesta_Emergencias.CU08_Actualizar_Estado_Unidad.repositories import (
     UnidadEmergenciaReadRepository,
     UnidadEmergenciaWriteRepository,
+    UnidadEstadoHistorialReadRepository,
+    UnidadEstadoHistorialWriteRepository,
 )
 from accidentes.shared.catalogo_repositories import UnidadEmergenciaCatalogoRepository
 
@@ -23,7 +25,7 @@ class UnidadEmergenciaService:
         filas_ordenadas = sorted(filas, key=lambda x: x.get('fecha_actualizacion', 0))
         for fila in filas_ordenadas:
             uid = int(fila.get('idunidademergencia', 0))
-            est = str(fila.get('estadounidad', 'EN_BASE'))
+            est = str(fila.get('estadounidad', 'En base'))
             if uid > 0:
                 ultimo_estado_map[uid] = est
 
@@ -50,6 +52,8 @@ class UnidadEmergenciaService:
         if not unidad_encontrada:
             raise ValueError(f"Unidad con ID {unidad_id} no encontrada en el catálogo.")
 
+        estado_anterior = UnidadEstadoHistorialReadRepository.get_ultimo_estado(unidad_id) or "En base"
+
         payload = {
             "idunidademergencia": int(unidad_id),
             "unidademergencia": unidad_encontrada["unidademergencia"],
@@ -59,4 +63,18 @@ class UnidadEmergenciaService:
         }
 
         UnidadEmergenciaWriteRepository.create(payload)
+
+        max_id = UnidadEstadoHistorialReadRepository.get_max_id()
+        historial_payload = {
+            "idhistorial": max_id + 1,
+            "idunidademergencia": int(unidad_id),
+            "unidademergencia": unidad_encontrada["unidademergencia"],
+            "tipounidademergencia": unidad_encontrada["tipounidademergencia"],
+            "estadoanterior": estado_anterior,
+            "estadonuevo": nuevo_estado,
+            "fecha_actualizacion": int(time.time() * 1000),
+            "activo": True,
+        }
+        UnidadEstadoHistorialWriteRepository.create(historial_payload)
+
         return payload

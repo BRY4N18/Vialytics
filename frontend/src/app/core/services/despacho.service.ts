@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
-import { DespachoPendiente } from '../models/despacho-pendiente.model';
+import { DespachoPendiente, NotificacionDespacho } from '../models/despacho-pendiente.model';
 
 @Injectable({ providedIn: 'root' })
 export class DespachoService {
@@ -18,9 +18,17 @@ export class DespachoService {
       .pipe(catchError(this.handleError));
   }
 
-  confirmarDespacho(despachoId: number): Observable<{ mensaje: string }> {
+  getNotificaciones(): Observable<NotificacionDespacho[]> {
     return this.http
-      .patch<{ mensaje: string }>(`${this.baseUrl}/despachos/${despachoId}/confirmar/`, {})
+      .get<NotificacionDespacho[]>(`${this.baseUrl}/notificaciones/`)
+      .pipe(catchError(this.handleError));
+  }
+
+  aceptarNotificacion(notificacionId: number, unidadId: number): Observable<any> {
+    return this.http
+      .post(`${this.baseUrl}/notificaciones/${notificacionId}/aceptar/`, {
+        idunidademergencia: unidadId
+      })
       .pipe(catchError(this.handleError));
   }
 

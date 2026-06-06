@@ -1,176 +1,90 @@
 <div class="bg-card rounded-card shadow-modal overflow-hidden flex flex-col animate-modal-enter">
-  <!-- Modal Header -->
   <div class="px-6 py-5 border-b border-border">
     <h3 class="text-lg font-bold text-text-primary">Despachar Unidades #{{ accidenteId() }}</h3>
-    <p class="text-sm text-text-secondary mt-0">Seleccione las unidades que responderán al incidente</p>
+    <p class="text-sm text-text-secondary mt-0">Seleccione el tipo de unidad de emergencia que necesita</p>
   </div>
 
-  <!-- Filter Tabs -->
-  <div class="flex gap-2 px-6 py-3.5 bg-gray-50 border-b border-border overflow-x-auto">
-    <button
-      class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white border border-border text-text-secondary cursor-pointer whitespace-nowrap transition-all hover:bg-gray-100 hover:text-text-primary"
-      [class.bg-info/10]="filtroTipo() === 'TODAS'"
-      [class.border-info/30]="filtroTipo() === 'TODAS'"
-      [class.text-info]="filtroTipo() === 'TODAS'"
-      [class.shadow-[0_0_8px_rgba(2,132,199,0.15)]]="filtroTipo() === 'TODAS'"
-      (click)="setFiltroTipo('TODAS')">Todas</button>
-    <button
-      class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white border border-border text-text-secondary cursor-pointer whitespace-nowrap transition-all hover:bg-gray-100 hover:text-text-primary"
-      [class.bg-info/10]="filtroTipo() === 'AMBULANCIA'"
-      [class.border-info/30]="filtroTipo() === 'AMBULANCIA'"
-      [class.text-info]="filtroTipo() === 'AMBULANCIA'"
-      [class.shadow-[0_0_8px_rgba(2,132,199,0.15)]]="filtroTipo() === 'AMBULANCIA'"
-      (click)="setFiltroTipo('AMBULANCIA')">Ambulancias</button>
-    <button
-      class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white border border-border text-text-secondary cursor-pointer whitespace-nowrap transition-all hover:bg-gray-100 hover:text-text-primary"
-      [class.bg-info/10]="filtroTipo() === 'POLICIA'"
-      [class.border-info/30]="filtroTipo() === 'POLICIA'"
-      [class.text-info]="filtroTipo() === 'POLICIA'"
-      [class.shadow-[0_0_8px_rgba(2,132,199,0.15)]]="filtroTipo() === 'POLICIA'"
-      (click)="setFiltroTipo('POLICIA')">Policía</button>
-    <button
-      class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white border border-border text-text-secondary cursor-pointer whitespace-nowrap transition-all hover:bg-gray-100 hover:text-text-primary"
-      [class.bg-info/10]="filtroTipo() === 'BOMBEROS'"
-      [class.border-info/30]="filtroTipo() === 'BOMBEROS'"
-      [class.text-info]="filtroTipo() === 'BOMBEROS'"
-      [class.shadow-[0_0_8px_rgba(2,132,199,0.15)]]="filtroTipo() === 'BOMBEROS'"
-      (click)="setFiltroTipo('BOMBEROS')">Bomberos</button>
-    <button
-      class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white border border-border text-text-secondary cursor-pointer whitespace-nowrap transition-all hover:bg-gray-100 hover:text-text-primary"
-      [class.bg-info/10]="filtroTipo() === 'GRUA'"
-      [class.border-info/30]="filtroTipo() === 'GRUA'"
-      [class.text-info]="filtroTipo() === 'GRUA'"
-      [class.shadow-[0_0_8px_rgba(2,132,199,0.15)]]="filtroTipo() === 'GRUA'"
-      (click)="setFiltroTipo('GRUA')">Grúas</button>
-  </div>
-
-  <!-- Selected counter -->
-  @if (!cargando()) {
+  @if (tiposSeleccionados().size > 0) {
     <div class="flex items-center gap-1.5 px-6 py-2 text-xs text-text-muted bg-gray-50/50 border-b border-border">
       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
       </svg>
-      <span class="font-extrabold text-success text-sm">{{ selectedUnidadesIds().size }}</span>
-      <span class="font-semibold uppercase tracking-widest text-[0.58rem] text-text-muted">seleccionadas</span>
+      <span class="font-extrabold text-success text-sm">{{ tiposSeleccionados().size }}</span>
+      <span class="font-semibold uppercase tracking-widest text-[0.58rem] text-text-muted">seleccionados</span>
     </div>
   }
 
-  <!-- Loading -->
-  @if (cargando()) {
-    <div class="py-15 px-6 flex flex-col items-center gap-4 text-center">
-      <div class="w-7 h-7 border-3 border-info/10 border-t-info rounded-full animate-spin"></div>
-      <p class="text-sm text-text-secondary">Cargando unidades de emergencia...</p>
-    </div>
-  } @else {
-    <!-- Body -->
-    <div class="p-6 max-h-[400px] overflow-y-auto">
+  <div class="p-6">
+    @if (error(); as err) {
+      <div class="flex items-center gap-2.5 p-3 bg-danger/10 border border-danger/20 rounded-sm text-sm text-danger mb-4">
+        <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <span>{{ err }}</span>
+      </div>
+    }
 
-      <!-- Error -->
-      @if (error(); as err) {
-        <div class="flex items-center gap-2.5 p-3 bg-danger/10 border border-danger/20 rounded-sm text-sm text-danger mb-3">
-          <svg class="w-5 h-5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-          <span>{{ err }}</span>
+    <div class="grid grid-cols-2 gap-4">
+      @for (t of TIPOS; track t.clave) {
+        @let selected = tiposSeleccionados().has(t.clave);
+        <div
+          class="flex flex-col items-center gap-3 p-6 bg-white border-2 rounded-sm cursor-pointer transition-all select-none"
+          [class.border-border]="!selected"
+          [class.border-success]="selected"
+          [class.bg-success/[0.04]]="selected"
+          [class.hover:border-success/50]="!selected"
+          [class.hover:-translate-y-0.5]="!selected"
+          [class.active:scale-[0.97]]="!selected"
+          (click)="toggleTipo(t.clave)">
+          <div class="w-14 h-14 rounded-full flex items-center justify-center"
+            [style.background]="t.color + '15'">
+            @switch (t.clave) {
+              @case ('AMBULANCIA') {
+                <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" [style.color]="t.color">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+                </svg>
+              }
+              @case ('POLICIA') {
+                <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" [style.color]="t.color">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/>
+                </svg>
+              }
+              @case ('BOMBEROS') {
+                <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" [style.color]="t.color">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/>
+                </svg>
+              }
+              @case ('GRUA') {
+                <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" [style.color]="t.color">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177V3.75A1.5 1.5 0 0012.75 2.25h-1.5a1.5 1.5 0 00-1.5 1.5v4.877m4.5-1.877H9m0 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3 0h3.75m9.75 0h-9.75"/>
+                </svg>
+              }
+            }
+          </div>
+          <span class="text-sm font-bold text-text-primary">{{ t.label }}</span>
+          @if (selected) {
+            <span class="text-[0.55rem] font-bold text-success uppercase tracking-wider">Seleccionado</span>
+          }
         </div>
       }
-
-      <!-- Units Grid -->
-      <div class="grid grid-cols-2 gap-3">
-        @for (uni of unidadesFiltradas(); track uni.idunidademergencia) {
-          @let disp = isDisponible(uni);
-          <div
-            class="flex items-center gap-3 p-3.5 bg-white border border-border rounded-sm cursor-pointer transition-all hover:border-border-light hover:-translate-y-0.5 active:scale-[0.97] relative select-none"
-            [class.opacity-40]="!disp"
-            [class.cursor-not-allowed]="!disp"
-            [class.hover:translate-y-0]="!disp"
-            [class.bg-success/[0.04]]="selectedUnidadesIds().has(uni.idunidademergencia)"
-            [class.border-success/30]="selectedUnidadesIds().has(uni.idunidademergencia)"
-            [class.shadow-[0_0_8px_rgba(22,163,74,0.1)]]="selectedUnidadesIds().has(uni.idunidademergencia)"
-            (click)="disp && toggleSeleccion(uni.idunidademergencia)">
-
-            <div class="flex items-center">
-              <input
-                type="checkbox"
-                [checked]="selectedUnidadesIds().has(uni.idunidademergencia)"
-                [disabled]="!disp"
-                class="w-4 h-4 accent-accent-gray cursor-inherit"
-                (click)="$event.stopPropagation(); toggleSeleccion(uni.idunidademergencia)">
-            </div>
-
-            <div class="w-9 h-9 rounded flex items-center justify-center flex-shrink-0"
-              [class.bg-warning/10]="uni.tipounidademergencia === 'AMBULANCIA'"
-              [class.text-warning]="uni.tipounidademergencia === 'AMBULANCIA'"
-              [class.bg-info/10]="uni.tipounidademergencia === 'POLICIA'"
-              [class.text-info]="uni.tipounidademergencia === 'POLICIA'"
-              [class.bg-danger/10]="uni.tipounidademergencia === 'BOMBEROS'"
-              [class.text-danger]="uni.tipounidademergencia === 'BOMBEROS'"
-              [class.bg-gray-100]="uni.tipounidademergencia === 'GRUA'"
-              [class.text-text-muted]="uni.tipounidademergencia === 'GRUA'">
-              @switch (uni.tipounidademergencia) {
-                @case ('AMBULANCIA') {
-                  <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                  </svg>
-                }
-                @case ('POLICIA') {
-                  <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-                  </svg>
-                }
-                @case ('BOMBEROS') {
-                  <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
-                  </svg>
-                }
-                @case ('GRUA') {
-                  <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177V3.75A1.5 1.5 0 0012.75 2.25h-1.5a1.5 1.5 0 00-1.5 1.5v4.877m4.5-1.877H9m0 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3 0h3.75m9.75 0h-9.75" />
-                  </svg>
-                }
-              }
-            </div>
-
-            <div class="flex flex-col gap-1 flex-1 min-w-0">
-              <strong class="text-sm font-bold text-text-primary truncate">{{ uni.unidademergencia }}</strong>
-              <div class="flex flex-wrap gap-1.5 items-center">
-                <span class="text-[0.6rem] font-bold text-text-muted uppercase">{{ uni.tipounidademergencia }}</span>
-                <span class="text-[0.6rem] font-bold px-1.5 py-0.5 rounded uppercase"
-                  [class.bg-success/10]="uni.estadounidad === 'EN_BASE' || uni.estadounidad === 'DISPONIBLE'"
-                  [class.text-success]="uni.estadounidad === 'EN_BASE' || uni.estadounidad === 'DISPONIBLE'"
-                  [class.bg-danger/10]="uni.estadounidad !== 'EN_BASE' && uni.estadounidad !== 'DISPONIBLE'"
-                  [class.text-danger]="uni.estadounidad !== 'EN_BASE' && uni.estadounidad !== 'DISPONIBLE'">
-                  {{ uni.estadounidad }}
-                </span>
-              </div>
-            </div>
-
-          </div>
-        } @empty {
-          <div class="col-span-2 text-center py-10 text-text-muted text-sm">
-            <p>No se encontraron unidades de esta categoría.</p>
-          </div>
-        }
-      </div>
     </div>
+  </div>
 
-    <!-- Footer -->
-    <div class="flex justify-end gap-3 px-6 py-4.5 bg-gray-50/50 border-t border-border">
-      <button type="button" class="px-5 py-2.5 bg-transparent border border-border text-text-secondary rounded-sm text-sm font-semibold cursor-pointer transition-all hover:bg-gray-50 hover:text-text-primary active:scale-[0.97] disabled:opacity-40" (click)="onCancelar()" [disabled]="guardando()">
-        Cancelar
-      </button>
-      <button
-        type="button"
-        class="px-5 py-2.5 bg-sidebar text-white rounded-sm text-sm font-semibold cursor-pointer transition-all hover:bg-sidebar-hover active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-text-muted disabled:shadow-none flex items-center gap-2"
-        [disabled]="selectedUnidadesIds().size === 0 || guardando()"
-        (click)="submit()">
-        @if (guardando()) {
-          <div class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-          Despachando...
-        } @else {
-          Despachar ({{ selectedUnidadesIds().size }})
-        }
-      </button>
-    </div>
-  }
+  <div class="flex justify-end gap-3 px-6 py-4.5 bg-gray-50/50 border-t border-border">
+    <button type="button" class="px-5 py-2.5 bg-transparent border border-border text-text-secondary rounded-sm text-sm font-semibold cursor-pointer transition-all hover:bg-gray-50 hover:text-text-primary active:scale-[0.97] disabled:opacity-40" (click)="onCancelar()" [disabled]="guardando()">
+      Cancelar
+    </button>
+    <button
+      type="button"
+      class="px-5 py-2.5 bg-sidebar text-white rounded-sm text-sm font-semibold cursor-pointer transition-all hover:bg-sidebar-hover active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+      [disabled]="tiposSeleccionados().size === 0 || guardando()"
+      (click)="submit()">
+      @if (guardando()) {
+        <div class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+        Notificando...
+      } @else {
+        Notificar ({{ tiposSeleccionados().size }})
+      }
+    </button>
+  </div>
 </div>
