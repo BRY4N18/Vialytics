@@ -1,4 +1,4 @@
-export type TipoUnidad = 'AMBULANCIA' | 'BOMBEROS' | 'TRANSITO' | 'GRUA';
+export type TipoUnidad = string;
 
 export type EstadoUnidad =
   | 'En base'
@@ -7,6 +7,11 @@ export type EstadoUnidad =
   | 'En traslado'
   | 'Regreso'
   | 'Disponible';
+
+export interface TipoUnidadCatalogoItem {
+  idtipounidad: number;
+  tipounidad: TipoUnidad;
+}
 
 export interface UnidadEmergencia {
   idunidademergencia: number;

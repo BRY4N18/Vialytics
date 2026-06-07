@@ -3,7 +3,6 @@ import logging
 from typing import List, Optional, Dict, Any
 
 from accidentes.PKG2_Respuesta_Emergencias.CU08_Actualizar_Estado_Unidad.repositories import (
-    UnidadEmergenciaReadRepository,
     UnidadEmergenciaWriteRepository,
     UnidadEstadoHistorialReadRepository,
     UnidadEstadoHistorialWriteRepository,
@@ -19,26 +18,15 @@ class UnidadEmergenciaService:
 
     @staticmethod
     def obtener_unidades(tipo: Optional[str] = None) -> List[Dict[str, Any]]:
-        filas = UnidadEmergenciaReadRepository.get_all()
-
-        ultimo_estado_map = {}
-        filas_ordenadas = sorted(filas, key=lambda x: x.get('fecha_actualizacion', 0))
-        for fila in filas_ordenadas:
-            uid = int(fila.get('idunidademergencia', 0))
-            est = str(fila.get('estadounidad', 'En base'))
-            if uid > 0:
-                ultimo_estado_map[uid] = est
-
         resultado = []
         for uni in CATALOGO_UNIDADES:
             uid = uni["idunidademergencia"]
             uni_copia = uni.copy()
-            if uid in ultimo_estado_map:
-                uni_copia["estadounidad"] = ultimo_estado_map[uid]
+            estado = UnidadEstadoHistorialReadRepository.get_ultimo_estado(uid) or "En base"
+            uni_copia["estadounidad"] = estado
             if tipo and uni_copia["tipounidademergencia"] != tipo:
                 continue
             resultado.append(uni_copia)
-
         return resultado
 
     @staticmethod

@@ -13,4 +13,10 @@ class DespachoSerializer(serializers.Serializer):
 
 
 class DespachoCrearSerializer(serializers.Serializer):
-    tipos = serializers.ListField(child=serializers.CharField(), min_length=1)
+    tipos = serializers.ListField(child=serializers.CharField(), min_length=1, required=False)
+    unidad_ids = serializers.ListField(child=serializers.IntegerField(), min_length=1, required=False)
+
+    def validate(self, data):
+        if not data.get('tipos') and not data.get('unidad_ids'):
+            raise serializers.ValidationError("Debe proporcionar 'tipos' o 'unidad_ids'")
+        return data

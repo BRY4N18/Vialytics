@@ -2,7 +2,7 @@ import logging
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 
-from accidentes.shared.permissions import EsDespachadorOAdministrador, EsUnidadRespondiente
+from accidentes.shared.permissions import EsDespachadorOAdministrador, EsUnidadEmergencia
 from accidentes.shared.utils import ok_response, validation_error_response, server_error_response, not_found_response
 from accidentes.PKG2_Respuesta_Emergencias.CU07_Recibir_Despacho.services import RecibirDespachoService
 from accidentes.PKG2_Respuesta_Emergencias.CU07_Recibir_Despacho.serializers import (
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class DespachoUnidadView(APIView):
-    permission_classes = [IsAuthenticated, EsDespachadorOAdministrador | EsUnidadRespondiente]
+    permission_classes = [IsAuthenticated, EsDespachadorOAdministrador | EsUnidadEmergencia]
 
     def get(self, request, unidad_id: int):
         try:
@@ -29,7 +29,7 @@ class DespachoUnidadView(APIView):
 
 
 class DespachoLLegadaView(APIView):
-    permission_classes = [IsAuthenticated, EsDespachadorOAdministrador | EsUnidadRespondiente]
+    permission_classes = [IsAuthenticated, EsDespachadorOAdministrador | EsUnidadEmergencia]
 
     def patch(self, request, despacho_id: int):
         try:
@@ -46,7 +46,7 @@ class DespachoLLegadaView(APIView):
 
 
 class NotificacionListView(APIView):
-    permission_classes = [IsAuthenticated, EsDespachadorOAdministrador | EsUnidadRespondiente]
+    permission_classes = [IsAuthenticated, EsDespachadorOAdministrador | EsUnidadEmergencia]
 
     def get(self, request):
         try:
@@ -59,7 +59,7 @@ class NotificacionListView(APIView):
 
 
 class NotificacionAceptarView(APIView):
-    permission_classes = [IsAuthenticated, EsDespachadorOAdministrador | EsUnidadRespondiente]
+    permission_classes = [IsAuthenticated, EsDespachadorOAdministrador | EsUnidadEmergencia]
 
     def post(self, request, notificacion_id: int):
         serializer = NotificacionAceptarSerializer(data=request.data)
@@ -67,7 +67,7 @@ class NotificacionAceptarView(APIView):
             return validation_error_response(serializer.errors)
         try:
             resultado = RecibirDespachoService.aceptar_notificacion(
-                notificacion_id, serializer.validated_data['idunidademergencia']
+                notificacion_id, serializer.validated_data['unidad_ids']
             )
             return ok_response(resultado)
         except ValueError as exc:

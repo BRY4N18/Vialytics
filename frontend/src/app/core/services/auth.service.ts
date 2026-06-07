@@ -105,7 +105,7 @@ export class AuthService {
 
   getHomeRoute(): string {
     const role = this.userRole();
-    if (role === 'Despachador' || role === 'Unidad Respondiente') {
+    if (role === 'Despachador' || role === 'Unidad de Emergencia') {
       return '/responder';
     }
     if (role === 'Consumidor Analítico') {

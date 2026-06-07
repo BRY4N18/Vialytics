@@ -6,7 +6,7 @@ USUARIOS_ROLES = {
     'admin_sga': {'nombre': 'Carlos Gomez', 'rol': 'Administrador'},
     'analista_sga': {'nombre': 'Patricia Vega', 'rol': 'Consumidor Analítico'},
     'despachador_sga': {'nombre': 'David Torres', 'rol': 'Despachador'},
-    'respondiente_sga': {'nombre': 'Unidad Alfa 1', 'rol': 'Unidad Respondiente'},
+    'unidad_emergencia_sga': {'nombre': 'Unidad Alfa 1', 'rol': 'Unidad de Emergencia'},
 }
 
 
@@ -54,5 +54,5 @@ class EsDespachadorOAdministrador(RolePermission):
     allowed_roles = ['Despachador', 'Administrador']
 
 
-class EsUnidadRespondiente(RolePermission):
-    allowed_roles = ['Unidad Respondiente']
+class EsUnidadEmergencia(RolePermission):
+    allowed_roles = ['Unidad de Emergencia']

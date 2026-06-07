@@ -1,33 +1,44 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
-import { UnidadEmergencia } from '../models/unidad-emergencia.model';
+import { UnidadEmergencia, TipoUnidadCatalogoItem } from '../models/unidad-emergencia.model';
 
 @Injectable({ providedIn: 'root' })
 export class UnidadEmergenciaService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = 'http://localhost:8080/api/v1';
 
-  getUnidades(): Observable<UnidadEmergencia[]> {
+  getUnidades(filtros?: { tipo?: string; estado?: string; activo?: string; search?: string }): Observable<UnidadEmergencia[]> {
+    let params = new HttpParams();
+    if (filtros?.tipo) params = params.set('tipo', filtros.tipo);
+    if (filtros?.estado) params = params.set('estado', filtros.estado);
+    if (filtros?.activo) params = params.set('activo', filtros.activo);
+    if (filtros?.search) params = params.set('search', filtros.search);
     return this.http
-      .get<UnidadEmergencia[]>(`${this.baseUrl}/unidades/`)
+      .get<UnidadEmergencia[]>(`${this.baseUrl}/unidades/`, { params })
       .pipe(catchError(this.handleError));
   }
 
-  crearUnidad(nombre: string, tipo: string): Observable<UnidadEmergencia> {
+  getTiposUnidad(): Observable<TipoUnidadCatalogoItem[]> {
+    return this.http
+      .get<TipoUnidadCatalogoItem[]>(`${this.baseUrl}/tipos-unidad/`)
+      .pipe(catchError(this.handleError));
+  }
+
+  crearUnidad(nombre: string, tipoId: number): Observable<UnidadEmergencia> {
     return this.http
       .post<UnidadEmergencia>(`${this.baseUrl}/unidades/`, {
         unidademergencia: nombre,
-        tipounidademergencia: tipo,
+        tipounidad_id: tipoId,
       })
       .pipe(catchError(this.handleError));
   }
 
-  actualizarUnidad(id: number, nombre: string, tipo: string): Observable<UnidadEmergencia> {
+  actualizarUnidad(id: number, nombre: string, tipoId: number): Observable<UnidadEmergencia> {
     return this.http
       .put<UnidadEmergencia>(`${this.baseUrl}/unidades/${id}/`, {
         unidademergencia: nombre,
-        tipounidademergencia: tipo,
+        tipounidad_id: tipoId,
       })
       .pipe(catchError(this.handleError));
   }
@@ -46,7 +57,7 @@ export class UnidadEmergenciaService {
 
   actualizarEstadoUnidad(id: number, estado: string): Observable<UnidadEmergencia> {
     return this.http
-      .patch<UnidadEmergencia>(`${this.baseUrl}/unidades/${id}/estado/`, { estado })
+      .patch<UnidadEmergencia>(`${this.baseUrl}/unidades/${id}/estado/`, { estadounidad: estado })
       .pipe(catchError(this.handleError));
   }
 

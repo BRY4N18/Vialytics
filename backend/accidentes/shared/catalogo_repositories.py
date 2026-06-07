@@ -157,6 +157,28 @@ class EstadoUnidadCatalogoRepository:
         return _ESTADOS_UNIDAD_CATALOGO
 
 
+_TIPOS_UNIDAD_CATALOGO = [
+    {"idtipounidad": 1, "tipounidad": "AMBULANCIA"},
+    {"idtipounidad": 2, "tipounidad": "BOMBEROS"},
+    {"idtipounidad": 3, "tipounidad": "TRANSITO"},
+    {"idtipounidad": 4, "tipounidad": "GRUA"},
+]
+
+
+class TipoUnidadCatalogoRepository:
+
+    @staticmethod
+    def get_all() -> List[Dict[str, Any]]:
+        return _TIPOS_UNIDAD_CATALOGO
+
+    @staticmethod
+    def get_nombre(id_tipo: int) -> str | None:
+        for t in _TIPOS_UNIDAD_CATALOGO:
+            if t["idtipounidad"] == id_tipo:
+                return t["tipounidad"]
+        return None
+
+
 _UNIDADES_CATALOGO = [
     {"idunidademergencia": 1, "unidademergencia": "Alfa 1", "tipounidademergencia": "AMBULANCIA", "estadounidad": "En base", "activo": True},
     {"idunidademergencia": 2, "unidademergencia": "Alfa 2", "tipounidademergencia": "AMBULANCIA", "estadounidad": "En base", "activo": True},
@@ -164,8 +186,8 @@ _UNIDADES_CATALOGO = [
     {"idunidademergencia": 4, "unidademergencia": "Bomberos 4", "tipounidademergencia": "BOMBEROS", "estadounidad": "En base", "activo": True},
     {"idunidademergencia": 5, "unidademergencia": "ATM Movil 10", "tipounidademergencia": "TRANSITO", "estadounidad": "En base", "activo": True},
     {"idunidademergencia": 6, "unidademergencia": "ATM Movil 12", "tipounidademergencia": "TRANSITO", "estadounidad": "En base", "activo": True},
-    {"idunidademergencia": 7, "unidademergencia": "Patrulla 105", "tipounidademergencia": "POLICIA", "estadounidad": "En base", "activo": True},
-    {"idunidademergencia": 8, "unidademergencia": "Patrulla 109", "tipounidademergencia": "POLICIA", "estadounidad": "En base", "activo": True},
+    {"idunidademergencia": 7, "unidademergencia": "Patrulla 105", "tipounidademergencia": "TRANSITO", "estadounidad": "En base", "activo": True},
+    {"idunidademergencia": 8, "unidademergencia": "Patrulla 109", "tipounidademergencia": "TRANSITO", "estadounidad": "En base", "activo": True},
 ]
 
 
@@ -175,7 +197,7 @@ class UnidadEmergenciaCatalogoRepository:
     def get_all() -> List[Dict[str, Any]]:
         rows = PinotRepository.execute_query(
             "SELECT idunidademergencia, unidademergencia, tipounidademergencia, "
-            "estadounidad FROM unidadesemergencia WHERE activo = true LIMIT 100"
+            "activo FROM unidadesemergencia WHERE activo = true LIMIT 100"
         )
         if rows:
             return rows

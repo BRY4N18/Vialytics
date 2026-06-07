@@ -5,7 +5,7 @@ from accidentes.PKG1_Gestion_Accidentes.CU03_Actualizar_Estado.views import Acci
 from accidentes.PKG1_Gestion_Accidentes.CU04_Despachar_Emergencias.views import DespachoView
 from accidentes.PKG2_Respuesta_Emergencias.CU07_Recibir_Despacho.views import DespachoUnidadView, DespachoLLegadaView, NotificacionListView, NotificacionAceptarView
 from accidentes.PKG2_Respuesta_Emergencias.CU08_Actualizar_Estado_Unidad.views import UnidadEstadoView
-from accidentes.PKG5_Administracion.CU17_Gestionar_Unidades_Emergencia.views import (
+from accidentes.PKG2_Respuesta_Emergencias.CU22_Gestionar_Unidades_Emergencia.views import (
     UnidadEmergenciaListCreateView, UnidadEmergenciaDetailView, UnidadEmergenciaActivarView
 )
 from accidentes.PKG2_Respuesta_Emergencias.CU09_Gestionar_Retiro_Vehicular.views import RetiroSolicitarView, RetiroAceptarView, RetiroFinalizarView, RetiroListView
@@ -19,7 +19,7 @@ from accidentes.shared.catalogo_views import (
     SeveridadListView, TipoReportadoListView, TipoEstadoListView,
     PaisListView, EstadoListView, CondadoListView, CiudadListView,
     CalleListView, ClimaListView, ElementoFisicoListView, PeriodoDiaListView,
-    EstadoUnidadListView,
+    EstadoUnidadListView, TipoUnidadListView,
 )
 
 urlpatterns = [
@@ -65,4 +65,5 @@ urlpatterns = [
     path('elementos-fisicos/', ElementoFisicoListView.as_view(), name='elementos-fisicos'),
     path('periodos-dias/', PeriodoDiaListView.as_view(), name='periodos-dias'),
     path('estados-unidad/', EstadoUnidadListView.as_view(), name='estados-unidad'),
+    path('tipos-unidad/', TipoUnidadListView.as_view(), name='tipos-unidad'),
 ]

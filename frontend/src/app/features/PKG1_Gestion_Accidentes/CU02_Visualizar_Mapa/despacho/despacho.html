@@ -1,18 +1,12 @@
 <div class="bg-card rounded-card shadow-modal overflow-hidden flex flex-col animate-modal-enter">
   <div class="px-6 py-5 border-b border-border">
-    <h3 class="text-lg font-bold text-text-primary">Despachar Unidades #{{ accidenteId() }}</h3>
-    <p class="text-sm text-text-secondary mt-0">Seleccione el tipo de unidad de emergencia que necesita</p>
-  </div>
-
-  @if (tiposSeleccionados().size > 0) {
-    <div class="flex items-center gap-1.5 px-6 py-2 text-xs text-text-muted bg-gray-50/50 border-b border-border">
-      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-      </svg>
-      <span class="font-extrabold text-success text-sm">{{ tiposSeleccionados().size }}</span>
-      <span class="font-semibold uppercase tracking-widest text-[0.58rem] text-text-muted">seleccionados</span>
+    <div class="flex items-center gap-2">
+      <h3 class="text-lg font-bold text-text-primary">Despachar Unidades #{{ accidenteId() }}</h3>
     </div>
-  }
+    <p class="text-sm text-text-secondary mt-0">
+      Seleccione los tipos de unidad de emergencia que necesita
+    </p>
+  </div>
 
   <div class="p-6">
     @if (error(); as err) {
@@ -24,20 +18,36 @@
       </div>
     }
 
+    <div class="flex items-center gap-2 mb-4 px-1">
+      <span class="text-xs font-semibold text-text-muted uppercase tracking-wider">Tipos de Unidad:</span>
+      @if (tiposSeleccionados().size > 0) {
+        <span class="text-[0.55rem] font-bold bg-violet-500/20 text-violet-400 px-2 py-0.5 rounded-full">
+          {{ tiposSeleccionados().size }} seleccionados
+        </span>
+      }
+    </div>
+
     <div class="grid grid-cols-2 gap-4">
       @for (t of TIPOS; track t.clave) {
         @let selected = tiposSeleccionados().has(t.clave);
         <div
           class="flex flex-col items-center gap-3 p-6 bg-white border-2 rounded-sm cursor-pointer transition-all select-none"
           [class.border-border]="!selected"
-          [class.border-success]="selected"
-          [class.bg-success/[0.04]]="selected"
-          [class.hover:border-success/50]="!selected"
+          [class.border-violet-500]="selected"
+          [class.bg-violet-500/[0.04]]="selected"
+          [class.hover:border-violet-500/50]="!selected"
           [class.hover:-translate-y-0.5]="!selected"
           [class.active:scale-[0.97]]="!selected"
           (click)="toggleTipo(t.clave)">
-          <div class="w-14 h-14 rounded-full flex items-center justify-center"
+          <div class="w-14 h-14 rounded-full flex items-center justify-center relative"
             [style.background]="t.color + '15'">
+            @if (selected) {
+              <div class="absolute -top-1 -right-1 w-5 h-5 bg-violet-500 rounded-full flex items-center justify-center shadow-sm">
+                <svg class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+            }
             @switch (t.clave) {
               @case ('AMBULANCIA') {
                 <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" [style.color]="t.color">
@@ -62,9 +72,6 @@
             }
           </div>
           <span class="text-sm font-bold text-text-primary">{{ t.label }}</span>
-          @if (selected) {
-            <span class="text-[0.55rem] font-bold text-success uppercase tracking-wider">Seleccionado</span>
-          }
         </div>
       }
     </div>
@@ -76,14 +83,14 @@
     </button>
     <button
       type="button"
-      class="px-5 py-2.5 bg-sidebar text-white rounded-sm text-sm font-semibold cursor-pointer transition-all hover:bg-sidebar-hover active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+      class="px-5 py-2.5 bg-violet-500/20 border border-violet-500/40 text-violet-400 rounded-sm text-sm font-semibold cursor-pointer transition-all hover:bg-violet-500/30 hover:text-violet-300 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
       [disabled]="tiposSeleccionados().size === 0 || guardando()"
       (click)="submit()">
       @if (guardando()) {
-        <div class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-        Notificando...
+        <div class="w-3.5 h-3.5 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin"></div>
+        Despachando...
       } @else {
-        Notificar ({{ tiposSeleccionados().size }})
+        Despachar ({{ tiposSeleccionados().size }})
       }
     </button>
   </div>

@@ -11,30 +11,8 @@
         <h1 class="text-xl font-extrabold text-text-primary tracking-tight">Mis Despachos</h1>
       </div>
     </div>
-    <div class="flex items-center gap-4 mt-3">
-      <div class="flex flex-col gap-1">
-        <label class="text-[0.55rem] font-bold uppercase tracking-wider text-text-muted">Unidad</label>
-        <select
-          class="appearance-none bg-white/5 border border-border text-text-primary rounded-sm px-3 py-1.5 text-sm outline-none cursor-pointer transition-all hover:border-emerald-500/40 focus:border-emerald-500/40 min-w-[220px]"
-          [value]="unidadSeleccionada() || ''"
-          (change)="onUnidadChange($any($event.target).value)">
-          <option value="" disabled>— Seleccione unidad —</option>
-          @for (u of unidades(); track u.idunidademergencia) {
-            <option [value]="u.idunidademergencia">
-              {{ u.unidademergencia }} ({{ u.tipounidademergencia }})
-            </option>
-          }
-        </select>
-      </div>
-      @if (unidadActual(); as u) {
-        <div class="flex items-center gap-2 mt-4">
-          <span class="text-[0.55rem] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider text-text-muted border-border">
-            {{ u.tipounidademergencia }}
-          </span>
-          <span class="text-[0.55rem] text-text-muted">{{ u.estadounidad }}</span>
-        </div>
-      }
-
+    <div class="flex items-center gap-2 mt-3">
+      <span class="text-[0.55rem] font-bold uppercase tracking-wider text-text-muted">Seleccione una notificación para aceptar un despacho</span>
     </div>
   </header>
 
@@ -128,19 +106,9 @@
                   </div>
                   <div class="flex items-start flex-shrink-0">
                     <button
-                      class="px-4 py-2 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-xs font-bold rounded-sm cursor-pointer transition-all hover:bg-emerald-500/30 hover:text-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                      [disabled]="!unidadSeleccionada() || aceptandoId() === n.idnotificaciondespacho"
-                      (click)="aceptarNotificacion(n.idnotificaciondespacho)">
-                      @if (aceptandoId() === n.idnotificaciondespacho) {
-                        <span class="flex items-center gap-1.5">
-                          <svg class="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"/>
-                          </svg>
-                          Aceptando...
-                        </span>
-                      } @else {
-                        Aceptar Despacho
-                      }
+                      class="px-4 py-2 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-xs font-bold rounded-sm cursor-pointer transition-all hover:bg-emerald-500/30 hover:text-emerald-300 whitespace-nowrap"
+                      (click)="abrirModal(n)">
+                      Aceptar Despacho
                     </button>
                   </div>
                 </div>
@@ -166,15 +134,28 @@
         </svg>
         Despachos
       </h2>
-      <button class="text-[0.6rem] font-semibold text-text-muted hover:text-text-secondary transition-colors cursor-pointer flex items-center gap-1" (click)="cargarDespachos()">
-        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-        </svg>
-        Refrescar
-      </button>
+      <div class="flex items-center gap-3">
+        <select
+          class="appearance-none bg-white/5 border border-border text-text-primary rounded-sm px-2 py-1 text-[0.6rem] outline-none cursor-pointer transition-all hover:border-emerald-500/40 focus:border-emerald-500/40"
+          [value]="unidadFiltroDespachos() || ''"
+          (change)="onFiltroDespachoChange($any($event.target).value)">
+          <option value="">Todas las unidades</option>
+          @for (u of unidades(); track u.idunidademergencia) {
+            <option [value]="u.idunidademergencia">
+              {{ u.unidademergencia }}
+            </option>
+          }
+        </select>
+        <button class="text-[0.6rem] font-semibold text-text-muted hover:text-text-secondary transition-colors cursor-pointer flex items-center gap-1" (click)="cargarDespachos()">
+          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+          Refrescar
+        </button>
+      </div>
     </div>
 
-    @if (!unidadSeleccionada()) {
+    @if (!unidadFiltroDespachos()) {
       <div class="flex items-center justify-center h-32 bg-white/[0.02] border border-border rounded-panel">
         <span class="text-sm text-text-muted">Seleccione una unidad para ver sus despachos</span>
       </div>
@@ -251,3 +232,167 @@
     }
   </section>
 </div>
+
+<!-- Modal -->
+@if (modalAbierto()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" (click)="cerrarModal()">
+    <div class="bg-card rounded-card shadow-modal overflow-hidden flex flex-col animate-modal-enter w-full max-w-lg mx-4" (click)="$event.stopPropagation()">
+      <div class="px-6 py-5 border-b border-border">
+        <h3 class="text-lg font-bold text-text-primary">
+          Aceptar Despacho #{{ notificacionSeleccionada()?.idaccidente }}
+        </h3>
+        <p class="text-sm text-text-secondary mt-0">
+          Seleccione las unidades a despachar por tipo
+        </p>
+      </div>
+
+      <div class="p-6 max-h-[60vh] overflow-y-auto">
+        @if (errorModal(); as err) {
+          <div class="flex items-center gap-2.5 p-3 bg-danger/10 border border-danger/20 rounded-sm text-sm text-danger mb-4">
+            <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <span>{{ err }}</span>
+          </div>
+        }
+
+        @if (tiposFiltrados().length === 0) {
+          <div class="flex items-center justify-center h-32 bg-white/[0.02] border border-border rounded-panel">
+            <span class="text-sm text-text-muted">No hay tipos de unidad disponibles</span>
+          </div>
+        } @else {
+          <div class="flex flex-col gap-4">
+            @for (t of tiposFiltrados(); track t.clave) {
+              @let expandido = tiposExpandidos().has(t.clave);
+              @let unidades = (unidadesPorTipo()[t.clave] || []);
+              @let cargando = cargandoTipos().has(t.clave);
+              @let seleccionadas = unidades.filter(u => unidadIdsSeleccionados().has(u.idunidademergencia)).length;
+
+              <div class="bg-white border-2 rounded-sm transition-all select-none overflow-hidden"
+                [class.border-border]="!expandido"
+                [class.border-emerald-500]="expandido"
+                [class.hover:border-emerald-500/50]="!expandido"
+                [class.hover:-translate-y-0.5]="!expandido"
+                [class.active:scale-[0.97]]="!expandido">
+
+                <div class="flex flex-col items-center gap-2.5 p-6 cursor-pointer"
+                  (click)="toggleTipoExpandido(t.clave)">
+                  <div class="w-14 h-14 rounded-full flex items-center justify-center relative"
+                    [style.background]="t.color + '15'">
+                    @if (seleccionadas > 0) {
+                      <div class="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm">
+                        <svg class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      </div>
+                    }
+                    @switch (t.clave) {
+                      @case ('AMBULANCIA') {
+                        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" [style.color]="t.color">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+                        </svg>
+                      }
+                      @case ('POLICIA') {
+                        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" [style.color]="t.color">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/>
+                        </svg>
+                      }
+                      @case ('BOMBEROS') {
+                        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" [style.color]="t.color">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/>
+                        </svg>
+                      }
+                      @case ('GRUA') {
+                        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" [style.color]="t.color">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177V3.75A1.5 1.5 0 0012.75 2.25h-1.5a1.5 1.5 0 00-1.5 1.5v4.877m4.5-1.877H9m0 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3 0h3.75m9.75 0h-9.75"/>
+                        </svg>
+                      }
+                    }
+                  </div>
+                  <span class="text-sm font-bold text-text-primary">{{ t.label }}</span>
+                  <div class="text-[0.6rem] text-text-muted text-center">
+                    @if (cargando) {
+                      Cargando unidades...
+                    } @else {
+                      {{ unidades.length }} disponible(s)
+                      @if (seleccionadas > 0) {
+                        · <span class="text-emerald-500 font-semibold">{{ seleccionadas }} seleccionada(s)</span>
+                      }
+                    }
+                  </div>
+                  <svg class="w-4 h-4 text-text-muted transition-transform"
+                    [class.rotate-180]="expandido"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </div>
+
+                @if (expandido) {
+                  <div class="border-t border-border">
+                    @if (cargando) {
+                      <div class="flex items-center justify-center py-6">
+                        <div class="flex items-center gap-2 text-xs text-text-muted">
+                          <svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"/>
+                          </svg>
+                          Cargando unidades...
+                        </div>
+                      </div>
+                    } @else if (unidades.length === 0) {
+                      <div class="flex items-center justify-center py-6 bg-gray-50/50">
+                        <span class="text-xs text-text-muted">No hay unidades disponibles de este tipo</span>
+                      </div>
+                    } @else {
+                      <div class="flex flex-col">
+                        @for (u of unidades; track u.idunidademergencia) {
+                          @let sel = unidadIdsSeleccionados().has(u.idunidademergencia);
+                          <div
+                            class="flex items-center gap-3 px-5 py-3 cursor-pointer transition-all select-none border-b border-border last:border-b-0 hover:bg-gray-50/50"
+                            [class.bg-emerald-500/[0.04]]="sel"
+                            (click)="toggleUnidad(u.idunidademergencia)">
+                            <div class="w-5 h-5 rounded-sm border-2 flex items-center justify-center transition-all flex-shrink-0"
+                              [class.border-border]="!sel"
+                              [class.border-emerald-500]="sel"
+                              [class.bg-emerald-500]="sel">
+                              @if (sel) {
+                                <svg class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                  <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                              }
+                            </div>
+                            <div class="flex-1 min-w-0">
+                              <div class="text-sm font-semibold text-text-primary">{{ u.unidademergencia }}</div>
+                              <div class="text-[0.6rem] text-text-muted">{{ u.estadounidad }}</div>
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="flex justify-end gap-3 px-6 py-4.5 bg-gray-50/50 border-t border-border">
+        <button type="button" class="px-5 py-2.5 bg-transparent border border-border text-text-secondary rounded-sm text-sm font-semibold cursor-pointer transition-all hover:bg-gray-50 hover:text-text-primary active:scale-[0.97] disabled:opacity-40" (click)="cerrarModal()" [disabled]="aceptandoNotificacion()">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="px-5 py-2.5 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 rounded-sm text-sm font-semibold cursor-pointer transition-all hover:bg-emerald-500/30 hover:text-emerald-300 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+          [disabled]="unidadIdsSeleccionados().size === 0 || aceptandoNotificacion()"
+          (click)="confirmarAceptar()">
+          @if (aceptandoNotificacion()) {
+            <div class="w-3.5 h-3.5 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin"></div>
+            Aceptando...
+          } @else {
+            Aceptar Despacho ({{ unidadIdsSeleccionados().size }})
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

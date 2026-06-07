@@ -50,8 +50,23 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   { 
+    path: 'responder/cambiar-estado', 
+    loadComponent: () => import('./features/PKG2_Respuesta_Emergencias/CU08_Actualizar_Estado_Unidad/cambiar-estado/cambiar-estado').then(m => m.CambiarEstadoComponent),
+    canActivate: [authGuard]
+  },
+  { 
+    path: 'retiros/solicitar', 
+    loadComponent: () => import('./features/PKG2_Respuesta_Emergencias/CU09_Gestionar_Retiro_Vehicular/solicitar-retiro/solicitar-retiro').then(m => m.SolicitarRetiroComponent),
+    canActivate: [authGuard]
+  },
+  { 
+    path: 'retiros/gestionar', 
+    loadComponent: () => import('./features/PKG2_Respuesta_Emergencias/CU09_Gestionar_Retiro_Vehicular/gestionar-retiros/gestionar-retiros').then(m => m.GestionarRetirosComponent),
+    canActivate: [authGuard]
+  },
+  { 
     path: 'unidades', 
-    loadComponent: () => import('./features/PKG5_Administracion/CU17_Gestionar_Unidades_Emergencia/gestionar-unidades/gestionar-unidades').then(m => m.GestionarUnidadesComponent),
+    loadComponent: () => import('./features/PKG2_Respuesta_Emergencias/CU22_Gestionar_Unidades_Emergencia/gestionar-unidades/gestionar-unidades').then(m => m.GestionarUnidadesComponent),
     canActivate: [authGuard]
   },
   { path: '**', redirectTo: 'dashboard' }

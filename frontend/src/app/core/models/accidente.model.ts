@@ -247,7 +247,8 @@ export interface ActualizarEstadoPayload {
 }
 
 export interface DespachoPayload {
-  tipos: string[];
+  tipos?: string[];
+  unidad_ids?: number[];
 }
 
 export interface ExpedienteAccidente {

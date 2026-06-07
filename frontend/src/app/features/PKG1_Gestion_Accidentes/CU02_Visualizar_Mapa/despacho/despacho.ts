@@ -1,7 +1,6 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, input, output, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AccidenteService } from '../../../../core/services/accidente.service';
-import { inject } from '@angular/core';
 
 interface TipoVehiculo {
   clave: string;
@@ -51,7 +50,9 @@ export class DespachoComponent {
     this.guardando.set(true);
     this.error.set(null);
 
-    this.accidenteService.despacharUnidades(this.accidenteId(), { tipos }).subscribe({
+    this.accidenteService.despacharUnidades(this.accidenteId(), {
+      tipos
+    }).subscribe({
       next: () => {
         this.guardando.set(false);
         this.cerrar.emit();

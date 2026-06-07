@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
-from accidentes.shared.permissions import EsDespachadorOAdministrador
+from accidentes.shared.permissions import EsDespachadorOAdministrador, EsOperador
 from accidentes.shared.utils import ok_response, validation_error_response, server_error_response
 from accidentes.PKG1_Gestion_Accidentes.CU04_Despachar_Emergencias.services import DespachoService
 from accidentes.PKG1_Gestion_Accidentes.CU04_Despachar_Emergencias.serializers import DespachoCrearSerializer, DespachoSerializer
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class DespachoView(APIView):
-    permission_classes = [IsAuthenticated, EsDespachadorOAdministrador]
+    permission_classes = [IsAuthenticated, EsDespachadorOAdministrador | EsOperador]
 
     def get(self, request, accidente_id: str):
         try:
@@ -30,7 +30,8 @@ class DespachoView(APIView):
         try:
             resultado = DespachoService.despachar_unidades(
                 accidente_id=accidente_id,
-                tipos=serializer.validated_data['tipos'],
+                tipos=serializer.validated_data.get('tipos'),
+                unidad_ids=serializer.validated_data.get('unidad_ids'),
             )
             return ok_response(resultado, status=status.HTTP_201_CREATED)
         except Exception as exc:

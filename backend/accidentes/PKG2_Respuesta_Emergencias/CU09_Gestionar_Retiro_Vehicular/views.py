@@ -2,7 +2,7 @@ import logging
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 
-from accidentes.shared.permissions import EsDespachadorOAdministrador, EsUnidadRespondiente
+from accidentes.shared.permissions import EsDespachadorOAdministrador, EsUnidadEmergencia
 from accidentes.shared.utils import ok_response, validation_error_response, server_error_response, not_found_response
 from accidentes.PKG2_Respuesta_Emergencias.CU09_Gestionar_Retiro_Vehicular.services import GestionarRetiroService
 from accidentes.PKG2_Respuesta_Emergencias.CU09_Gestionar_Retiro_Vehicular.serializers import (
@@ -38,7 +38,7 @@ class RetiroSolicitarView(APIView):
 
 
 class RetiroAceptarView(APIView):
-    permission_classes = [IsAuthenticated, EsUnidadRespondiente]
+    permission_classes = [IsAuthenticated, EsUnidadEmergencia]
 
     def patch(self, request, retiro_id: int):
         serializer = RetiroAceptarSerializer(data=request.data)
@@ -60,7 +60,7 @@ class RetiroAceptarView(APIView):
 
 
 class RetiroFinalizarView(APIView):
-    permission_classes = [IsAuthenticated, EsUnidadRespondiente]
+    permission_classes = [IsAuthenticated, EsUnidadEmergencia]
 
     def post(self, request, retiro_id: int):
         serializer = RetiroFinalizarSerializer(data=request.data)
@@ -84,7 +84,7 @@ class RetiroFinalizarView(APIView):
 
 
 class RetiroListView(APIView):
-    permission_classes = [IsAuthenticated, EsDespachadorOAdministrador | EsUnidadRespondiente]
+    permission_classes = [IsAuthenticated, EsDespachadorOAdministrador | EsUnidadEmergencia]
 
     def get(self, request):
         try:

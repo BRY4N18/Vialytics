@@ -15,7 +15,7 @@ class Command(BaseCommand):
          'first_name': 'Patricia', 'last_name': 'Vega'},
         {'username': 'despachador_sga', 'password': 'sga_secure_pwd_2026',
          'first_name': 'David', 'last_name': 'Torres'},
-        {'username': 'respondiente_sga', 'password': 'sga_secure_pwd_2026',
+        {'username': 'unidad_emergencia_sga', 'password': 'sga_secure_pwd_2026',
          'first_name': 'Unidad', 'last_name': 'Alfa 1'},
     ]
 

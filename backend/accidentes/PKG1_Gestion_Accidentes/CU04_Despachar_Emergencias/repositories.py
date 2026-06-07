@@ -35,7 +35,8 @@ class AccidenteInfoReadRepository:
     def find_by_id(accidente_id: str) -> Dict[str, Any]:
         safe = PinotRepository.escape_sql_str(accidente_id)
         rows = PinotRepository.execute_query(
-            f"SELECT idaccidente, numheridos, numvehiculos "
+            f"SELECT idaccidente, numheridos, numvehiculos, "
+            f"latitudinicio, longitudinicio "
             f"FROM accidentes "
             f"WHERE idaccidente = '{safe}' LIMIT 1"
         )

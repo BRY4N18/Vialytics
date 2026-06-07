@@ -51,11 +51,11 @@ class DespachoService:
         return despachos_list
 
     @staticmethod
-    def despachar_unidades(accidente_id: str, tipos: List[str]) -> Dict[str, Any]:
-        return DespachoService._crear_notificacion(accidente_id, tipos)
+    def despachar_unidades(accidente_id: str, tipos: List[str] = None, unidad_ids: List[int] = None) -> Dict[str, Any]:
+        return DespachoService._crear_notificacion(accidente_id, tipos or [], unidad_ids or [])
 
     @staticmethod
-    def _crear_notificacion(accidente_id: str, tipos: List[str]) -> Dict[str, Any]:
+    def _crear_notificacion(accidente_id: str, tipos: List[str], unidad_ids: List[int]) -> Dict[str, Any]:
         ahora_ms = int(time.time() * 1000)
         notificacion_id = int(ahora_ms % 10000000)
 
@@ -65,12 +65,26 @@ class DespachoService:
             logger.error("Error consultando accidente %s para notificacion: %s", accidente_id, e)
             info = {}
 
+        mercanciapeligrosa = False
+        try:
+            pinot_id_for_query = int(accidente_id)
+            from accidentes.PKG2_Respuesta_Emergencias.CU07_Recibir_Despacho.repositories import AccidenteVehiculoReadRepository
+            vehiculos = AccidenteVehiculoReadRepository.find_by_accidente(pinot_id_for_query)
+            if any(v.get("mercanciapeligrosa", False) for v in vehiculos):
+                mercanciapeligrosa = True
+        except Exception as e:
+            logger.warning("Error consultando mercanciapeligrosa para accidente %s: %s", accidente_id, e)
+
         pinot_id = zlib.crc32(accidente_id.encode('utf-8')) & 0x7FFFFFFF
         payload = {
             "idnotificaciondespacho": notificacion_id,
             "idaccidente": pinot_id,
             "numheridos": info.get("numheridos", 0) if info else 0,
             "numvehiculos": info.get("numvehiculos", 0) if info else 0,
+            "latitudinicio": info.get("latitudinicio") if info else None,
+            "longitudinicio": info.get("longitudinicio") if info else None,
+            "mercanciapeligrosa": mercanciapeligrosa,
+            "tipos_necesarios": tipos,
             "activo": True,
             "fecha_actualizacion": ahora_ms,
         }

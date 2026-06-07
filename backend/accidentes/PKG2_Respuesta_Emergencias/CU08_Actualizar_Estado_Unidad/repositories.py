@@ -12,7 +12,7 @@ class UnidadEmergenciaReadRepository:
     @staticmethod
     def get_all() -> List[Dict[str, Any]]:
         return PinotRepository.execute_query(
-            "SELECT idunidademergencia, estadounidad, fecha_actualizacion "
+            "SELECT idunidademergencia, fecha_actualizacion "
             "FROM unidadesemergencia"
         )
 
@@ -41,7 +41,13 @@ class UnidadEstadoHistorialReadRepository:
             "SELECT MAX(idhistorial) AS max_id FROM historialesestadosunidadesemergencias"
         )
         if rows and rows[0].get("max_id") is not None:
-            return int(rows[0]["max_id"])
+            val = rows[0]["max_id"]
+            if isinstance(val, str) and val in ('-Infinity', 'Infinity', 'NaN'):
+                return 0
+            try:
+                return int(val)
+            except (ValueError, TypeError):
+                return 0
         return 0
 
 

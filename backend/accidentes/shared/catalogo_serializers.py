@@ -80,3 +80,8 @@ class PeriodoDiaSerializer(serializers.Serializer):
 class EstadoUnidadCatalogoSerializer(serializers.Serializer):
     idestadounidad = serializers.IntegerField()
     estadounidad = serializers.CharField()
+
+
+class TipoUnidadCatalogoSerializer(serializers.Serializer):
+    idtipounidad = serializers.IntegerField()
+    tipounidad = serializers.CharField()

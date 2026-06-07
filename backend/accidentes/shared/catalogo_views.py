@@ -16,12 +16,14 @@ from accidentes.shared.catalogo_repositories import (
     ElementoFisicoCatalogoRepository,
     PeriodoDiaCatalogoRepository,
     EstadoUnidadCatalogoRepository,
+    TipoUnidadCatalogoRepository,
 )
 from accidentes.shared.catalogo_serializers import (
     SeveridadSerializer, TipoReportadoSerializer, TipoEstadoIncidenteSerializer,
     PaisSerializer, EstadoSerializer, CondadoSerializer, CiudadSerializer,
     CalleSerializer, ClimaSerializer, ElementoFisicoSerializer, PeriodoDiaSerializer,
-    EstadoUnidadCatalogoSerializer
+    EstadoUnidadCatalogoSerializer,
+    TipoUnidadCatalogoSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -338,4 +340,13 @@ class EstadoUnidadListView(APIView):
         if not data:
             data = SEED_ESTADOS_UNIDAD
         serializer = EstadoUnidadCatalogoSerializer(data, many=True)
+        return Response(serializer.data)
+
+
+class TipoUnidadListView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        data = TipoUnidadCatalogoRepository.get_all()
+        serializer = TipoUnidadCatalogoSerializer(data, many=True)
         return Response(serializer.data)

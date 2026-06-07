@@ -37,10 +37,11 @@ class NotificacionSerializer(serializers.Serializer):
     idaccidente = serializers.CharField()
     numheridos = serializers.IntegerField(required=False, default=0)
     numvehiculos = serializers.IntegerField(required=False, default=0)
+    tipos_necesarios = serializers.ListField(child=serializers.CharField(), required=False, default=[])
     fecha_actualizacion = serializers.CharField(required=False, allow_blank=True, default='')
     accidente = AccidenteInfoSerializer(required=False)
     vehiculos = VehiculoSerializer(many=True, required=False, default=[])
 
 
 class NotificacionAceptarSerializer(serializers.Serializer):
-    idunidademergencia = serializers.IntegerField()
+    unidad_ids = serializers.ListField(child=serializers.IntegerField(), min_length=1)

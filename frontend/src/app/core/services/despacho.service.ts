@@ -24,10 +24,10 @@ export class DespachoService {
       .pipe(catchError(this.handleError));
   }
 
-  aceptarNotificacion(notificacionId: number, unidadId: number): Observable<any> {
+  aceptarNotificacion(notificacionId: number, unidadIds: number[]): Observable<any> {
     return this.http
       .post(`${this.baseUrl}/notificaciones/${notificacionId}/aceptar/`, {
-        idunidademergencia: unidadId
+        unidad_ids: unidadIds
       })
       .pipe(catchError(this.handleError));
   }
