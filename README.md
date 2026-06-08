@@ -9,11 +9,12 @@ Plataforma web para la gestión operativa y analítica del ciclo de vida complet
 | Capa | Tecnología | Versión |
 |------|-----------|---------|
 | Frontend | Angular (standalone) | 21.x |
-| UI | CSS plano (sin Tailwind), Leaflet 1.9.4 + MarkerCluster 1.5.3 (CDN) | — |
-| Backend | Django + Django REST Framework | 5.x |
+| UI | Tailwind CSS 3 + CSS plano, Leaflet 1.9.4 + MarkerCluster 1.5.3 (CDN) | — |
+| Backend | Django + Django REST Framework | 6.x |
 | Base de datos operacional | Apache Pinot (vía Kafka) | — |
 | Mensajería | Kafka | — |
 | Autenticación | JWT (djangorestframework-simplejwt) | — |
+| Gráficos | Chart.js | 4.5.1 |
 | Entorno | Python venv (backend) | 3.x |
 
 ---
@@ -22,14 +23,66 @@ Plataforma web para la gestión operativa y analítica del ciclo de vida complet
 
 ```
 /
-├── frontend/                          # Angular standalone SPA
+├── frontend/                              # Angular 21 standalone SPA
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── core/                  # Servicios, modelos, interceptors, guards
-│   │   │   ├── features/              # Páginas por rol (operador/, admin/)
-│   │   │   └── shared/                # Componentes reutilizables
+│   │   │   ├── app.ts / app.html          # Root component
+│   │   │   ├── app.routes.ts              # 14 rutas (públicas, protegidas, analista)
+│   │   │   ├── app.config.ts              # Providers globales
+│   │   │   ├── core/                      # Capa transversal
+│   │   │   │   ├── guards/
+│   │   │   │   │   ├── auth.guard.ts
+│   │   │   │   │   └── analista.guard.ts
+│   │   │   │   ├── interceptors/
+│   │   │   │   │   ├── auth.interceptor.ts
+│   │   │   │   │   └── error.interceptor.ts
+│   │   │   │   ├── models/
+│   │   │   │   │   ├── accidente.model.ts
+│   │   │   │   │   ├── despacho.model.ts
+│   │   │   │   │   ├── despacho-pendiente.model.ts
+│   │   │   │   │   └── unidad-emergencia.model.ts
+│   │   │   │   └── services/
+│   │   │   │       ├── accidente.service.ts
+│   │   │   │       ├── auth.service.ts
+│   │   │   │       ├── despacho.service.ts
+│   │   │   │       ├── mapa.service.ts
+│   │   │   │       ├── toast.service.ts
+│   │   │   │       └── unidad-emergencia.service.ts
+│   │   │   ├── features/                  # Organizado por PKGs (espejo del backend)
+│   │   │   │   ├── PKG1_Gestion_Accidentes/
+│   │   │   │   │   ├── CU01_Registrar_Accidente/   # RegistroAccidenteComponent
+│   │   │   │   │   ├── CU02_Visualizar_Mapa/       # Mapa, panel, despacho, estado
+│   │   │   │   │   ├── CU03_Actualizar_Estado/     # (vacío)
+│   │   │   │   │   ├── CU05_Archivar_Accidente/    # (vacío)
+│   │   │   │   │   ├── CU06_Asignar_Severidad/     # (vacío)
+│   │   │   │   │   └── CU20_Dashboard_KPIs/        # DashboardComponent
+│   │   │   │   ├── PKG2_Respuesta_Emergencias/
+│   │   │   │   │   ├── CU07_Recibir_Despacho/      # RecibirDespachoComponent
+│   │   │   │   │   ├── CU08_Actualizar_Estado_Unidad/ # CambiarEstadoComponent
+│   │   │   │   │   ├── CU09_Gestionar_Retiro_Vehicular/ # SolicitarRetiroComponent
+│   │   │   │   │   └── CU22_Gestionar_Unidades_Emergencia/ # GestionarUnidadesComponent
+│   │   │   │   ├── PKG3_Consulta_Analisis/
+│   │   │   │   │   ├── CU10_Buscar_Accidentes/     # 2 vistas: operador + analista
+│   │   │   │   │   ├── CU11_Generar_Informes/      # (vacío)
+│   │   │   │   │   ├── CU12_Exportar_Datos/        # (vacío)
+│   │   │   │   │   ├── CU13_Visualizar_Mapa_Calor/ # (vacío)
+│   │   │   │   │   ├── CU14_Solicitar_Expediente/  # ExpedienteComponent
+│   │   │   │   │   └── layout-analitico/           # LayoutAnaliticoComponent
+│   │   │   │   ├── PKG4_Portal_Externo/
+│   │   │   │   │   ├── CU15_Consultar_Mapa_Publico/ # MapaPublicoPageComponent
+│   │   │   │   │   └── CU16_Consultar_Estadisticas/ # (vacío)
+│   │   │   │   └── PKG5_Administracion/
+│   │   │   │       ├── CU17_Gestionar_Usuarios/    # (vacío)
+│   │   │   │       ├── CU18_Gestionar_Roles/       # (vacío)
+│   │   │   │       ├── CU19_Auditar_Accesos/       # (vacío)
+│   │   │   │       └── CU21_Iniciar_Sesion/        # (login en shared)
+│   │   │   └── shared/
+│   │   │       └── components/
+│   │   │           ├── badge-severidad/ # BadgeSeveridadComponent
+│   │   │           ├── header/          # HeaderComponent (navbar + login modal)
+│   │   │           └── login-modal/     # LoginModalComponent
 │   │   ├── assets/
-│   │   └── types/                     # Declaraciones .d.ts (Leaflet)
+│   │   └── types/                       # leaflet.d.ts (tipos MarkerCluster)
 │   └── package.json
 ├── backend/                           # Django REST API
 │   ├── accidentes/                    # App Django principal
@@ -41,10 +94,11 @@ Plataforma web para la gestión operativa y analítica del ciclo de vida complet
 │   │   │   ├── CU05_Archivar_Accidente/   # (vacío)
 │   │   │   ├── CU06_Asignar_Severidad/
 │   │   │   └── CU20_Dashboard_KPIs/
-│   │   ├── PKG2_Respuesta_Emergencias/    # 3 CUs (despacho, unidades)
-│   │   │   ├── CU07_Recibir_Despacho/     # (vacío)
+│   │   ├── PKG2_Respuesta_Emergencias/    # 4 CUs (despacho, unidades, retiro)
+│   │   │   ├── CU07_Recibir_Despacho/
 │   │   │   ├── CU08_Actualizar_Estado_Unidad/
-│   │   │   └── CU09_Gestionar_Retiro_Vehicular/  # (vacío)
+│   │   │   ├── CU09_Gestionar_Retiro_Vehicular/
+│   │   │   └── CU22_Gestionar_Unidades_Emergencia/
 │   │   ├── PKG3_Consulta_Analisis/        # 5 CUs (búsqueda, informes, expediente)
 │   │   │   ├── CU10_Buscar_Accidentes/
 │   │   │   ├── CU11_Generar_Informes/
@@ -64,12 +118,13 @@ Plataforma web para la gestión operativa y analítica del ciclo de vida complet
 │   │   │   ├── admin.py                   # Registro admin para todos los modelos
 │   │   │   ├── catalogo_views.py          # Endpoints de catálogos (CRUD list)
 │   │   │   ├── catalogo_serializers.py    # Serializers de catálogos
+│   │   │   ├── catalogo_repositories.py   # Repositorios de catálogos
 │   │   │   ├── repositories.py           # PinotRepository, KafkaRepository
-│   │   │   ├── kafka_producer.py          # Productor Kafka genérico
-│   │   │   └── permissions.py             # Permisos personalizados
+│   │   │   ├── permissions.py             # Permisos personalizados
+│   │   │   └── utils.py                   # Utilidades compartidas
 │   │   ├── models/__init__.py             # Re-exporta desde shared/models
 │   │   ├── migrations/                    # Migraciones Django
-│   │   ├── management/commands/           # seed_auth_users, seed_data
+│   │   ├── management/commands/           # seed_auth_users
 │   │   ├── urls.py                        # Enrutador principal de la app
 │   │   └── apps.py                        # Config App (AccidentesConfig)
 │   └── core/                              # settings.py, urls.py globales
@@ -93,8 +148,7 @@ cd backend
 source venv/bin/activate
 
 python manage.py migrate
-python manage.py seed_data          # Seed completo de datos en Kafka/Pinot
-python manage.py seed_auth_users    # Crear 4 usuarios JWT
+python manage.py seed_auth_users    # Crear 5 usuarios JWT
 python manage.py runserver
 ```
 
@@ -118,8 +172,9 @@ El frontend corre en `http://localhost:4200`.
 |---------|-----|-----------|
 | `operador_sga` | Operador | `sga_secure_pwd_2026` |
 | `admin_sga` | Administrador | `sga_secure_pwd_2026` |
-| `supervisor_sga` | Supervisor | `sga_secure_pwd_2026` |
+| `analista_sga` | Consumidor Analítico | `sga_secure_pwd_2026` |
 | `despachador_sga` | Despachador | `sga_secure_pwd_2026` |
+| `unidad_emergencia_sga` | Unidad de Emergencia | `sga_secure_pwd_2026` |
 
 Endpoint de login: `POST /api/v1/auth/login/` con JSON `{ "usuario": "...", "password": "..." }`.
 
@@ -129,71 +184,77 @@ Endpoint de login: `POST /api/v1/auth/login/` con JSON `{ "usuario": "...", "pas
 
 ### PKG-1 — Gestión de Accidentes ✅ (6/7 CUs)
 
-| CU | Nombre | Estado | Archivos |
-|----|--------|--------|----------|
-| CU-01 | Registrar Accidente | ✅ | views, services, serializers |
-| CU-02 | Visualizar Mapa Tiempo Real | ✅ | views, services |
-| CU-03 | Actualizar Estado | ✅ | views, services, serializers |
-| CU-04 | Despachar Emergencias | ✅ | views, services, serializers |
-| CU-05 | Archivar Accidente | ⬜ Pendiente | — |
-| CU-06 | Asignar Severidad | ✅ | services |
-| CU-20 | Dashboard KPIs | ✅ | views, services |
+| CU | Nombre | Estado | Backend | Frontend |
+|----|--------|--------|---------|----------|
+| CU-01 | Registrar Accidente | ✅ | views, services, repos, serializers | RegistroAccidenteComponent |
+| CU-02 | Visualizar Mapa Tiempo Real | ✅ | views, services, repos | MapaPageComponent, MapaComponent, PanelDetalleComponent |
+| CU-03 | Actualizar Estado | ✅ | views, services, serializers | ActualizarEstadoComponent |
+| CU-04 | Despachar Emergencias | ✅ | views, services, repos, serializers | DespachoComponent |
+| CU-05 | Archivar Accidente | ⬜ Pendiente | — | — |
+| CU-06 | Asignar Severidad | ✅ | services | — (integrado en registro) |
+| CU-20 | Dashboard KPIs | ✅ | views, services, repos | DashboardComponent |
 
-### PKG-2 — Respuesta a Emergencias ✅ (1/3 CUs)
+### PKG-2 — Respuesta a Emergencias ✅ (4/4 CUs)
 
-| CU | Nombre | Estado | Archivos |
-|----|--------|--------|----------|
-| CU-07 | Recibir Despacho | ⬜ Pendiente | — |
-| CU-08 | Actualizar Estado Unidad | ✅ | views, services, serializers |
-| CU-09 | Gestionar Retiro Vehicular | ⬜ Pendiente | — |
+| CU | Nombre | Estado | Backend | Frontend |
+|----|--------|--------|---------|----------|
+| CU-07 | Recibir Despacho | ✅ | views, services, repos, serializers | RecibirDespachoComponent |
+| CU-08 | Actualizar Estado Unidad | ✅ | views, services, repos, serializers | CambiarEstadoComponent |
+| CU-09 | Gestionar Retiro Vehicular | ✅ | views, services, repos, serializers | SolicitarRetiroComponent, GestionarRetirosComponent |
+| CU-22 | Gestionar Unidades Emergencia | ✅ | views, services, repos, serializers | GestionarUnidadesComponent |
 
 ### PKG-3 — Consulta y Análisis ✅ (3/5 CUs)
 
-| CU | Nombre | Estado | Archivos |
-|----|--------|--------|----------|
-| CU-10 | Buscar Accidentes Históricos | ✅ | views, services |
-| CU-11 | Generar Informes Estadísticos | ✅ | services |
-| CU-12 | Exportar Datos (CSV, PDF) | ⬜ Pendiente | — |
-| CU-13 | Visualizar Mapa de Calor | ⬜ Pendiente | — |
-| CU-14 | Solicitar Expediente Oficial | ✅ | views, services |
+| CU | Nombre | Estado | Backend | Frontend |
+|----|--------|--------|---------|----------|
+| CU-10 | Buscar Accidentes Históricos | ✅ | views, services, repos | ListaAccidentesComponent (operador), ListaAccidentesAnaliticoComponent (analista) |
+| CU-11 | Generar Informes Estadísticos | ✅ | services, repos | — |
+| CU-12 | Exportar Datos (CSV, PDF) | ⬜ Pendiente | — | — |
+| CU-13 | Visualizar Mapa de Calor | ⬜ Pendiente | — | — |
+| CU-14 | Solicitar Expediente Oficial | ✅ | views, services, repos | ExpedienteComponent |
 
 ### PKG-4 — Portal Externo ✅ (2/2 CUs)
 
-| CU | Nombre | Estado | Archivos |
-|----|--------|--------|----------|
-| CU-15 | Consultar Mapa Público | ✅ | views (reusa MapaService de CU-02) |
-| CU-16 | Consultar Estadísticas Públicas | ✅ | views (reusa DashboardService de CU-20) |
+| CU | Nombre | Estado | Backend | Frontend |
+|----|--------|--------|---------|----------|
+| CU-15 | Consultar Mapa Público | ✅ | views (reusa MapaService) | MapaPublicoPageComponent |
+| CU-16 | Consultar Estadísticas Públicas | ✅ | views (reusa DashboardService) | — |
 
 ### PKG-5 — Administración del Sistema ✅ (1/4 CUs)
 
-| CU | Nombre | Estado | Archivos |
-|----|--------|--------|----------|
-| CU-17 | Gestionar Usuarios | ⬜ Pendiente | — |
-| CU-18 | Gestionar Roles y Permisos | ⬜ Pendiente | — |
-| CU-19 | Auditar Accesos | ⬜ Pendiente | — |
-| CU-21 | Iniciar Sesión (JWT) | ✅ | views |
+| CU | Nombre | Estado | Backend | Frontend |
+|----|--------|--------|---------|----------|
+| CU-17 | Gestionar Usuarios | ⬜ Pendiente | — | — |
+| CU-18 | Gestionar Roles y Permisos | ⬜ Pendiente | — | — |
+| CU-19 | Auditar Accesos | ⬜ Pendiente | — | — |
+| CU-21 | Iniciar Sesión (JWT) | ✅ | views | LoginModalComponent (integrado en HeaderComponent) |
 
-**Total: 12/21 CUs implementados** · 9 pendientes
+**Total: 16/22 CUs implementados** · 6 pendientes
 
 ---
 
 ## Convenciones y Decisiones de Arquitectura
 
 ### Frontend
-- **Componentes standalone** (no NgModules).
+- **Componentes standalone** (no NgModules). Lazy loading con `loadComponent`.
 - **Signals** para estado reactivo (no RxJS BehaviorSubject para estado local).
-- **CSS plano con variables CSS** — paleta oscura táctica con colores desaturados. No usar Tailwind ni librerías UI externas.
+- **Tailwind CSS 3** con PostCSS + Autoprefixer + CSS plano con variables CSS — paleta oscura táctica con colores desaturados.
 - **Leaflet vía CDN** (no npm). Tipos declarados en `src/types/leaflet.d.ts`. MarkerCluster añadido vía CDN (`leaflet.markercluster` 1.5.3) con severidad por colores en iconos de cluster.
 - **Marcadores SVG personalizados** — pines con gradiente cromático por severidad (sin números), animación de pulso para accidentes activos, efecto hover (escala + glow). Popups rediseñados con cabecera degradada, badge de severidad y estadísticas SVG inline.
+- **Chart.js 4.5.1** para gráficos del dashboard (barras, dona, línea temporal).
 - **Estilo Double-Bezel** en cards: `border-radius: 10px`, transiciones `cubic-bezier(0.16, 1, 0.3, 1)` 200ms.
 - **Interceptor HTTP** para JWT (`auth.interceptor.ts`) y manejo de errores (`error.interceptor.ts`).
-- **Rutas públicas**: `/mapa` (AllowAny). **Rutas protegidas**: `/dashboard`, `/lista`, `/registro` (requieren auth. guard).
+- **Guard de autenticación** (`auth.guard.ts`) y **guard de rol analítico** (`analista.guard.ts`).
+- **Rutas públicas**: `/mapa`, `/mapa-publico` (AllowAny).
+- **Rutas protegidas**: `/dashboard`, `/registro-accidente`, `/accidentes`, `/responder`, `/responder/cambiar-estado`, `/retiros/solicitar`, `/retiros/gestionar`, `/unidades`.
+- **Rutas de analista**: `/analitico/accidentes`, `/analitico/expediente/:id` (auth + rol analista).
 
 ### Backend
 - **DRF con JWTAuthentication + IsAuthenticated** por defecto. Vistas públicas (catálogos, mapa público, estadísticas) tienen `permission_classes = [AllowAny]`.
 - **Organización por PKGs del SRS**: Cada paquete funcional (`PKG1` – `PKG5`) agrupa sus Casos de Uso como submódulos independientes. Cada CU contiene `views.py`, `services.py` y opcionalmente `serializers.py`.
-- **Código compartido en `shared/`**: modelos, repositorios (Pinot, Kafka), catálogos, admin, permisos. Todos los modelos usan `app_label = 'accidentes'` para mantener compatibilidad con migraciones.
+- **Código compartido en `shared/`**: modelos, repositorios (Pinot, Kafka), catálogos (views, serializers, repositories), admin, permisos, utilidades. Todos los modelos usan `app_label = 'accidentes'` para mantener compatibilidad con migraciones.
 - **Vistas DRF puras** (no ViewSets) para control fino.
+- **Tests**: Vitest + jsdom (frontend), unittest (backend).
 - **JWT sin refresh token** configurado; el frontend persiste el token en `localStorage`.
 - **Base de datos**: Apache Pinot (OLAP) vía queries SQL directas. Kafka como bus de eventos para ingestion en tiempo real. No se usa PostgreSQL/MySQL como almacenamiento primario.
 
@@ -250,16 +311,17 @@ Al crear/actualizar accidentes y estados, `idusuario_id` se envía como `1`. No 
 
 ## Flujo de Autenticación
 
-1. Usuario ingresa credenciales en `LoginModalComponent`.
+1. Usuario ingresa credenciales en `LoginModalComponent` (integrado en `HeaderComponent`).
 2. `AuthService.login()` envía POST a `/api/v1/auth/login/`.
 3. Backend valida contra `django.contrib.auth.models.User` y devuelve JWT + refresh token.
-4. Frontend guarda access token, refresh token y username en `localStorage`.
+4. Frontend guarda access token, refresh token, username y rol en `localStorage`.
 5. `auth.interceptor.ts` adjunta `Authorization: Bearer <token>` a cada request HTTP.
-6. Si el servidor responde 401, el interceptor intenta renovar el token via `POST /auth/refresh/` con el refresh token guardado.
+6. Si el servidor responde 401, el interceptor intenta renovar el token via `POST /api/v1/auth/refresh/` con el refresh token guardado.
 7. Si el refresh es exitoso, se re-intenta la request original con el nuevo token.
-8. Si el refresh falla, se limpia la sesión y redirige a `/mapa`.
+8. Si el refresh falla, se limpia la sesión y redirige a `/mapa` (público).
 9. `auth.guard.ts` protege rutas redirigiendo a `/mapa` si no hay sesión.
-10. `AuthService.restoreSession()` en el constructor restaura sesión desde `localStorage` al recargar la página.
+10. `analista.guard.ts` restringe rutas analíticas solo al rol `Consumidor Analitico`.
+11. `AuthService.restoreSession()` en el constructor restaura sesión desde `localStorage` al recargar la página.
 
 ---
 
@@ -312,8 +374,18 @@ Reportado (ACTIVO) → En Atención (EN_ATENCION) → Despejado (CONTROLADO) →
 
 | Endpoint | CU | Descripción |
 |----------|----|-------------|
-| `GET /api/v1/unidades/` | CU-08 | Listar unidades de emergencia |
+| `GET /api/v1/unidades/` | CU-22 | Listar y crear unidades de emergencia |
+| `GET /api/v1/unidades/<id>/` | CU-22 | Detalle de unidad |
 | `PATCH /api/v1/unidades/<id>/estado/` | CU-08 | Actualizar estado de unidad |
+| `PATCH /api/v1/unidades/<id>/activar/` | CU-22 | Activar/desactivar unidad |
+| `GET /api/v1/despachos/unidad/<id>/` | CU-07 | Despachos asignados a una unidad |
+| `PATCH /api/v1/despachos/<id>/llegada/` | CU-07 | Reportar llegada a emergencia |
+| `GET /api/v1/notificaciones/` | CU-07 | Listar notificaciones de despacho |
+| `POST /api/v1/notificaciones/<id>/aceptar/` | CU-07 | Aceptar despacho asignado |
+| `GET /api/v1/retiros/` | CU-09 | Listar solicitudes de retiro vehicular |
+| `POST /api/v1/retiros/solicitar/` | CU-09 | Solicitar retiro de vehículo |
+| `PATCH /api/v1/retiros/<id>/aceptar/` | CU-09 | Aprobar solicitud de retiro |
+| `PATCH /api/v1/retiros/<id>/finalizar/` | CU-09 | Finalizar retiro vehicular |
 
 ### Catálogos (AllowAny)
 
@@ -330,20 +402,22 @@ Reportado (ACTIVO) → En Atención (EN_ATENCION) → Despejado (CONTROLADO) →
 | `GET /api/v1/climas/` | Estados climáticos |
 | `GET /api/v1/elementos-fisicos/` | Elementos físicos de la vía |
 | `GET /api/v1/periodos-dias/` | Períodos del día |
+| `GET /api/v1/estados-unidad/` | Estados de unidad de emergencia |
+| `GET /api/v1/tipos-unidad/` | Tipos de unidad de emergencia |
 
 ---
 
 ## Comandos Útiles
 
 ```bash
-# Re-seedear datos de prueba
-python manage.py seed_data
-
 # Re-seedear usuarios JWT
 python manage.py seed_auth_users
 
 # Build frontend
 cd frontend && npx ng build
+
+# Tests de backend
+python manage.py test accidentes
 
 # Verificar sintaxis Python (en todos los .py del backend)
 python -m py_compile manage.py
