@@ -1,7 +1,8 @@
 import logging
 from typing import Any, Dict, List
 
-from accidentes.shared.repositories import PinotRepository
+from accidentes.shared.repositories import PinotRepository, QueryTimeout
+from accidentes.shared.cache_utils import memoize
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,8 @@ class BusquedaCalleRepository:
         safe = safe.replace("%", "\\%").replace("_", "\\_")
         rows = PinotRepository.execute_query(
             f"SELECT idcalle FROM calles "
-            f"WHERE LOWER(calle) LIKE '%{safe.lower()}%' LIMIT 100"
+            f"WHERE LOWER(calle) LIKE '%{safe.lower()}%' LIMIT 100",
+            timeout=QueryTimeout.BUSQUEDA,
         )
         return [r["idcalle"] for r in rows if r.get("idcalle") is not None]
 
@@ -31,7 +33,8 @@ class BusquedaCiudadRepository:
         safe = safe.replace("%", "\\%").replace("_", "\\_")
         rows = PinotRepository.execute_query(
             f"SELECT idciudad FROM ciudades "
-            f"WHERE LOWER(ciudad) LIKE '%{safe.lower()}%' LIMIT 100"
+            f"WHERE LOWER(ciudad) LIKE '%{safe.lower()}%' LIMIT 100",
+            timeout=QueryTimeout.BUSQUEDA,
         )
         return [r["idciudad"] for r in rows if r.get("idciudad") is not None]
 
@@ -48,7 +51,8 @@ class VehiculoBusquedaRepository:
             f"SELECT idvehiculo FROM vehiculos WHERE "
             f"LOWER(modelovehiculo) LIKE '%{safe.lower()}%' "
             f"OR LOWER(tipovehiculo) LIKE '%{safe.lower()}%' "
-            f"LIMIT 500"
+            f"LIMIT 500",
+            timeout=QueryTimeout.BUSQUEDA,
         )
         return [r["idvehiculo"] for r in rows if r.get("idvehiculo") is not None]
 
@@ -62,7 +66,8 @@ class ConductorAccidenteBusquedaRepository:
         ids_str = ", ".join(str(v) for v in vehiculo_ids)
         rows = PinotRepository.execute_query(
             f"SELECT DISTINCT idaccidente FROM conductoresaccidentes "
-            f"WHERE idvehiculo IN ({ids_str}) LIMIT 500"
+            f"WHERE idvehiculo IN ({ids_str}) LIMIT 500",
+            timeout=QueryTimeout.BUSQUEDA,
         )
         return [str(r["idaccidente"]) for r in rows if r.get("idaccidente") is not None]
 
@@ -70,11 +75,13 @@ class ConductorAccidenteBusquedaRepository:
 class EstadoIncidenteRepository:
 
     @staticmethod
+    @memoize
     def get_all() -> List[Dict[str, Any]]:
         return PinotRepository.execute_query(
             "SELECT idaccidente, idtipoestadoincidente, fechahoramodificado "
             "FROM accidentestiposestadosincidentes "
-            "WHERE activo = true LIMIT 100000"
+            "WHERE activo = true LIMIT 100000",
+            timeout=QueryTimeout.EXPEDIENTE,
         )
 
     @staticmethod
@@ -85,7 +92,8 @@ class EstadoIncidenteRepository:
         return PinotRepository.execute_query(
             f"SELECT idaccidente, idtipoestadoincidente, fechahoramodificado "
             f"FROM accidentestiposestadosincidentes "
-            f"WHERE idaccidente IN ({ids_str}) AND activo = true LIMIT 500"
+            f"WHERE idaccidente IN ({ids_str}) AND activo = true LIMIT 500",
+            timeout=QueryTimeout.BUSQUEDA,
         )
 
 
@@ -94,7 +102,8 @@ class AccidenteBusquedaRepository:
     @staticmethod
     def count(where_clause: str) -> int:
         rows = PinotRepository.execute_query(
-            f"SELECT count(*) FROM accidentes WHERE {where_clause}"
+            f"SELECT count(*) FROM accidentes WHERE {where_clause}",
+            timeout=QueryTimeout.BUSQUEDA,
         )
         if rows:
             return int(rows[0].get("count(*)", 0))
@@ -109,4 +118,4 @@ class AccidenteBusquedaRepository:
             f"ORDER BY fecha_actualizacion DESC "
             f"LIMIT {page_size} OFFSET {offset}"
         )
-        return PinotRepository.execute_query(query)
+        return PinotRepository.execute_query(query, timeout=QueryTimeout.BUSQUEDA)

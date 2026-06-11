@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, ElementRef, viewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, ElementRef, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AccidenteService } from '../../../core/services/accidente.service';
 import { Chart, registerables } from 'chart.js';
@@ -11,7 +11,7 @@ Chart.register(...registerables);
   imports: [CommonModule],
   templateUrl: './dashboard.html'
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   private readonly accidenteService = inject(AccidenteService);
 
   readonly trendCanvas = viewChild<ElementRef<HTMLCanvasElement>>('trendCanvas');
@@ -33,6 +33,10 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarEstadisticas();
+  }
+
+  ngOnDestroy(): void {
+    this.destroyCharts();
   }
 
   private formatNumber(num: number): string {

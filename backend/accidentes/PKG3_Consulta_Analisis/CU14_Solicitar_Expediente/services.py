@@ -1,15 +1,24 @@
-import zlib
 import logging
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
+from accidentes.shared.utils import uuid_to_pinot_id
 from accidentes.PKG1_Gestion_Accidentes.CU02_Visualizar_Mapa.repositories import (
     CalleRepository,
     CiudadRepository,
+    SeveridadRepository,
+)
+from accidentes.shared.catalogo_repositories import (
+    ClimaCatalogoRepository,
+    PeriodoDiaCatalogoRepository,
+    ElementoFisicoCatalogoRepository,
+    PaisCatalogoRepository,
+    EstadoCatalogoRepository,
+    CondadoCatalogoRepository,
+    TipoReportadoCatalogoRepository,
 )
 from accidentes.PKG3_Consulta_Analisis.CU14_Solicitar_Expediente.repositories import (
     AccidenteExpedienteRepository,
-    SeveridadExpedienteRepository,
     EstadoIncidenteExpedienteRepository,
     DespachoRepository,
     NotaExpedienteRepository,
@@ -17,14 +26,6 @@ from accidentes.PKG3_Consulta_Analisis.CU14_Solicitar_Expediente.repositories im
     ConductorExpedienteRepository,
     VehiculoExpedienteRepository,
     EstadoConductorExpedienteRepository,
-    ClimaExpedienteRepository,
-    PeriodoDiaExpedienteRepository,
-    ElementoFisicoExpedienteRepository,
-    EstacionExpedienteRepository,
-    PaisExpedienteRepository,
-    EstadoGeograficoExpedienteRepository,
-    CondadoExpedienteRepository,
-    TipoReportadoExpedienteRepository,
     EvidenciaFotoRepository,
 )
 
@@ -33,8 +34,118 @@ logger = logging.getLogger(__name__)
 
 class ExpedienteService:
     @staticmethod
-    def _uuid_to_pinot_id(uuid_str: str) -> int:
-        return zlib.crc32(uuid_str.encode('utf-8')) & 0x7FFFFFFF
+    def _timestamp_to_iso(ts) -> str:
+        if isinstance(ts, (int, float)) and ts > 0:
+            return datetime.fromtimestamp(ts / 1000.0).isoformat()
+        if isinstance(ts, str) and ts:
+            try:
+                return datetime.strptime(ts.split('.')[0], '%Y-%m-%d %H:%M:%S').isoformat()
+            except (ValueError, TypeError):
+                return ts
+        return str(ts or "")
+
+    @staticmethod
+    def _build_dims_from_row(row: Dict[str, Any]) -> Dict[str, Any]:
+        dim_ids = {
+            'idestadoclima': row.get('idestadoclima'),
+            'idperiododia': row.get('idperiododia'),
+            'idelementofisico': row.get('idelementofisico'),
+            'idpais': row.get('idpais'),
+            'idestado': row.get('idestado'),
+            'idcondado': row.get('idcondado'),
+            'idtiporeportado': row.get('idtiporeportado'),
+        }
+        valid_ids = {k: v for k, v in dim_ids.items() if v is not None}
+        if not valid_ids:
+            return {}
+
+        all_climas = ClimaCatalogoRepository.get_all()
+        all_periodos = PeriodoDiaCatalogoRepository.get_all()
+        all_elementos = ElementoFisicoCatalogoRepository.get_all()
+
+        clima_map = {c['idestadoclima']: c for c in all_climas}
+        periodo_map = {p['idperiododia']: p for p in all_periodos}
+        elemento_map = {e['idelementofisico']: e for e in all_elementos}
+        pais_map = {p['idpais']: p for p in PaisCatalogoRepository.get_all()}
+
+        dims = {}
+
+        c = clima_map.get(valid_ids.get('idestadoclima'))
+        if c:
+            dims.update({
+                'condicion_clima': str(c.get('condicionclima', 'Despejado')),
+                'temperatura_f': c.get('temperaturaf', 72.0),
+                'humedad_porcentaje': c.get('humedadporcentaje', 50.0),
+                'visibilidad_millas': c.get('visibilidadmillas', 10.0),
+                'velocidad_viento_mph': c.get('velocidadvientomph', 0.0),
+            })
+
+        p = periodo_map.get(valid_ids.get('idperiododia'))
+        if p:
+            dims.update({
+                'amaneceranochecer': str(p.get('amaneceranochecer', 'Day')),
+                'crepusculocivil': str(p.get('crepusculocivil', 'Day')),
+                'crepusculonautico': str(p.get('crepusculonautico', 'Day')),
+                'crepusculoastronomico': str(p.get('crepusculoastronomico', 'Day')),
+            })
+
+        ef = elemento_map.get(valid_ids.get('idelementofisico'))
+        if ef:
+            dims.update({
+                'cerca_cruce': bool(ef.get('cercacruce', False)),
+                'cerca_semaforo': bool(ef.get('cercasemaforo', False)),
+                'cerca_parada': bool(ef.get('cercaparada', False)),
+                'cerca_estacion': bool(ef.get('cercaestacion', False)),
+                'cerca_bache': bool(ef.get('cercabache', False)),
+                'cerca_viatren': bool(ef.get('cercaviatren', False)),
+            })
+
+        pa = pais_map.get(valid_ids.get('idpais'))
+        if pa:
+            dims['pais_nombre'] = str(pa.get('pais', ''))
+
+        if valid_ids.get('idestado'):
+            estados = EstadoCatalogoRepository.get_all()
+            est_map = {e['idestado']: e for e in estados}
+            est = est_map.get(valid_ids['idestado'])
+            if est:
+                dims['estado_nombre'] = str(est.get('estado', ''))
+
+        if valid_ids.get('idcondado'):
+            condados = CondadoCatalogoRepository.get_all()
+            cond_map = {c['idcondado']: c for c in condados}
+            cond = cond_map.get(valid_ids['idcondado'])
+            if cond:
+                dims['condado_nombre'] = str(cond.get('condado', ''))
+
+        if valid_ids.get('idtiporeportado'):
+            tipos = TipoReportadoCatalogoRepository.get_all()
+            tipo_map = {t['idtiporeportado']: t for t in tipos}
+            tr = tipo_map.get(valid_ids['idtiporeportado'])
+            if tr:
+                dims['tiporeportado_descripcion'] = str(tr.get('tiporeportado', ''))
+
+        dims.setdefault('condicion_clima', 'Despejado')
+        dims.setdefault('temperatura_f', 72.0)
+        dims.setdefault('humedad_porcentaje', 50.0)
+        dims.setdefault('visibilidad_millas', 10.0)
+        dims.setdefault('velocidad_viento_mph', 0.0)
+        dims.setdefault('amaneceranochecer', 'Day')
+        dims.setdefault('crepusculocivil', 'Day')
+        dims.setdefault('crepusculonautico', 'Day')
+        dims.setdefault('crepusculoastronomico', 'Day')
+        dims.setdefault('cerca_cruce', False)
+        dims.setdefault('cerca_semaforo', False)
+        dims.setdefault('cerca_parada', False)
+        dims.setdefault('cerca_estacion', False)
+        dims.setdefault('cerca_bache', False)
+        dims.setdefault('cerca_viatren', False)
+        dims.setdefault('pais_nombre', '')
+        dims.setdefault('estado_nombre', '')
+        dims.setdefault('condado_nombre', '')
+        dims.setdefault('tiporeportado_descripcion', '')
+
+        return dims
 
     @staticmethod
     def obtener_detalle(accidente_id: str) -> Optional[Dict[str, Any]]:
@@ -61,36 +172,17 @@ class ExpedienteService:
         severidad_desc = "Leve"
         severidad_nivel = 1
         if idseveridad is not None:
-            sev = SeveridadExpedienteRepository.find_by_id(idseveridad)
-            if sev:
-                severidad_nivel = sev.get('severidad', 1)
-                severidad_desc = sev.get('descripcion', 'Leve')
+            sev_rows = SeveridadRepository.get_all()
+            for s in sev_rows:
+                if s.get('idseveridad') == idseveridad:
+                    severidad_nivel = s.get('severidad', 1)
+                    severidad_desc = s.get('descripcion', 'Leve')
+                    break
 
-        fa = row.get('fecha_actualizacion')
-        if isinstance(fa, (int, float)):
-            fa_iso = datetime.fromtimestamp(fa / 1000.0).isoformat()
-        elif isinstance(fa, str) and fa:
-            try:
-                fa_dt = datetime.strptime(fa.split('.')[0], '%Y-%m-%d %H:%M:%S')
-                fa_iso = fa_dt.isoformat()
-            except (ValueError, TypeError):
-                fa_iso = fa
-        else:
-            fa_iso = str(fa or "")
+        fa_iso = ExpedienteService._timestamp_to_iso(row.get('fecha_actualizacion'))
+        fhc_iso = ExpedienteService._timestamp_to_iso(row.get('fechahoraclima'))
 
-        fhc = row.get('fechahoraclima')
-        if isinstance(fhc, (int, float)) and fhc > 0:
-            fhc_iso = datetime.fromtimestamp(fhc / 1000.0).isoformat()
-        elif isinstance(fhc, str) and fhc:
-            try:
-                fhc_dt = datetime.strptime(fhc.split('.')[0], '%Y-%m-%d %H:%M:%S')
-                fhc_iso = fhc_dt.isoformat()
-            except (ValueError, TypeError):
-                fhc_iso = fhc
-        else:
-            fhc_iso = str(fhc or "")
-
-        pinot_id_detalle = ExpedienteService._uuid_to_pinot_id(accidente_id)
+        pinot_id_detalle = uuid_to_pinot_id(accidente_id)
 
         estado_actual = "ACTIVO"
         eid = EstadoIncidenteExpedienteRepository.find_latest_by_accidente(pinot_id_detalle)
@@ -115,11 +207,7 @@ class ExpedienteService:
         notas_list = []
         nota_rows = NotaExpedienteRepository.find_by_accidente(pinot_id_detalle)
         for n in nota_rows:
-            nfa = n.get('fecha_actualizacion')
-            if isinstance(nfa, (int, float)):
-                nfa_iso = datetime.fromtimestamp(nfa / 1000.0).isoformat()
-            else:
-                nfa_iso = str(nfa or '')
+            nfa_iso = ExpedienteService._timestamp_to_iso(n.get('fecha_actualizacion'))
             notas_list.append({
                 "idnotaaccidentes": n.get('idnotaaccidentes'),
                 "idaccidente": str(accidente_id),
@@ -130,102 +218,23 @@ class ExpedienteService:
 
         vehiculos_detalles = ExpedienteService._obtener_vehiculos_desde_pinot(accidente_id)
 
-        idestadoclima = row.get('idestadoclima')
-        idperiododia = row.get('idperiododia')
-        idelementofisico = row.get('idelementofisico')
-        idreferenciaestacion = row.get('idreferenciaestacion')
-        idpais = row.get('idpais')
-        idestado = row.get('idestado')
-        idcondado = row.get('idcondado')
-        idtiporeportado = row.get('idtiporeportado')
-
-        clima_data = {
-            'condicion_clima': 'Despejado', 'temperatura_f': 72.0,
-            'humedad_porcentaje': 50.0, 'visibilidad_millas': 10.0,
-            'velocidad_viento_mph': 0.0,
-        }
-        if idestadoclima:
-            r = ClimaExpedienteRepository.find_by_id(idestadoclima)
-            if r:
-                clima_data = {
-                    'condicion_clima': str(r.get('condicionclima', 'Despejado')),
-                    'temperatura_f': r.get('temperaturaf', 72.0),
-                    'humedad_porcentaje': r.get('humedadporcentaje', 50.0),
-                    'visibilidad_millas': r.get('visibilidadmillas', 10.0),
-                    'velocidad_viento_mph': r.get('velocidadvientomph', 0.0),
-                }
-
-        periodo_data = {
-            'amaneceranochecer': 'Day', 'crepusculocivil': 'Day',
-            'crepusculonautico': 'Day', 'crepusculoastronomico': 'Day',
-        }
-        if idperiododia:
-            r = PeriodoDiaExpedienteRepository.find_by_id(idperiododia)
-            if r:
-                periodo_data = {
-                    'amaneceranochecer': str(r.get('amaneceranochecer', 'Day')),
-                    'crepusculocivil': str(r.get('crepusculocivil', 'Day')),
-                    'crepusculonautico': str(r.get('crepusculonautico', 'Day')),
-                    'crepusculoastronomico': str(r.get('crepusculoastronomico', 'Day')),
-                }
-
-        elemento_data = {
-            'cerca_cruce': False, 'cerca_semaforo': False,
-            'cerca_parada': False, 'cerca_estacion': False,
-            'cerca_bache': False, 'cerca_viatren': False,
-        }
-        if idelementofisico:
-            r = ElementoFisicoExpedienteRepository.find_by_id(idelementofisico)
-            if r:
-                elemento_data = {
-                    'cerca_cruce': bool(r.get('cercacruce', False)),
-                    'cerca_semaforo': bool(r.get('cercasemaforo', False)),
-                    'cerca_parada': bool(r.get('cercaparada', False)),
-                    'cerca_estacion': bool(r.get('cercaestacion', False)),
-                    'cerca_bache': bool(r.get('cercabache', False)),
-                    'cerca_viatren': bool(r.get('cercaviatren', False)),
-                }
-
-        estacion_data = {
-            'codigoaeropuerto': 'KJFK', 'zonahoraria': 'US/Eastern',
-        }
-        if idreferenciaestacion:
-            r = EstacionExpedienteRepository.find_by_id(idreferenciaestacion)
-            if r:
-                estacion_data = {
-                    'codigoaeropuerto': str(r.get('codigoaeropuerto', 'KJFK')),
-                    'zonahoraria': str(r.get('zonahoraria', 'US/Eastern')),
-                }
-
-        pais_nombre = PaisExpedienteRepository.find_by_id(idpais) if idpais else ''
-        estado_nombre = EstadoGeograficoExpedienteRepository.find_by_id(idestado) if idestado else ''
-        condado_nombre = CondadoExpedienteRepository.find_by_id(idcondado) if idcondado else ''
-        tiporeportado_desc = TipoReportadoExpedienteRepository.find_by_id(idtiporeportado) if idtiporeportado else ''
-
-        dims = {
-            **clima_data,
-            **periodo_data,
-            **elemento_data,
-            **estacion_data,
-            'pais_nombre': pais_nombre or '',
-            'estado_nombre': estado_nombre or '',
-            'condado_nombre': condado_nombre or '',
-            'tiporeportado_descripcion': tiporeportado_desc or '',
-            'idpais_id': idpais,
-            'idestado_id': idestado,
-            'idcondado_id': idcondado,
+        dims = ExpedienteService._build_dims_from_row(row)
+        dims.update({
+            'idpais_id': row.get('idpais'),
+            'idestado_id': row.get('idestado'),
+            'idcondado_id': row.get('idcondado'),
             'idciudad_id': idciudad,
             'idcalle_id': idcalle,
-            'idtiporeportado_id': idtiporeportado,
+            'idtiporeportado_id': row.get('idtiporeportado'),
             'idseveridad_id': severidad_nivel,
-            'idperiododia_id': idperiododia,
-            'idestadoclima_id': idestadoclima,
-            'idreferenciaestacion_id': idreferenciaestacion,
+            'idperiododia_id': row.get('idperiododia'),
+            'idestadoclima_id': row.get('idestadoclima'),
+            'idreferenciaestacion_id': row.get('idreferenciaestacion'),
             'idfecha_id': row.get('idfecha'),
             'idusuario_id': row.get('idusuario'),
-            'idelementofisico_id': idelementofisico,
+            'idelementofisico_id': row.get('idelementofisico'),
             'vehiculos_detalles': vehiculos_detalles,
-        }
+        })
 
         return {
             "idaccidente": str(row.get('idaccidente')),
@@ -255,7 +264,7 @@ class ExpedienteService:
 
     @staticmethod
     def _obtener_vehiculos_desde_pinot(accidente_id: str) -> list:
-        pinot_id = ExpedienteService._uuid_to_pinot_id(accidente_id)
+        pinot_id = uuid_to_pinot_id(accidente_id)
 
         ca_rows = ConductorAccidenteExpedienteRepository.find_by_accidente(pinot_id)
         if not ca_rows:
@@ -302,7 +311,7 @@ class ExpedienteService:
             if not detalle:
                 return None
 
-            pinot_id = ExpedienteService._uuid_to_pinot_id(accidente_id)
+            pinot_id = uuid_to_pinot_id(accidente_id)
 
             fotos = []
             foto_rows = EvidenciaFotoRepository.find_by_accidente(pinot_id)
@@ -313,30 +322,35 @@ class ExpedienteService:
                 })
 
             clima = {}
-            if detalle.get('idestadoclima'):
-                r = ClimaExpedienteRepository.find_full_by_id(detalle['idestadoclima'])
-                if r:
-                    clima = {
-                        'condicion': str(r.get('condicionclima', '')),
-                        'temperatura_f': r.get('temperaturaf'),
-                        'humedad': r.get('humedadporcentaje'),
-                        'visibilidad_millas': r.get('visibilidadmillas'),
-                        'velocidad_viento_mph': r.get('velocidadvientomph'),
-                        'precipitacion_pulgadas': r.get('precipitacionpulgadas'),
-                        'presion_pulgadas': r.get('presionpulgadas'),
-                    }
+            id_clima = detalle.get('idestadoclima_id')
+            if id_clima:
+                all_climas = ClimaCatalogoRepository.get_all()
+                for c in all_climas:
+                    if c.get('idestadoclima') == id_clima:
+                        clima = {
+                            'condicion': str(c.get('condicionclima', '')),
+                            'temperatura_f': c.get('temperaturaf'),
+                            'humedad': c.get('humedadporcentaje'),
+                            'visibilidad_millas': c.get('visibilidadmillas'),
+                            'velocidad_viento_mph': c.get('velocidadvientomph'),
+                            'precipitacion_pulgadas': c.get('precipitacionpulgadas'),
+                            'presion_pulgadas': c.get('presionpulgadas'),
+                        }
+                        break
 
             vehiculos = []
             veh_ids = ConductorAccidenteExpedienteRepository.find_vehiculo_ids_by_accidente(pinot_id)
-            for veh_id in veh_ids:
-                v = VehiculoExpedienteRepository.find_by_id(veh_id)
-                if v:
-                    vehiculos.append({
-                        'tipo': str(v.get('tipovehiculo', '')),
-                        'modelo': str(v.get('modelovehiculo', '')),
-                        'categoria_uso': str(v.get('categoriausovehiculo', '')),
-                        'ejes': v.get('ejes', 0),
-                    })
+            if veh_ids:
+                vehiculos_map = VehiculoExpedienteRepository.find_by_ids(veh_ids)
+                for veh_id in veh_ids:
+                    v = vehiculos_map.get(veh_id)
+                    if v:
+                        vehiculos.append({
+                            'tipo': str(v.get('tipovehiculo', '')),
+                            'modelo': str(v.get('modelovehiculo', '')),
+                            'categoria_uso': str(v.get('categoriausovehiculo', '')),
+                            'ejes': v.get('ejes', 0),
+                        })
 
             return {
                 'accidente': detalle,

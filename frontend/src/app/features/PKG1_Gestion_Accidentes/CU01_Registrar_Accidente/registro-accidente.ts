@@ -715,7 +715,7 @@ export class RegistroAccidenteComponent implements OnInit {
     });
   }
 
-  private poblarCascadaConIds(detalle: any): void {
+  private async poblarCascadaConIds(detalle: any): Promise<void> {
     this.resolviendoDireccion.set(true);
     this.estadoResolucion.set('Cargando datos de ubicación guardados...');
 
@@ -724,75 +724,58 @@ export class RegistroAccidenteComponent implements OnInit {
       return !isNaN(n) && v !== null && v !== '' && v !== undefined ? n : null;
     };
 
-    Promise.all([
-      firstValueFrom(this.accidenteService.getPaises()),
-      firstValueFrom(this.accidenteService.getEstados()),
-      firstValueFrom(this.accidenteService.getCondados()),
-      firstValueFrom(this.accidenteService.getCiudades()),
-      firstValueFrom(this.accidenteService.getCalles()),
-    ]).then(([allPaises, allEstados, allCondados, allCiudades, allCalles]) => {
+    try {
+      const paisId = pid(detalle.idpais_id);
+      const estadoId = pid(detalle.idestado_id);
+      const condadoId = pid(detalle.idcondado_id);
+      const ciudadId = pid(detalle.idciudad_id);
+      const calleId = pid(detalle.idcalle_id);
+
+      // 1. Paises
+      const allPaises = await firstValueFrom(this.accidenteService.getPaises());
       this.paises.set(allPaises);
 
-      const paisId = pid(detalle.idpais_id);
-      const calleNombre = (detalle.calle_nombre ?? '').trim().toLowerCase();
-      const ciudadNombre = (detalle.ciudad_nombre ?? '').trim().toLowerCase();
-
       let matchPais = paisId !== null ? allPaises.find(p => p.idpais === paisId) : undefined;
-      if (!matchPais && paisId !== null && allPaises.length > 0) {
+      if (!matchPais && allPaises.length > 0) {
         matchPais = allPaises[0];
       }
 
       if (matchPais) {
-        const filtEstados = allEstados.filter(e => e.pais === matchPais.pais);
-        this.estados.set(filtEstados);
         this.form.get('idpais_id')?.setValue(matchPais.idpais.toString(), { emitEvent: false });
+
+        // 2. Estados
+        const filtEstados = await firstValueFrom(this.accidenteService.getEstados(matchPais.pais));
+        this.estados.set(filtEstados);
         this.form.get('idestado_id')?.enable({ emitEvent: false });
 
-        const estadoId = pid(detalle.idestado_id);
         let matchEstado = estadoId !== null ? filtEstados.find(e => e.idestado === estadoId) : undefined;
-        if (!matchEstado && calleNombre && allCalles.length > 0) {
-          const calleEst = allCalles.find(c => c.calle.toLowerCase() === calleNombre);
-          if (calleEst) {
-            matchEstado = filtEstados.find(e => e.estado === calleEst.ciudad);
-          }
-        }
-
         if (matchEstado) {
-          const filtCondados = allCondados.filter(c => c.estado === matchEstado.estado);
-          this.condados.set(filtCondados);
           this.form.get('idestado_id')?.setValue(matchEstado.idestado.toString(), { emitEvent: false });
+
+          // 3. Condados
+          const filtCondados = await firstValueFrom(this.accidenteService.getCondados(matchEstado.estado));
+          this.condados.set(filtCondados);
           this.form.get('idcondado_id')?.enable({ emitEvent: false });
 
-          const condadoId = pid(detalle.idcondado_id);
           let matchCondado = condadoId !== null ? filtCondados.find(c => c.idcondado === condadoId) : undefined;
-          if (!matchCondado && ciudadNombre) {
-            matchCondado = filtCondados.find(c => c.condado.toLowerCase() === ciudadNombre);
-          }
-
           if (matchCondado) {
-            const filtCiudades = allCiudades.filter(c => c.condado === matchCondado.condado);
-            this.ciudades.set(filtCiudades);
             this.form.get('idcondado_id')?.setValue(matchCondado.idcondado.toString(), { emitEvent: false });
+
+            // 4. Ciudades
+            const filtCiudades = await firstValueFrom(this.accidenteService.getCiudades(matchCondado.condado));
+            this.ciudades.set(filtCiudades);
             this.form.get('idciudad_id')?.enable({ emitEvent: false });
 
-            const ciudadId = pid(detalle.idciudad_id);
             let matchCiudad = ciudadId !== null ? filtCiudades.find(c => c.idciudad === ciudadId) : undefined;
-            if (!matchCiudad && ciudadNombre) {
-              matchCiudad = filtCiudades.find(c => c.ciudad.toLowerCase() === ciudadNombre);
-            }
-
             if (matchCiudad) {
-              const filtCalles = allCalles.filter(c => c.ciudad === matchCiudad.ciudad);
-              this.calles.set(filtCalles);
               this.form.get('idciudad_id')?.setValue(matchCiudad.idciudad.toString(), { emitEvent: false });
+
+              // 5. Calles
+              const filtCalles = await firstValueFrom(this.accidenteService.getCalles(matchCiudad.ciudad));
+              this.calles.set(filtCalles);
               this.form.get('idcalle_id')?.enable({ emitEvent: false });
 
-              const calleId = pid(detalle.idcalle_id);
               let matchCalle = calleId !== null ? filtCalles.find(c => c.idcalle === calleId) : undefined;
-              if (!matchCalle && calleNombre) {
-                matchCalle = filtCalles.find(c => c.calle.toLowerCase() === calleNombre);
-              }
-
               if (matchCalle) {
                 this.form.get('idcalle_id')?.setValue(matchCalle.idcalle.toString(), { emitEvent: false });
               }
@@ -803,12 +786,14 @@ export class RegistroAccidenteComponent implements OnInit {
 
       this.estadoResolucion.set('¡Ubicación cargada correctamente!');
       setTimeout(() => this.resolviendoDireccion.set(false), 1200);
-    }).catch(() => {
+
+    } catch (error) {
+      console.error(error);
       this.resolviendoDireccion.set(false);
       if (detalle.latitudinicio && detalle.longitudinicio) {
         this.resolverUbicacionCascada(detalle.latitudinicio, detalle.longitudinicio);
       }
-    });
+    }
   }
 
   numVal(field: string): number {
@@ -964,6 +949,7 @@ export class RegistroAccidenteComponent implements OnInit {
 
   async autocompletarCascada(address: any): Promise<void> {
     try {
+      const countryCode = (address.country_code || '').toUpperCase();
       const paisName = address.country || '';
       const estadoName = address.state || '';
       const condadoName = address.county || address.state_district || '';
@@ -975,128 +961,101 @@ export class RegistroAccidenteComponent implements OnInit {
         this.form.patchValue({ codigopostal: codigoPostal });
       }
 
-      this.estadoResolucion.set('Cargando base de datos cartográfica local...');
+      this.estadoResolucion.set('Cargando base de datos de países...');
 
-      const [allPaises, allEstados, allCondados, allCiudades, allCalles] = await Promise.all([
-        firstValueFrom(this.accidenteService.getPaises()),
-        firstValueFrom(this.accidenteService.getEstados()),
-        firstValueFrom(this.accidenteService.getCondados()),
-        firstValueFrom(this.accidenteService.getCiudades()),
-        firstValueFrom(this.accidenteService.getCalles())
-      ]);
-
-      let matchedPais: any = null;
-      let matchedEstado: any = null;
-      let matchedCondado: any = null;
-      let matchedCiudad: any = null;
-      let matchedCalle: any = null;
-
-      if (calleName) {
-        matchedCalle = allCalles.find(c => this.stringsMatch(c.calle, calleName)) ||
-                       allCalles.find(c => this.stringsPartialMatch(c.calle, calleName));
-
-        if (matchedCalle) {
-          this.estadoResolucion.set('Identificada calle: ' + matchedCalle.calle + '. Vinculando...');
-          matchedCiudad = allCiudades.find(c => this.stringsMatch(c.ciudad, matchedCalle.ciudad));
-          if (matchedCiudad) {
-            matchedCondado = allCondados.find(c => this.stringsMatch(c.condado, matchedCiudad.condado));
-          }
-          if (matchedCondado) {
-            matchedEstado = allEstados.find(e => this.stringsMatch(e.estado, matchedCondado.estado));
-          }
-          if (matchedEstado) {
-            matchedPais = allPaises.find(p => this.stringsMatch(p.pais, matchedEstado.pais));
-          }
-        }
-      }
-
-      if (!matchedCiudad && ciudadName) {
-        matchedCiudad = allCiudades.find(c => this.stringsMatch(c.ciudad, ciudadName)) ||
-                        allCiudades.find(c => this.stringsPartialMatch(c.ciudad, ciudadName));
-
-        if (matchedCiudad) {
-          this.estadoResolucion.set('Identificada ciudad: ' + matchedCiudad.ciudad + '. Vinculando...');
-          matchedCondado = allCondados.find(c => this.stringsMatch(c.condado, matchedCiudad.condado));
-          if (matchedCondado) {
-            matchedEstado = allEstados.find(e => this.stringsMatch(e.estado, matchedCondado.estado));
-          }
-          if (matchedEstado) {
-            matchedPais = allPaises.find(p => this.stringsMatch(p.pais, matchedEstado.pais));
-          }
-        }
-      }
-
-      if (!matchedCondado && condadoName) {
-        matchedCondado = allCondados.find(c => this.stringsMatch(c.condado, condadoName)) ||
-                         allCondados.find(c => this.stringsPartialMatch(c.condado, condadoName));
-
-        if (matchedCondado) {
-          this.estadoResolucion.set('Identificado condado: ' + matchedCondado.condado + '. Vinculando...');
-          matchedEstado = allEstados.find(e => this.stringsMatch(e.estado, matchedCondado.estado));
-          if (matchedEstado) {
-            matchedPais = allPaises.find(p => this.stringsMatch(p.pais, matchedEstado.pais));
-          }
-        }
-      }
-
-      if (!matchedEstado && estadoName) {
-        matchedEstado = allEstados.find(e => this.stringsMatch(e.estado, estadoName)) ||
-                        allEstados.find(e => this.stringsPartialMatch(e.estado, estadoName));
-
-        if (matchedEstado) {
-          this.estadoResolucion.set('Identificado estado: ' + matchedEstado.estado + '. Vinculando...');
-          matchedPais = allPaises.find(p => this.stringsMatch(p.pais, matchedEstado.pais));
-        }
-      }
-
-      if (!matchedPais && paisName) {
-        matchedPais = allPaises.find(p => this.stringsMatch(p.pais, paisName)) ||
-                      allPaises.find(p => this.stringsPartialMatch(p.pais, paisName));
-      }
-
+      // 1. Resolve Pais
+      const allPaises = await firstValueFrom(this.accidenteService.getPaises());
       this.paises.set(allPaises);
 
-      if (matchedPais) {
-        const filteredStates = allEstados.filter(e => e.pais === matchedPais.pais);
-        this.estados.set(filteredStates);
-        this.form.get('idpais_id')?.setValue(matchedPais.idpais.toString(), { emitEvent: false });
-        this.form.get('idestado_id')?.enable({ emitEvent: false });
+      let matchedPais = allPaises.find(p => p.pais === countryCode || this.stringsMatchSmart(p.pais, paisName));
+      if (!matchedPais && countryCode) {
+        matchedPais = allPaises.find(p => this.stringsMatchSmart(p.pais, countryCode));
+      }
+      if (!matchedPais && allPaises.length > 0) {
+        matchedPais = allPaises[0];
       }
 
-      if (matchedEstado) {
-        const filteredCondados = allCondados.filter(c => c.estado === matchedEstado.estado);
-        this.condados.set(filteredCondados);
-        this.form.get('idestado_id')?.setValue(matchedEstado.idestado.toString(), { emitEvent: false });
-        this.form.get('idcondado_id')?.enable({ emitEvent: false });
-      } else {
+      if (!matchedPais) {
+        this.estadoResolucion.set('País no encontrado en el catálogo.');
+        setTimeout(() => this.resolviendoDireccion.set(false), 1500);
+        return;
+      }
+
+      this.form.get('idpais_id')?.setValue(matchedPais.idpais.toString(), { emitEvent: false });
+      this.estadoResolucion.set(`País identificado: ${matchedPais.pais}. Buscando estado...`);
+
+      // 2. Resolve Estado
+      const filtEstados = await firstValueFrom(this.accidenteService.getEstados(matchedPais.pais));
+      this.estados.set(filtEstados);
+
+      const mappedEstadoQuery = this.mapStateName(estadoName);
+      let matchedEstado = filtEstados.find(e => this.stringsMatchSmart(e.estado, mappedEstadoQuery) || this.stringsMatchSmart(e.estado, estadoName));
+
+      if (!matchedEstado) {
         this.resetLocationCascades(1);
+        this.estadoResolucion.set('Estado no encontrado. Complete manualmente.');
+        setTimeout(() => this.resolviendoDireccion.set(false), 1500);
+        return;
       }
 
-      if (matchedCondado) {
-        const filteredCiudades = allCiudades.filter(c => c.condado === matchedCondado.condado);
-        this.ciudades.set(filteredCiudades);
-        this.form.get('idcondado_id')?.setValue(matchedCondado.idcondado.toString(), { emitEvent: false });
-        this.form.get('idciudad_id')?.enable({ emitEvent: false });
-      } else {
+      this.form.get('idestado_id')?.setValue(matchedEstado.idestado.toString(), { emitEvent: false });
+      this.form.get('idestado_id')?.enable({ emitEvent: false });
+      this.estadoResolucion.set(`Estado identificado: ${matchedEstado.estado}. Buscando condado...`);
+
+      // 3. Resolve Condado
+      const filtCondados = await firstValueFrom(this.accidenteService.getCondados(matchedEstado.estado));
+      this.condados.set(filtCondados);
+
+      let matchedCondado = filtCondados.find(c => this.stringsMatchSmart(c.condado, condadoName));
+      if (!matchedCondado && !condadoName && filtCondados.length > 0) {
+        matchedCondado = filtCondados[0];
+      }
+
+      if (!matchedCondado) {
         this.resetLocationCascades(2);
+        this.estadoResolucion.set('Condado no encontrado. Complete manualmente.');
+        setTimeout(() => this.resolviendoDireccion.set(false), 1500);
+        return;
       }
 
-      if (matchedCiudad) {
-        const filteredCalles = allCalles.filter(c => c.ciudad === matchedCiudad.ciudad);
-        this.calles.set(filteredCalles);
-        this.form.get('idciudad_id')?.setValue(matchedCiudad.idciudad.toString(), { emitEvent: false });
-        this.form.get('idcalle_id')?.enable({ emitEvent: false });
-      } else {
-        this.resetLocationCascades(3);
+      this.form.get('idcondado_id')?.setValue(matchedCondado.idcondado.toString(), { emitEvent: false });
+      this.form.get('idcondado_id')?.enable({ emitEvent: false });
+      this.estadoResolucion.set(`Condado identificado: ${matchedCondado.condado}. Buscando ciudad...`);
+
+      // 4. Resolve Ciudad
+      const filtCiudades = await firstValueFrom(this.accidenteService.getCiudades(matchedCondado.condado));
+      this.ciudades.set(filtCiudades);
+
+      let matchedCiudad = filtCiudades.find(c => this.stringsMatchSmart(c.ciudad, ciudadName));
+      if (!matchedCiudad && !ciudadName && filtCiudades.length > 0) {
+        matchedCiudad = filtCiudades[0];
       }
+
+      if (!matchedCiudad) {
+        this.resetLocationCascades(3);
+        this.estadoResolucion.set('Ciudad no encontrada. Complete manualmente.');
+        setTimeout(() => this.resolviendoDireccion.set(false), 1500);
+        return;
+      }
+
+      this.form.get('idciudad_id')?.setValue(matchedCiudad.idciudad.toString(), { emitEvent: false });
+      this.form.get('idciudad_id')?.enable({ emitEvent: false });
+      this.estadoResolucion.set(`Ciudad identificada: ${matchedCiudad.ciudad}. Buscando calle...`);
+
+      // 5. Resolve Calle
+      const filtCalles = await firstValueFrom(this.accidenteService.getCalles(matchedCiudad.ciudad));
+      this.calles.set(filtCalles);
+
+      let matchedCalle = filtCalles.find(c => this.stringsMatchSmart(c.calle, calleName));
 
       if (matchedCalle) {
         this.form.get('idcalle_id')?.setValue(matchedCalle.idcalle.toString(), { emitEvent: false });
+        this.form.get('idcalle_id')?.enable({ emitEvent: false });
         this.estadoResolucion.set('¡Ubicación resuelta con éxito hasta nivel calle!');
-      } else if (matchedPais) {
-        this.estadoResolucion.set('Ubicación resuelta parcialmente. Complete manualmente.');
       } else {
-        this.estadoResolucion.set('Ubicación no encontrada en los catálogos.');
+        this.form.get('idcalle_id')?.setValue('', { emitEvent: false });
+        this.form.get('idcalle_id')?.enable({ emitEvent: false });
+        this.estadoResolucion.set('Calle no encontrada. Seleccione una calle del listado.');
       }
 
       setTimeout(() => {
@@ -1109,18 +1068,40 @@ export class RegistroAccidenteComponent implements OnInit {
     }
   }
 
-  private stringsMatch(str1: string, str2: string): boolean {
-    if (!str1 || !str2) return false;
-    const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-    return norm(str1) === norm(str2);
+  private mapStateName(stateName: string): string {
+    if (!stateName) return '';
+    const norm = stateName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    const STATE_MAP: Record<string, string> = {
+      'pichincha': 'PI',
+      'provincia de pichincha': 'PI',
+      'guayas': 'GY',
+      'provincia del guayas': 'GY',
+      'texas': 'TX',
+      'alabama': 'AL',
+      'minnesota': 'MN',
+      'virginia': 'VA',
+      'georgia': 'GA',
+      'south carolina': 'SC',
+      'carolina del sur': 'SC'
+    };
+    return STATE_MAP[norm] || stateName;
   }
 
-  private stringsPartialMatch(str1: string, str2: string): boolean {
-    if (!str1 || !str2) return false;
-    const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-    const n1 = norm(str1);
-    const n2 = norm(str2);
-    return n1.includes(n2) || n2.includes(n1);
+  private stringsMatchSmart(dbStr: string, geoStr: string): boolean {
+    if (!dbStr || !geoStr) return false;
+    const clean = (s: string) => s.normalize("NFD")
+                                   .replace(/[\u0300-\u036f]/g, "")
+                                   .toLowerCase()
+                                   .replace(/[^a-z0-9\s]/g, "")
+                                   .replace(/\b(canton|distrito|metropolitano|provincia|estado|de|del|la|el|los|las)\b/g, "")
+                                   .trim();
+    const c1 = clean(dbStr);
+    const c2 = clean(geoStr);
+    if (!c1 || !c2) return false;
+    if (c1 === c2 || c1.includes(c2) || c2.includes(c1)) return true;
+    const tokens1 = c1.split(/\s+/).filter(t => t.length >= 3);
+    const tokens2 = c2.split(/\s+/).filter(t => t.length >= 3);
+    return tokens1.some(t => tokens2.includes(t));
   }
 
   private finalizarResolucion(msg: string): void {

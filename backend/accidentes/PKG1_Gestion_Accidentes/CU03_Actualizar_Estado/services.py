@@ -1,18 +1,14 @@
 import time
-import zlib
 import logging
 from typing import Any, Dict, Optional
 
+from accidentes.shared.utils import uuid_to_pinot_id
 from accidentes.shared.repositories import KafkaRepository
 
 logger = logging.getLogger(__name__)
 
 
 class EstadoService:
-    @staticmethod
-    def _uuid_to_pinot_id(uuid_str: str) -> int:
-        return zlib.crc32(uuid_str.encode('utf-8')) & 0x7FFFFFFF
-
     @staticmethod
     def _enviar_kafka_seguro(kafka_repo, topic, clave, datos):
         try:
@@ -33,7 +29,7 @@ class EstadoService:
         idusuario_id: int,
     ) -> Dict[str, Any]:
         ahora_ms = int(time.time() * 1000)
-        pinot_id_accidente = EstadoService._uuid_to_pinot_id(accidente_id)
+        pinot_id_accidente = uuid_to_pinot_id(accidente_id)
         try:
             kafka_repo = KafkaRepository()
         except Exception as e:

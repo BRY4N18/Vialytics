@@ -158,6 +158,18 @@ class ClimaExpedienteRepository:
         )
         return rows[0] if rows else None
 
+    @staticmethod
+    def find_by_ids(ids: List[int]) -> Dict[int, Dict[str, Any]]:
+        if not ids:
+            return {}
+        ids_str = ", ".join(str(x) for x in ids)
+        rows = PinotRepository.execute_query(
+            f"SELECT idestadoclima, condicionclima, temperaturaf, humedadporcentaje, "
+            f"visibilidadmillas, velocidadvientomph "
+            f"FROM estadoclima WHERE idestadoclima IN ({ids_str}) LIMIT 100"
+        )
+        return {r["idestadoclima"]: r for r in rows if r.get("idestadoclima") is not None}
+
 
 class PeriodoDiaExpedienteRepository:
 
@@ -169,6 +181,18 @@ class PeriodoDiaExpedienteRepository:
             f"FROM periododia WHERE idperiododia = {idperiododia} LIMIT 1"
         )
         return rows[0] if rows else None
+
+    @staticmethod
+    def find_by_ids(ids: List[int]) -> Dict[int, Dict[str, Any]]:
+        if not ids:
+            return {}
+        ids_str = ", ".join(str(x) for x in ids)
+        rows = PinotRepository.execute_query(
+            f"SELECT idperiododia, amaneceranochecer, crepusculocivil, crepusculonautico, "
+            f"crepusculoastronomico "
+            f"FROM periododia WHERE idperiododia IN ({ids_str}) LIMIT 100"
+        )
+        return {r["idperiododia"]: r for r in rows if r.get("idperiododia") is not None}
 
 
 class ElementoFisicoExpedienteRepository:
@@ -182,6 +206,18 @@ class ElementoFisicoExpedienteRepository:
         )
         return rows[0] if rows else None
 
+    @staticmethod
+    def find_by_ids(ids: List[int]) -> Dict[int, Dict[str, Any]]:
+        if not ids:
+            return {}
+        ids_str = ", ".join(str(x) for x in ids)
+        rows = PinotRepository.execute_query(
+            f"SELECT idelementofisico, cercacruce, cercasemaforo, cercaparada, cercaestacion, "
+            f"cercabache, cercaviatren "
+            f"FROM elementofisico WHERE idelementofisico IN ({ids_str}) LIMIT 100"
+        )
+        return {r["idelementofisico"]: r for r in rows if r.get("idelementofisico") is not None}
+
 
 class EstacionExpedienteRepository:
 
@@ -194,6 +230,18 @@ class EstacionExpedienteRepository:
         )
         return rows[0] if rows else None
 
+    @staticmethod
+    def find_by_ids(ids: List[int]) -> Dict[int, Dict[str, Any]]:
+        if not ids:
+            return {}
+        ids_str = ", ".join(str(x) for x in ids)
+        rows = PinotRepository.execute_query(
+            f"SELECT idreferenciaestacion, codigoaeropuerto, zonahoraria "
+            f"FROM referenciaestacion "
+            f"WHERE idreferenciaestacion IN ({ids_str}) LIMIT 100"
+        )
+        return {r["idreferenciaestacion"]: r for r in rows if r.get("idreferenciaestacion") is not None}
+
 
 class PaisExpedienteRepository:
 
@@ -203,6 +251,16 @@ class PaisExpedienteRepository:
             f"SELECT pais FROM paises WHERE idpais = {idpais} LIMIT 1"
         )
         return str(rows[0]["pais"]) if rows else None
+
+    @staticmethod
+    def find_by_ids(ids: List[int]) -> Dict[int, str]:
+        if not ids:
+            return {}
+        ids_str = ", ".join(str(x) for x in ids)
+        rows = PinotRepository.execute_query(
+            f"SELECT idpais, pais FROM paises WHERE idpais IN ({ids_str}) LIMIT 100"
+        )
+        return {r["idpais"]: str(r.get("pais", "")) for r in rows if r.get("idpais") is not None}
 
 
 class EstadoGeograficoExpedienteRepository:
@@ -214,6 +272,16 @@ class EstadoGeograficoExpedienteRepository:
         )
         return str(rows[0]["estado"]) if rows else None
 
+    @staticmethod
+    def find_by_ids(ids: List[int]) -> Dict[int, str]:
+        if not ids:
+            return {}
+        ids_str = ", ".join(str(x) for x in ids)
+        rows = PinotRepository.execute_query(
+            f"SELECT idestado, estado FROM estados WHERE idestado IN ({ids_str}) LIMIT 100"
+        )
+        return {r["idestado"]: str(r.get("estado", "")) for r in rows if r.get("idestado") is not None}
+
 
 class CondadoExpedienteRepository:
 
@@ -223,6 +291,16 @@ class CondadoExpedienteRepository:
             f"SELECT condado FROM condados WHERE idcondado = {idcondado} LIMIT 1"
         )
         return str(rows[0]["condado"]) if rows else None
+
+    @staticmethod
+    def find_by_ids(ids: List[int]) -> Dict[int, str]:
+        if not ids:
+            return {}
+        ids_str = ", ".join(str(x) for x in ids)
+        rows = PinotRepository.execute_query(
+            f"SELECT idcondado, condado FROM condados WHERE idcondado IN ({ids_str}) LIMIT 200"
+        )
+        return {r["idcondado"]: str(r.get("condado", "")) for r in rows if r.get("idcondado") is not None}
 
 
 class TipoReportadoExpedienteRepository:
@@ -234,6 +312,16 @@ class TipoReportadoExpedienteRepository:
             f"WHERE idtiporeportado = {idtiporeportado} LIMIT 1"
         )
         return str(rows[0]["descripcion"]) if rows else None
+
+    @staticmethod
+    def find_by_ids(ids: List[int]) -> Dict[int, str]:
+        if not ids:
+            return {}
+        ids_str = ", ".join(str(x) for x in ids)
+        rows = PinotRepository.execute_query(
+            f"SELECT idtiporeportado, tiporeportado FROM tiposreportados WHERE idtiporeportado IN ({ids_str}) LIMIT 100"
+        )
+        return {r["idtiporeportado"]: str(r.get("tiporeportado", "")) for r in rows if r.get("idtiporeportado") is not None}
 
 
 class EvidenciaFotoRepository:

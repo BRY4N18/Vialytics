@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
-from accidentes.shared.permissions import EsOperadorOAdministrador, EsOperadorOAnalistaOAdministrador
+from accidentes.shared.permissions import EsOperadorOAdministrador, EsOperadorOAnalistaOAdministrador, USUARIOS_ROLES
 from accidentes.shared.utils import ok_response, validation_error_response, not_found_response, server_error_response
 from accidentes.PKG1_Gestion_Accidentes.CU01_Registrar_Accidente.services import AccidenteRegistroService
 from accidentes.PKG1_Gestion_Accidentes.CU01_Registrar_Accidente.serializers import (
@@ -22,8 +22,12 @@ class AccidenteRegistroView(APIView):
         if not serializer.is_valid():
             return validation_error_response(serializer.errors)
         try:
-            accidente = AccidenteRegistroService.registrar_accidente(serializer.validated_data)
-            return ok_response(serializer.data, status=status.HTTP_201_CREATED)
+            perfil = USUARIOS_ROLES.get(request.user.username, {})
+            idusuario_id = perfil.get('id', 1)
+            datos_validados = serializer.validated_data.copy()
+            datos_validados['idusuario_id'] = idusuario_id
+            accidente = AccidenteRegistroService.registrar_accidente(datos_validados)
+            return ok_response(accidente, status=status.HTTP_201_CREATED)
         except Exception as exc:
             logger.error('Error registrando accidente: %s', exc)
             return server_error_response('Error interno al registrar')
@@ -51,7 +55,11 @@ class AccidenteDetalleView(APIView):
         if not serializer.is_valid():
             return validation_error_response(serializer.errors)
         try:
-            accidente = AccidenteRegistroService.actualizar_accidente(accidente_id, serializer.validated_data)
+            perfil = USUARIOS_ROLES.get(request.user.username, {})
+            idusuario_id = perfil.get('id', 1)
+            datos_validados = serializer.validated_data.copy()
+            datos_validados['idusuario_id'] = idusuario_id
+            accidente = AccidenteRegistroService.actualizar_accidente(accidente_id, datos_validados)
             if not accidente:
                 return not_found_response()
             return ok_response(accidente)

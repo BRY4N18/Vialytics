@@ -1,10 +1,10 @@
 import uuid
 import time
-import zlib
 import logging
 from datetime import datetime
 from typing import Any, Dict, Optional
 
+from accidentes.shared.utils import uuid_to_pinot_id
 from accidentes.PKG1_Gestion_Accidentes.CU06_Asignar_Severidad.services import SeveridadService
 from accidentes.PKG1_Gestion_Accidentes.CU01_Registrar_Accidente.repositories import (
     ClimaRepository,
@@ -23,10 +23,6 @@ logger = logging.getLogger(__name__)
 
 
 class AccidenteRegistroService:
-
-    @staticmethod
-    def _uuid_to_pinot_id(uuid_str: str) -> int:
-        return zlib.crc32(uuid_str.encode('utf-8')) & 0x7FFFFFFF
 
     @staticmethod
     def _obtener_pinot_id_severidad(level: int) -> int:
@@ -72,7 +68,7 @@ class AccidenteRegistroService:
 
         ahora_ms = int(time.time() * 1000)
         horainicio = datetime.now().strftime("%H:%M:%S")
-        pinot_id_accidente = AccidenteRegistroService._uuid_to_pinot_id(idaccidente)
+        pinot_id_accidente = uuid_to_pinot_id(idaccidente)
 
         payload_accidente = {
             "idaccidente": idaccidente,
@@ -106,13 +102,12 @@ class AccidenteRegistroService:
         }
         AccidenteWriteRepository.create(payload_accidente)
 
-        base_id = int(time.time_ns())
         vehiculos_detalles = datos.get('vehiculos_detalles', [])
         for idx, v in enumerate(vehiculos_detalles):
-            idvehiculo = (base_id + idx * 4 + 1) % 10000000000
-            idconductor = (base_id + idx * 4 + 2) % 10000000000
-            idestadoconductor = (base_id + idx * 4 + 3) % 10000000000
-            idconductoraccidente = (base_id + idx * 4 + 4) % 10000000000
+            idvehiculo = uuid.uuid4().int % 10000000000
+            idconductor = uuid.uuid4().int % 10000000000
+            idestadoconductor = uuid.uuid4().int % 10000000000
+            idconductoraccidente = uuid.uuid4().int % 10000000000
 
             VehiculoRepository.create({
                 "idvehiculo": idvehiculo,
@@ -205,7 +200,7 @@ class AccidenteRegistroService:
         pinot_usuario = int(datos.get('idusuario_id', 1))
 
         ahora_ms = int(time.time() * 1000)
-        pinot_id_accidente = AccidenteRegistroService._uuid_to_pinot_id(accidente_id)
+        pinot_id_accidente = uuid_to_pinot_id(accidente_id)
 
         payload_accidente = {
             "idaccidente": accidente_id,
@@ -238,15 +233,14 @@ class AccidenteRegistroService:
             "fechahoraclima": ahora_ms,
         }
 
-        AccidenteWriteRepository.create(payload_accidente)
+        AccidenteWriteRepository.update(accidente_id, payload_accidente)
 
-        base_id = int(time.time_ns())
         vehiculos_detalles = datos.get('vehiculos_detalles', [])
         for idx, v in enumerate(vehiculos_detalles):
-            idvehiculo = (base_id + idx * 4 + 1) % 10000000000
-            idconductor = (base_id + idx * 4 + 2) % 10000000000
-            idestadoconductor = (base_id + idx * 4 + 3) % 10000000000
-            idconductoraccidente = (base_id + idx * 4 + 4) % 10000000000
+            idvehiculo = uuid.uuid4().int % 10000000000
+            idconductor = uuid.uuid4().int % 10000000000
+            idestadoconductor = uuid.uuid4().int % 10000000000
+            idconductoraccidente = uuid.uuid4().int % 10000000000
 
             VehiculoRepository.create({
                 "idvehiculo": idvehiculo,

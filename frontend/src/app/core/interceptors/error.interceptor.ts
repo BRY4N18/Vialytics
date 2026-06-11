@@ -13,7 +13,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       } else {
         switch (error.status) {
           case 400:
-            errorMessage = 'Solicitud invÃ¡lida';
+            errorMessage = 'Solicitud inválida';
             break;
           case 403:
             errorMessage = 'Acceso denegado';

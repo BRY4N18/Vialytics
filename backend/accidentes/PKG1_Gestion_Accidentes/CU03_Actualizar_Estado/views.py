@@ -2,7 +2,7 @@ import logging
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 
-from accidentes.shared.permissions import EsOperadorOAdministrador
+from accidentes.shared.permissions import EsOperadorOAdministrador, USUARIOS_ROLES
 from accidentes.shared.utils import ok_response, validation_error_response, server_error_response
 from accidentes.PKG1_Gestion_Accidentes.CU03_Actualizar_Estado.serializers import ActualizarEstadoSerializer
 from accidentes.PKG1_Gestion_Accidentes.CU03_Actualizar_Estado.services import EstadoService
@@ -18,11 +18,13 @@ class AccidenteEstadoView(APIView):
         if not serializer.is_valid():
             return validation_error_response(serializer.errors)
         try:
+            perfil = USUARIOS_ROLES.get(request.user.username, {})
+            idusuario_id = perfil.get('id', 1)
             resultado = EstadoService.actualizar_estado(
                 accidente_id=accidente_id,
                 nuevo_estado_id=serializer.validated_data['idtipoestadoincidente_id'],
                 nota=serializer.validated_data.get('nota'),
-                idusuario_id=1,
+                idusuario_id=idusuario_id,
             )
             return ok_response(resultado)
         except Exception as exc:

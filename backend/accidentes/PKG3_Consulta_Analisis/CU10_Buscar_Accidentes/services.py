@@ -1,8 +1,9 @@
 import logging
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from accidentes.shared.repositories import PinotRepository
+from accidentes.shared.cache_utils import memoize
 from accidentes.PKG1_Gestion_Accidentes.CU02_Visualizar_Mapa.repositories import (
     SeveridadRepository,
     CalleRepository,
@@ -18,6 +19,72 @@ from accidentes.PKG3_Consulta_Analisis.CU10_Buscar_Accidentes.repositories impor
 )
 
 logger = logging.getLogger(__name__)
+
+_ESTADOS_CATALOGO = {
+    1: "ACTIVO", 2: "EN_ATENCION", 3: "EN_ATENCION",
+    4: "CONTROLADO", 5: "ARCHIVADO",
+}
+
+
+@memoize
+def _get_severidad_maps() -> tuple:
+    rows = SeveridadRepository.get_all()
+    sev_map = {}
+    sev_id_for_level = {}
+    for s in rows:
+        sid = s.get('idseveridad')
+        slevel = s.get('severidad', 0)
+        sev_map[sid] = slevel
+        sev_id_for_level[slevel] = sid
+    return sev_map, sev_id_for_level
+
+
+@memoize
+def _get_ultimo_estado_por_accidente() -> Dict[str, int]:
+    todos = EstadoIncidenteRepository.get_all()
+    ultimo = {}
+    for r in todos:
+        aid = r.get('idaccidente')
+        eid = r.get('idtipoestadoincidente')
+        fhm = r.get('fechahoramodificado', 0)
+        if aid and eid:
+            prev = ultimo.get(aid)
+            if prev is None or fhm > prev:
+                ultimo[aid] = eid
+    return ultimo
+
+
+def _build_estado_filter(estado_param: str, solo_activos: bool) -> Optional[List[str]]:
+    estado_ids = []
+    if estado_param == 'ACTIVO':
+        estado_ids = [1]
+    elif estado_param == 'EN_ATENCION':
+        estado_ids = [2, 3]
+    elif estado_param == 'CONTROLADO':
+        estado_ids = [4]
+    elif estado_param == 'ARCHIVADO':
+        estado_ids = [5]
+    if solo_activos:
+        estado_ids = [1, 2, 3]
+    if not estado_ids:
+        return None
+    ultimo_estado = _get_ultimo_estado_por_accidente()
+    acc_ids = set()
+    for aid, eid in ultimo_estado.items():
+        if eid in estado_ids:
+            acc_ids.add(f"'{aid}'")
+    return list(acc_ids)
+
+
+def _timestamp_to_iso(fa: Any) -> str:
+    if isinstance(fa, (int, float)):
+        return datetime.fromtimestamp(fa / 1000.0).isoformat()
+    if isinstance(fa, str) and fa:
+        try:
+            return datetime.strptime(fa.split('.')[0], '%Y-%m-%d %H:%M:%S').isoformat()
+        except (ValueError, TypeError):
+            return fa
+    return str(fa or "")
 
 
 class BusquedaService:
@@ -40,14 +107,7 @@ class BusquedaService:
         fecha_hasta = filtros.get('fecha_hasta', '')
         matricula = filtros.get('matricula', '').strip()
 
-        sev_rows = SeveridadRepository.get_all()
-        sev_map = {}
-        sev_id_for_level = {}
-        for s in sev_rows:
-            sid = s.get('idseveridad')
-            slevel = s.get('severidad', 0)
-            sev_map[sid] = slevel
-            sev_id_for_level[slevel] = sid
+        sev_map, sev_id_for_level = _get_severidad_maps()
 
         where_clauses = ["activo = true"]
 
@@ -56,17 +116,33 @@ class BusquedaService:
             where_clauses.append(f"idseveridad = {sev_hash}")
 
         if ciudad_id is not None:
-            where_clauses.append(f"idciudad = {ciudad_id}")
+            try:
+                cid = int(ciudad_id)
+                where_clauses.append(f"idciudad = {cid}")
+            except (ValueError, TypeError):
+                pass
 
         if min_heridos is not None:
-            where_clauses.append(f"numheridos >= {min_heridos}")
+            try:
+                where_clauses.append(f"numheridos >= {int(min_heridos)}")
+            except (ValueError, TypeError):
+                pass
         if max_heridos is not None:
-            where_clauses.append(f"numheridos <= {max_heridos}")
+            try:
+                where_clauses.append(f"numheridos <= {int(max_heridos)}")
+            except (ValueError, TypeError):
+                pass
 
         if min_fallecidos is not None:
-            where_clauses.append(f"numfallecidos >= {min_fallecidos}")
+            try:
+                where_clauses.append(f"numfallecidos >= {int(min_fallecidos)}")
+            except (ValueError, TypeError):
+                pass
         if max_fallecidos is not None:
-            where_clauses.append(f"numfallecidos <= {max_fallecidos}")
+            try:
+                where_clauses.append(f"numfallecidos <= {int(max_fallecidos)}")
+            except (ValueError, TypeError):
+                pass
 
         if fecha_desde:
             try:
@@ -110,39 +186,10 @@ class BusquedaService:
                     where_clauses.append(f"idaccidente IN ({', '.join(acc_ids)})")
 
         if estado_param or solo_activos:
-            estado_ids = []
-            if estado_param == 'ACTIVO':
-                estado_ids = [1]
-            elif estado_param == 'EN_ATENCION':
-                estado_ids = [2, 3]
-            elif estado_param == 'CONTROLADO':
-                estado_ids = [4]
-            elif estado_param == 'ARCHIVADO':
-                estado_ids = [5]
-
-            if solo_activos:
-                estado_ids = [1, 2, 3]
-
-            if estado_ids:
-                todos_estados = EstadoIncidenteRepository.get_all()
-                if todos_estados:
-                    ultimo_estado_por_accidente = {}
-                    for r in todos_estados:
-                        aid = r.get('idaccidente')
-                        eid = r.get('idtipoestadoincidente')
-                        fhm = r.get('fechahoramodificado', 0)
-                        if aid and eid:
-                            prev = ultimo_estado_por_accidente.get(aid)
-                            if prev is None or fhm > prev['fecha']:
-                                ultimo_estado_por_accidente[aid] = {'id': eid, 'fecha': fhm}
-                    acc_ids = set()
-                    for aid, info in ultimo_estado_por_accidente.items():
-                        if info['id'] in estado_ids:
-                            acc_ids.add(f"'{aid}'")
-                    if acc_ids:
-                        where_clauses.append(f"idaccidente IN ({', '.join(acc_ids)})")
-                    else:
-                        where_clauses.append("idaccidente = 'NONE'")
+            estado_acc_ids = _build_estado_filter(estado_param, solo_activos)
+            if estado_acc_ids is not None:
+                if estado_acc_ids:
+                    where_clauses.append(f"idaccidente IN ({', '.join(estado_acc_ids)})")
                 else:
                     where_clauses.append("idaccidente = 'NONE'")
 
@@ -169,10 +216,6 @@ class BusquedaService:
             estado_map = {}
             if acc_ids:
                 estado_rows = EstadoIncidenteRepository.find_by_accidente_ids(acc_ids)
-                estados_catalogo = {
-                    1: "ACTIVO", 2: "EN_ATENCION", 3: "EN_ATENCION",
-                    4: "CONTROLADO", 5: "ARCHIVADO"
-                }
                 latest_estado = {}
                 for r in estado_rows:
                     aid = r.get('idaccidente')
@@ -182,7 +225,7 @@ class BusquedaService:
                         if aid not in latest_estado or fhm > latest_estado[aid]['fecha']:
                             latest_estado[aid] = {'id': eid, 'fecha': fhm}
                 for aid, info in latest_estado.items():
-                    estado_map[aid] = estados_catalogo.get(info['id'], "ACTIVO")
+                    estado_map[aid] = _ESTADOS_CATALOGO.get(info['id'], "ACTIVO")
 
             for row in rows:
                 idaccidente = row.get('idaccidente')
@@ -192,42 +235,24 @@ class BusquedaService:
                 sev_id = row.get('idseveridad')
                 sev = sev_map.get(sev_id, 1)
 
-                fa = row.get('fecha_actualizacion')
-                if isinstance(fa, (int, float)):
-                    fa_iso = datetime.fromtimestamp(fa / 1000.0).isoformat()
-                elif isinstance(fa, str) and fa:
-                    try:
-                        fa_dt = datetime.strptime(fa.split('.')[0], '%Y-%m-%d %H:%M:%S')
-                        fa_iso = fa_dt.isoformat()
-                    except (ValueError, TypeError):
-                        fa_iso = fa
-                else:
-                    fa_iso = str(fa or "")
-
-                idcalle = row.get('idcalle')
-                idciudad = row.get('idciudad')
-                calle_nombre = calles_map.get(idcalle, "Ubicación Registrada")
-                ciudad_nombre = ciudades_map.get(idciudad, "Ubicación Registrada")
-                estado_actual = estado_map.get(idaccidente, "ACTIVO")
-
                 resultados.append({
                     "idaccidente": str(idaccidente),
                     "latitudinicio": lat,
                     "longitudinicio": lng,
                     "severidad_nivel": sev,
-                    "estado_actual": estado_actual,
+                    "estado_actual": estado_map.get(idaccidente, "ACTIVO"),
                     "numheridos": int(row.get('numheridos', 0)),
                     "numfallecidos": int(row.get('numfallecidos', 0)),
                     "numvehiculos": int(row.get('numvehiculos', 0)),
-                    "fecha_actualizacion": fa_iso,
+                    "fecha_actualizacion": _timestamp_to_iso(row.get('fecha_actualizacion')),
                     "descripcion": str(row.get('descripcion') or ''),
-                    "calle_nombre": calle_nombre,
-                    "ciudad_nombre": ciudad_nombre
+                    "calle_nombre": calles_map.get(row.get('idcalle'), "Ubicación Registrada"),
+                    "ciudad_nombre": ciudades_map.get(row.get('idciudad'), "Ubicación Registrada"),
                 })
 
         return {
             "total_records": total_records,
             "page": page,
             "page_size": page_size,
-            "results": resultados
+            "results": resultados,
         }

@@ -1,7 +1,8 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from accidentes.shared.repositories import PinotRepository
+from accidentes.shared.repositories import PinotRepository, QueryTimeout
+from accidentes.shared.cache_utils import memoize
 
 logger = logging.getLogger(__name__)
 
@@ -9,10 +10,12 @@ logger = logging.getLogger(__name__)
 class SeveridadRepository:
 
     @staticmethod
+    @memoize
     def get_all() -> List[Dict[str, Any]]:
         return PinotRepository.execute_query(
             "SELECT idseveridad, severidad, descripcion "
-            "FROM severidades WHERE activo = true LIMIT 10"
+            "FROM severidades WHERE activo = true LIMIT 10",
+            timeout=QueryTimeout.CATALOGO,
         )
 
 
@@ -23,7 +26,8 @@ class CalleRepository:
         safe = PinotRepository.escape_sql_str(ciudad)
         rows = PinotRepository.execute_query(
             f"SELECT idcalle FROM calles "
-            f"WHERE activo = true AND ciudad = '{safe}' LIMIT 5000"
+            f"WHERE activo = true AND ciudad = '{safe}' LIMIT 5000",
+            timeout=QueryTimeout.CATALOGO,
         )
         return [r["idcalle"] for r in rows if r.get("idcalle") is not None]
 
@@ -34,18 +38,21 @@ class CalleRepository:
         ci_str = ", ".join(f"'{PinotRepository.escape_sql_str(c)}'" for c in ciudades)
         rows = PinotRepository.execute_query(
             f"SELECT idcalle FROM calles "
-            f"WHERE activo = true AND ciudad IN ({ci_str}) LIMIT 5000"
+            f"WHERE activo = true AND ciudad IN ({ci_str}) LIMIT 5000",
+            timeout=QueryTimeout.CATALOGO,
         )
         return [r["idcalle"] for r in rows if r.get("idcalle") is not None]
 
     @staticmethod
+    @memoize
     def find_by_ids(ids: List[int]) -> Dict[int, str]:
         if not ids:
             return {}
         ids_str = ", ".join(str(i) for i in ids)
         rows = PinotRepository.execute_query(
             f"SELECT idcalle, calle FROM calles "
-            f"WHERE idcalle IN ({ids_str}) LIMIT 1000"
+            f"WHERE idcalle IN ({ids_str}) LIMIT 1000",
+            timeout=QueryTimeout.CATALOGO,
         )
         return {r["idcalle"]: r.get("calle", "") for r in rows}
 
@@ -57,7 +64,8 @@ class CiudadRepository:
         safe = PinotRepository.escape_sql_str(condado)
         return PinotRepository.execute_query(
             f"SELECT idciudad, ciudad FROM ciudades "
-            f"WHERE activo = true AND condado = '{safe}' LIMIT 2000"
+            f"WHERE activo = true AND condado = '{safe}' LIMIT 2000",
+            timeout=QueryTimeout.CATALOGO,
         )
 
     @staticmethod
@@ -67,17 +75,20 @@ class CiudadRepository:
         co_str = ", ".join(f"'{PinotRepository.escape_sql_str(c)}'" for c in condados)
         return PinotRepository.execute_query(
             f"SELECT idciudad, ciudad FROM ciudades "
-            f"WHERE activo = true AND condado IN ({co_str}) LIMIT 2000"
+            f"WHERE activo = true AND condado IN ({co_str}) LIMIT 2000",
+            timeout=QueryTimeout.CATALOGO,
         )
 
     @staticmethod
+    @memoize
     def find_by_ids(ids: List[int]) -> Dict[int, str]:
         if not ids:
             return {}
         ids_str = ", ".join(str(i) for i in ids)
         rows = PinotRepository.execute_query(
             f"SELECT idciudad, ciudad FROM ciudades "
-            f"WHERE idciudad IN ({ids_str}) LIMIT 1000"
+            f"WHERE idciudad IN ({ids_str}) LIMIT 1000",
+            timeout=QueryTimeout.CATALOGO,
         )
         return {r["idciudad"]: r.get("ciudad", "") for r in rows}
 
@@ -89,7 +100,8 @@ class CondadoRepository:
         safe = PinotRepository.escape_sql_str(estado)
         rows = PinotRepository.execute_query(
             f"SELECT condado FROM condados "
-            f"WHERE activo = true AND estado = '{safe}' LIMIT 2000"
+            f"WHERE activo = true AND estado = '{safe}' LIMIT 2000",
+            timeout=QueryTimeout.CATALOGO,
         )
         return [r["condado"] for r in rows if r.get("condado") is not None]
 
@@ -100,7 +112,8 @@ class CondadoRepository:
         es_str = ", ".join(f"'{PinotRepository.escape_sql_str(e)}'" for e in estados)
         rows = PinotRepository.execute_query(
             f"SELECT condado FROM condados "
-            f"WHERE activo = true AND estado IN ({es_str}) LIMIT 2000"
+            f"WHERE activo = true AND estado IN ({es_str}) LIMIT 2000",
+            timeout=QueryTimeout.CATALOGO,
         )
         return [r["condado"] for r in rows if r.get("condado") is not None]
 
@@ -112,7 +125,8 @@ class EstadoGeograficoRepository:
         safe = PinotRepository.escape_sql_str(pais)
         rows = PinotRepository.execute_query(
             f"SELECT estado FROM estados "
-            f"WHERE activo = true AND pais = '{safe}' LIMIT 2000"
+            f"WHERE activo = true AND pais = '{safe}' LIMIT 2000",
+            timeout=QueryTimeout.CATALOGO,
         )
         return [r["estado"] for r in rows if r.get("estado") is not None]
 
@@ -129,7 +143,7 @@ class FechaRepository:
             safe = PinotRepository.escape_sql_str(end_str)
             query += f" AND fechacompleta <= '{safe}'"
         query += " LIMIT 5000"
-        rows = PinotRepository.execute_query(query)
+        rows = PinotRepository.execute_query(query, timeout=QueryTimeout.CATALOGO)
         return list(set(r["idfecha"] for r in rows if r.get("idfecha") is not None))
 
 

@@ -1,7 +1,13 @@
 import logging
 from typing import Any, Dict, List
 
-from accidentes.shared.repositories import PinotRepository
+from accidentes.shared.repositories import PinotRepository, QueryTimeout
+from accidentes.shared.cache_utils import cached_catalog, memoize
+from accidentes.shared.seeds import (
+    ESTADOS_UNIDAD_CATALOGO,
+    TIPOS_UNIDAD_CATALOGO,
+    UNIDADES_CATALOGO,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -9,208 +15,209 @@ logger = logging.getLogger(__name__)
 class TipoReportadoCatalogoRepository:
 
     @staticmethod
+    @cached_catalog("catalogo:tiporeportado", ttl=3600)
     def get_all() -> List[Dict[str, Any]]:
         return PinotRepository.execute_query(
             "SELECT idtiporeportado, tiporeportado "
-            "FROM tiposreportados WHERE activo = true LIMIT 50"
+            "FROM tiposreportados WHERE activo = true LIMIT 50",
+            timeout=QueryTimeout.CATALOGO,
         )
 
 
 class TipoEstadoCatalogoRepository:
 
     @staticmethod
+    @cached_catalog("catalogo:tipoestado", ttl=3600)
     def get_all() -> List[Dict[str, Any]]:
         return PinotRepository.execute_query(
             "SELECT idtipoestadoincidente, tipoestadoincidente "
-            "FROM tiposestadosincidentes WHERE activo = true LIMIT 100"
+            "FROM tiposestadosincidentes WHERE activo = true LIMIT 100",
+            timeout=QueryTimeout.CATALOGO,
         )
 
 
 class PaisCatalogoRepository:
 
     @staticmethod
+    @cached_catalog("catalogo:pais", ttl=3600)
     def get_all() -> List[Dict[str, Any]]:
         return PinotRepository.execute_query(
-            "SELECT idpais, pais FROM paises WHERE activo = true LIMIT 100"
+            "SELECT idpais, pais FROM paises WHERE activo = true LIMIT 100",
+            timeout=QueryTimeout.CATALOGO,
         )
 
 
 class EstadoCatalogoRepository:
 
     @staticmethod
+    @cached_catalog("catalogo:estado", ttl=1800)
     def get_all(pais: str = "") -> List[Dict[str, Any]]:
         if pais:
             safe = PinotRepository.escape_sql_str(pais)
             return PinotRepository.execute_query(
                 f"SELECT idestado, estado, pais FROM estados "
-                f"WHERE activo = true AND pais = '{safe}' LIMIT 100"
+                f"WHERE activo = true AND pais = '{safe}' LIMIT 100",
+                timeout=QueryTimeout.CATALOGO,
             )
         return PinotRepository.execute_query(
             "SELECT idestado, estado, pais FROM estados "
-            "WHERE activo = true LIMIT 100"
+            "WHERE activo = true LIMIT 100",
+            timeout=QueryTimeout.CATALOGO,
         )
 
 
 class CondadoCatalogoRepository:
 
     @staticmethod
+    @cached_catalog("catalogo:condado", ttl=1800)
     def get_all(estado: str = "") -> List[Dict[str, Any]]:
         if estado:
             safe = PinotRepository.escape_sql_str(estado)
             return PinotRepository.execute_query(
                 f"SELECT idcondado, condado, estado FROM condados "
-                f"WHERE activo = true AND estado = '{safe}' LIMIT 200"
+                f"WHERE activo = true AND estado = '{safe}' LIMIT 200",
+                timeout=QueryTimeout.CATALOGO,
             )
         return PinotRepository.execute_query(
             "SELECT idcondado, condado, estado FROM condados "
-            "WHERE activo = true LIMIT 200"
+            "WHERE activo = true LIMIT 200",
+            timeout=QueryTimeout.CATALOGO,
         )
 
 
 class CiudadCatalogoRepository:
 
     @staticmethod
+    @cached_catalog("catalogo:ciudad", ttl=1800)
     def get_all(condado: str = "") -> List[Dict[str, Any]]:
         if condado:
             safe = PinotRepository.escape_sql_str(condado)
             return PinotRepository.execute_query(
                 f"SELECT idciudad, ciudad, condado FROM ciudades "
-                f"WHERE activo = true AND condado = '{safe}' LIMIT 500"
+                f"WHERE activo = true AND condado = '{safe}' LIMIT 500",
+                timeout=QueryTimeout.CATALOGO,
             )
         return PinotRepository.execute_query(
             "SELECT idciudad, ciudad, condado FROM ciudades "
-            "WHERE activo = true LIMIT 500"
+            "WHERE activo = true LIMIT 500",
+            timeout=QueryTimeout.CATALOGO,
         )
 
 
 class CalleCatalogoRepository:
 
     @staticmethod
+    @cached_catalog("catalogo:calle", ttl=1800)
     def get_all(ciudad: str = "") -> List[Dict[str, Any]]:
         if ciudad:
             safe = PinotRepository.escape_sql_str(ciudad)
             return PinotRepository.execute_query(
                 f"SELECT idcalle, calle, ciudad FROM calles "
-                f"WHERE activo = true AND ciudad = '{safe}' LIMIT 1000"
+                f"WHERE activo = true AND ciudad = '{safe}' LIMIT 1000",
+                timeout=QueryTimeout.CATALOGO,
             )
         return PinotRepository.execute_query(
             "SELECT idcalle, calle, ciudad FROM calles "
-            "WHERE activo = true LIMIT 1000"
+            "WHERE activo = true LIMIT 1000",
+            timeout=QueryTimeout.CATALOGO,
         )
 
 
 class ClimaCatalogoRepository:
 
     @staticmethod
+    @cached_catalog("catalogo:clima", ttl=3600)
     def get_all() -> List[Dict[str, Any]]:
         return PinotRepository.execute_query(
             "SELECT idestadoclima, condicionclima, direccionviento, temperaturaf, "
             "sensaciontermicaf, humedadporcentaje, presionpulgadas, visibilidadmillas, "
             "velocidadvientomph, precipitacionpulgadas "
-            "FROM estadoclima WHERE activo = true LIMIT 100"
+            "FROM estadoclima WHERE activo = true LIMIT 100",
+            timeout=QueryTimeout.CATALOGO,
         )
 
 
 class ElementoFisicoCatalogoRepository:
 
     @staticmethod
+    @cached_catalog("catalogo:elementofisico", ttl=3600)
     def get_all() -> List[Dict[str, Any]]:
         return PinotRepository.execute_query(
             "SELECT idelementofisico, cercacruce, cercasemaforo, cercaparada, "
             "cercaestacion, cercabache, cercaviatren "
-            "FROM elementosfisicos WHERE activo = true LIMIT 100"
+            "FROM elementosfisicos WHERE activo = true LIMIT 100",
+            timeout=QueryTimeout.CATALOGO,
         )
 
 
 class PeriodoDiaCatalogoRepository:
 
     @staticmethod
+    @cached_catalog("catalogo:periododia", ttl=3600)
     def get_all() -> List[Dict[str, Any]]:
         return PinotRepository.execute_query(
             "SELECT idperiododia, amaneceranochecer, crepusculocivil, "
             "crepusculonautico, crepusculoastronomico "
-            "FROM periodosdias WHERE activo = true LIMIT 100"
+            "FROM periodosdias WHERE activo = true LIMIT 100",
+            timeout=QueryTimeout.CATALOGO,
         )
-
-
-_ESTADOS_UNIDAD_CATALOGO = [
-    {"idestadounidad": 1, "estadounidad": "En base"},
-    {"idestadounidad": 2, "estadounidad": "En camino"},
-    {"idestadounidad": 3, "estadounidad": "En escena"},
-    {"idestadounidad": 4, "estadounidad": "En traslado"},
-    {"idestadounidad": 5, "estadounidad": "Regreso"},
-    {"idestadounidad": 6, "estadounidad": "Disponible"},
-]
 
 
 class EstadoUnidadCatalogoRepository:
 
     @staticmethod
+    @cached_catalog("catalogo:estadounidad", ttl=3600)
     def get_all() -> List[Dict[str, Any]]:
         rows = PinotRepository.execute_query(
             "SELECT idestadounidad, estadounidad "
-            "FROM estadosunidadesemergencias WHERE activo = true LIMIT 20"
+            "FROM estadosunidadesemergencias WHERE activo = true LIMIT 20",
+            timeout=QueryTimeout.CATALOGO,
         )
         if rows:
             return rows
         logger.warning("Error querying estados unidad from Pinot, using fallback")
-        return _ESTADOS_UNIDAD_CATALOGO
-
-
-_TIPOS_UNIDAD_CATALOGO = [
-    {"idtipounidad": 1, "tipounidad": "AMBULANCIA"},
-    {"idtipounidad": 2, "tipounidad": "BOMBEROS"},
-    {"idtipounidad": 3, "tipounidad": "TRANSITO"},
-    {"idtipounidad": 4, "tipounidad": "GRUA"},
-]
+        return ESTADOS_UNIDAD_CATALOGO
 
 
 class TipoUnidadCatalogoRepository:
 
     @staticmethod
+    @memoize
     def get_all() -> List[Dict[str, Any]]:
-        return _TIPOS_UNIDAD_CATALOGO
+        return TIPOS_UNIDAD_CATALOGO
 
     @staticmethod
     def get_nombre(id_tipo: int) -> str | None:
-        for t in _TIPOS_UNIDAD_CATALOGO:
+        for t in TIPOS_UNIDAD_CATALOGO:
             if t["idtipounidad"] == id_tipo:
                 return t["tipounidad"]
         return None
 
 
-_UNIDADES_CATALOGO = [
-    {"idunidademergencia": 1, "unidademergencia": "Alfa 1", "tipounidademergencia": "AMBULANCIA", "estadounidad": "En base", "activo": True},
-    {"idunidademergencia": 2, "unidademergencia": "Alfa 2", "tipounidademergencia": "AMBULANCIA", "estadounidad": "En base", "activo": True},
-    {"idunidademergencia": 3, "unidademergencia": "Rescate 1", "tipounidademergencia": "BOMBEROS", "estadounidad": "En base", "activo": True},
-    {"idunidademergencia": 4, "unidademergencia": "Bomberos 4", "tipounidademergencia": "BOMBEROS", "estadounidad": "En base", "activo": True},
-    {"idunidademergencia": 5, "unidademergencia": "ATM Movil 10", "tipounidademergencia": "TRANSITO", "estadounidad": "En base", "activo": True},
-    {"idunidademergencia": 6, "unidademergencia": "ATM Movil 12", "tipounidademergencia": "TRANSITO", "estadounidad": "En base", "activo": True},
-    {"idunidademergencia": 7, "unidademergencia": "Patrulla 105", "tipounidademergencia": "TRANSITO", "estadounidad": "En base", "activo": True},
-    {"idunidademergencia": 8, "unidademergencia": "Patrulla 109", "tipounidademergencia": "TRANSITO", "estadounidad": "En base", "activo": True},
-]
-
-
 class UnidadEmergenciaCatalogoRepository:
 
     @staticmethod
+    @cached_catalog("catalogo:unidademergencia", ttl=3600)
     def get_all() -> List[Dict[str, Any]]:
         rows = PinotRepository.execute_query(
             "SELECT idunidademergencia, unidademergencia, tipounidademergencia, "
-            "activo FROM unidadesemergencia WHERE activo = true LIMIT 100"
+            "activo FROM unidadesemergencia WHERE activo = true LIMIT 100",
+            timeout=QueryTimeout.CATALOGO,
         )
         if rows:
             return rows
         logger.warning("Error querying unidades from Pinot, using fallback")
-        return _UNIDADES_CATALOGO
+        return UNIDADES_CATALOGO
 
     @staticmethod
+    @cached_catalog("catalogo:unidademergencia:info_map", ttl=3600)
     def get_info_map() -> Dict[int, tuple]:
         rows = PinotRepository.execute_query(
             "SELECT idunidademergencia, unidademergencia, tipounidademergencia "
-            "FROM unidadesemergencia WHERE activo = true LIMIT 100"
+            "FROM unidadesemergencia WHERE activo = true LIMIT 100",
+            timeout=QueryTimeout.CATALOGO,
         )
         if rows:
             return {u["idunidademergencia"]: (u["unidademergencia"], u["tipounidademergencia"]) for u in rows}
         logger.warning("Error querying unidades info_map from Pinot, using fallback")
-        return {u["idunidademergencia"]: (u["unidademergencia"], u["tipounidademergencia"]) for u in _UNIDADES_CATALOGO}
+        return {u["idunidademergencia"]: (u["unidademergencia"], u["tipounidademergencia"]) for u in UNIDADES_CATALOGO}

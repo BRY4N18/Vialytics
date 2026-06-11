@@ -37,12 +37,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
               }
               localStorage.clear();
               router.navigate(['/mapa']);
-              return throwError(() => new Error('SesiÃ³n expirada'));
+              return throwError(() => new Error('Sesión expirada'));
             }),
             catchError(() => {
               localStorage.clear();
               router.navigate(['/mapa']);
-              return throwError(() => new Error('SesiÃ³n expirada'));
+              return throwError(() => new Error('Sesión expirada'));
             })
           );
         }

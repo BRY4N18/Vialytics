@@ -4,6 +4,8 @@ from typing import Any, Dict, List, Optional
 import httpx
 from django.conf import settings
 
+from accidentes.shared.repositories import PinotRepository
+
 logger = logging.getLogger(__name__)
 
 PINOT_BROKER_URL = getattr(settings, 'PINOT_BROKER', 'http://localhost:8099') + '/query/sql'
@@ -43,8 +45,8 @@ class ReporteAccidenteRepository:
     ) -> List[Dict[str, Any]]:
         condiciones = ['activo = true']
         if excluir_estados:
-            estados_str = ', '.join(f"'{e}'" for e in excluir_estados)
-            condiciones.append(f"estado_actual NOT IN ({estados_str})")
+            estados_escaped = [f"'{PinotRepository.escape_sql_str(e)}'" for e in excluir_estados]
+            condiciones.append(f"estado_actual NOT IN ({', '.join(estados_escaped)})")
         if severidad:
             condiciones.append(f'severidad_nivel = {severidad}')
         if horas:

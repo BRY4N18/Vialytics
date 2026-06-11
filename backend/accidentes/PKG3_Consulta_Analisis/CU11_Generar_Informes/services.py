@@ -13,6 +13,10 @@ class ReporteService:
 
     @staticmethod
     async def ejecutar_query(sql: str) -> List[Dict[str, Any]]:
+        sql_upper = sql.strip().upper()
+        if not sql_upper.startswith("SELECT") or "INTO" in sql_upper:
+            logger.error(f"Rejected non-SELECT SQL: {sql[:100]}")
+            return []
         return await ReportePinotRepository.execute_query(sql)
 
     @staticmethod

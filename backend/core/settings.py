@@ -120,6 +120,18 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+# Cache configuration
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "sga-cache",
+        "TIMEOUT": 300,
+        "OPTIONS": {
+            "MAX_ENTRIES": 1000,
+        },
+    }
+}
+
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = True  # Permite cualquier origen en desarrollo
 CORS_ALLOW_CREDENTIALS = True

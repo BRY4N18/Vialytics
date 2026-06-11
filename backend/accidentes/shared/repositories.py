@@ -1,7 +1,9 @@
 import json
 import time
 import logging
+from typing import Any
 import requests
+import threading
 from confluent_kafka import Producer
 from django.conf import settings
 
@@ -12,10 +14,24 @@ class KafkaRepository:
     MAX_RETRIES = 3
     INITIAL_BACKOFF = 1
     MAX_BACKOFF = 8
+    _instance = None
+    _lock = threading.Lock()
+    _producer = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+        return cls._instance
 
     def __init__(self):
+        if self._producer is None:
+            self._init_producer()
+
+    def _init_producer(self):
         try:
-            self.producer = Producer({
+            self._producer = Producer({
                 "bootstrap.servers": settings.KAFKA_BROKER,
                 "acks": "all",
                 "retries": 3,
@@ -25,6 +41,12 @@ class KafkaRepository:
         except Exception as e:
             logger.error(f"Failed to initialize Kafka producer: {e}")
             raise
+
+    @property
+    def producer(self):
+        if self._producer is None:
+            self._init_producer()
+        return self._producer
 
     def enviar_mensaje(self, topic, clave_primaria, datos_json, operacion="INSERT"):
         if not topic or not isinstance(topic, str):
@@ -88,6 +110,9 @@ class KafkaRepository:
         return False
 
 
+kafka_repository = KafkaRepository()
+
+
 class BaseWriteRepository:
     topic = ""
     primary_key_field = ""
@@ -97,8 +122,7 @@ class BaseWriteRepository:
         ahora_ms = int(time.time() * 1000)
         payload.setdefault("fecha_actualizacion", ahora_ms)
         try:
-            kafka = KafkaRepository()
-            return kafka.enviar_mensaje(
+            return kafka_repository.enviar_mensaje(
                 topic=cls.topic,
                 clave_primaria=payload.get(cls.primary_key_field, ""),
                 datos_json=payload,
@@ -108,8 +132,59 @@ class BaseWriteRepository:
             logger.error("Error enviando a Kafka (topic=%s): %s", cls.topic, e)
             return False
 
+    @classmethod
+    def update(cls, primary_key, payload):
+        ahora_ms = int(time.time() * 1000)
+        payload["fecha_actualizacion"] = ahora_ms
+        try:
+            return kafka_repository.enviar_mensaje(
+                topic=cls.topic,
+                clave_primaria=primary_key,
+                datos_json=payload,
+                operacion="INSERT",
+            )
+        except Exception as e:
+            logger.error("Error actualizando en Kafka (topic=%s): %s", cls.topic, e)
+            return False
+
+
+class QueryTimeout:
+    CATALOGO = 3.0
+    BUSQUEDA = 5.0
+    EXPEDIENTE = 10.0
+    ESCRITURA = 5.0
+    DEFAULT = 5.0
+
 
 class PinotRepository:
+    _instance = None
+    _lock = threading.Lock()
+    _session = None
+    _session_lock = threading.Lock()
+
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+        return cls._instance
+
+    @classmethod
+    def _get_session(cls) -> requests.Session:
+        if cls._session is None:
+            with cls._session_lock:
+                if cls._session is None:
+                    cls._session = requests.Session()
+                    adapter = requests.adapters.HTTPAdapter(
+                        pool_connections=10,
+                        pool_maxsize=20,
+                        max_retries=3,
+                        pool_block=False
+                    )
+                    cls._session.mount('http://', adapter)
+                    cls._session.mount('https://', adapter)
+        return cls._session
+
     @staticmethod
     def escape_sql_str(value: str) -> str:
         escaped = value.replace("'", "''")
@@ -117,7 +192,29 @@ class PinotRepository:
         return escaped
 
     @staticmethod
-    def execute_query(sql_query, use_multistage=False):
+    def safe_value(value: Any) -> str:
+        if isinstance(value, (int, float)):
+            return str(value)
+        if value is None:
+            return "NULL"
+        escaped = PinotRepository.escape_sql_str(str(value))
+        return f"'{escaped}'"
+
+    @staticmethod
+    def build_safe_query(template: str, *args: Any) -> str:
+        escaped_args = [PinotRepository.safe_value(a) for a in args]
+        parts = template.split("?")
+        if len(parts) - 1 != len(escaped_args):
+            raise ValueError(
+                f"Placeholder count ({len(parts) - 1}) "
+                f"does not match argument count ({len(escaped_args)})"
+            )
+        result = parts[0]
+        for i, part in enumerate(parts[1:]):
+            result += escaped_args[i] + part
+        return result
+
+    def _execute(self, sql_query, use_multistage=False, timeout=None):
         if not sql_query or not isinstance(sql_query, str):
             logger.error(f"Invalid SQL query: {sql_query}")
             raise ValueError("SQL query must be a non-empty string")
@@ -141,14 +238,16 @@ class PinotRepository:
             "Accept": "application/json"
         }
 
+        session = self._get_session()
+
         try:
             logger.debug(f"Executing Pinot query: {sql_query[:100]}...")
 
-            response = requests.post(
+            response = session.post(
                 url,
                 json=payload,
                 headers=headers,
-                timeout=5.0
+                timeout=timeout or QueryTimeout.DEFAULT
             )
 
             if response.status_code == 200:
@@ -191,3 +290,15 @@ class PinotRepository:
         except Exception as e:
             logger.error(f"Exception executing Pinot query: {e}")
             return []
+
+    @staticmethod
+    def execute_query(sql_query, use_multistage=False, timeout=None):
+        return pinot_repository._execute(sql_query, use_multistage, timeout)
+
+    @staticmethod
+    def safe_query(template: str, *args, use_multistage=False, timeout=None):
+        safe_sql = PinotRepository.build_safe_query(template, *args)
+        return pinot_repository._execute(safe_sql, use_multistage, timeout)
+
+
+pinot_repository = PinotRepository()

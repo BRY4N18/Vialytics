@@ -2,11 +2,11 @@ from rest_framework.permissions import BasePermission
 
 
 USUARIOS_ROLES = {
-    'operador_sga': {'nombre': 'Laura Mendoza', 'rol': 'Operador'},
-    'admin_sga': {'nombre': 'Carlos Gomez', 'rol': 'Administrador'},
-    'analista_sga': {'nombre': 'Patricia Vega', 'rol': 'Consumidor Analítico'},
-    'despachador_sga': {'nombre': 'David Torres', 'rol': 'Despachador'},
-    'unidad_emergencia_sga': {'nombre': 'Unidad Alfa 1', 'rol': 'Unidad de Emergencia'},
+    'operador_sga': {'id': 1, 'nombre': 'Laura Mendoza', 'rol': 'Operador'},
+    'admin_sga': {'id': 2, 'nombre': 'Carlos Gomez', 'rol': 'Administrador'},
+    'analista_sga': {'id': 3, 'nombre': 'Patricia Vega', 'rol': 'Consumidor Analítico'},
+    'despachador_sga': {'id': 4, 'nombre': 'David Torres', 'rol': 'Despachador'},
+    'unidad_emergencia_sga': {'id': 5, 'nombre': 'Unidad Alfa 1', 'rol': 'Unidad de Emergencia'},
 }
 
 

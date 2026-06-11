@@ -65,7 +65,7 @@
       </a>
     }
 
-    @if (authService.isLoggedIn() && authService.userRole() === 'analista') {
+    @if (authService.isLoggedIn() && authService.userRole() === 'Consumidor Analítico') {
       <a class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] font-medium text-white/50 transition-all hover:text-white/80 hover:bg-white/[0.04] no-underline cursor-pointer whitespace-nowrap" routerLink="/analitico" routerLinkActive="active">
         <svg class="w-[18px] h-[18px] flex-shrink-0 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 12a9 9 0 1 1-9-9"/>

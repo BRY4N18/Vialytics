@@ -1,5 +1,11 @@
+import zlib
+
 from rest_framework.response import Response
 from rest_framework import status as http_status
+
+
+def uuid_to_pinot_id(uuid_str: str) -> int:
+    return zlib.crc32(uuid_str.encode('utf-8')) & 0x7FFFFFFF
 
 
 def ok_response(data, status=http_status.HTTP_200_OK):

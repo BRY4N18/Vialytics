@@ -1,22 +1,9 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { RouterModule } from '@angular/router';
 import { ToastService } from '../../../../core/services/toast.service';
-
-interface Retiro {
-  idretiro: number;
-  idaccidente: string;
-  idunidademergencia: number;
-  unidademergencia_nombre: string;
-  estado: string;
-  descripcion: string;
-  nota_informe: string;
-  urls_fotos: string[];
-  fecha_solicitud: string;
-  fecha_aceptacion: string | null;
-  fecha_finalizacion: string | null;
-}
+import { RetiroService } from '../../../../core/services/retiro.service';
+import { Retiro } from '../../../../core/models/retiro.model';
 
 @Component({
   selector: 'app-gestionar-retiros',
@@ -25,9 +12,8 @@ interface Retiro {
   templateUrl: './gestionar-retiros.html'
 })
 export class GestionarRetirosComponent implements OnInit {
-  private readonly http = inject(HttpClient);
+  private readonly retiroService = inject(RetiroService);
   private readonly toastService = inject(ToastService);
-  private readonly baseUrl = 'http://localhost:8080/api/v1';
 
   readonly retiros = signal<Retiro[]>([]);
   readonly cargando = signal(false);
@@ -42,7 +28,7 @@ export class GestionarRetirosComponent implements OnInit {
   cargarRetiros(): void {
     this.cargando.set(true);
     this.error.set(null);
-    this.http.get<Retiro[]>(`${this.baseUrl}/retiros/`).subscribe({
+    this.retiroService.getRetiros().subscribe({
       next: (data) => {
         this.retiros.set(data);
         this.cargando.set(false);
@@ -56,7 +42,7 @@ export class GestionarRetirosComponent implements OnInit {
 
   aceptarRetiro(retiroId: number): void {
     this.aceptandoId.set(retiroId);
-    this.http.patch(`${this.baseUrl}/retiros/${retiroId}/aceptar/`, { nota: '' }).subscribe({
+    this.retiroService.aceptarRetiro(retiroId, { nota: '' }).subscribe({
       next: (res: any) => {
         this.toastService.show(res.mensaje || 'Retiro aceptado exitosamente');
         this.aceptandoId.set(null);
@@ -71,7 +57,7 @@ export class GestionarRetirosComponent implements OnInit {
 
   finalizarRetiro(retiroId: number): void {
     this.finalizandoId.set(retiroId);
-    this.http.post(`${this.baseUrl}/retiros/${retiroId}/finalizar/`, {
+    this.retiroService.finalizarRetiro(retiroId, {
       nota_informe: 'Retiro completado',
       urls_fotos: []
     }).subscribe({
